@@ -59,15 +59,32 @@ void askEnd() {
 
 
 int main() {
-	File inFile("input.txt");	
+	File inFile("input.txt");
+	char testChar;
 	str test;
 
-	test = inFile.getLine(0);
-	inFile.replaceLine(0, "Ciao");
-	std::cout << inFile.getLine(0);
-	inFile.replaceLine(0, test);
+	test = inFile.getLine(1);
+	inFile.replaceLine(1, "Linea-");
+	std::cout << inFile.getLine(1);
+	inFile.replaceLine(1, test);
+
+	test = inFile.getWord(1);
+	inFile.replaceWord(1, "Parola1-");
+	std::cout << inFile.getWord(1);
+	inFile.replaceWord(1, test);
+
+	test = inFile.getWord(1, 0);
+	inFile.replaceWord(1, 0, "Parola2-");
+	std::cout << inFile.getWord(1, 0);
+	inFile.replaceWord(1, 0, test);
+	
+	testChar = inFile.getChar(0);
+	inFile.replaceChar(0, '|');
+	std::cout << inFile.getChar(0);
+	inFile.replaceChar(0, testChar);
 
 	std::cout << '\n';
+	std::cout << '\r';
 	std::cout << '\r';
 	std::cout << '\r';
 	std::cout << '\r';

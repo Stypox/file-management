@@ -165,8 +165,7 @@ using uint32 = uint32_t;
 using uint64 = uint64_t;
 
 /*
-Returns true if the file has been opened correctly
-	Otherwise false
+Returns false if the file couldn't be opened, otherwise true
 */
 bool File::checkOpen() {
 	file.open(path, std::ios::binary | std::ios::in | std::ios::out | std::ios::app); //FARE va bene app
@@ -178,14 +177,13 @@ bool File::checkOpen() {
 The two pointers inside the file are moved to the new position
 The file is opened, if it wasn't already
 Line and word are used as offsets, if set to 0 it starts from the beginning
-Ex: pointTo(3, 2, 4) points to the 5th char of the 3rd word of the 4th line
+Eg: pointTo(3, 2, 4) points to the 5th char of the 3rd word of the 4th line
 	pointTo(3, 0, 0) points to the 4th line
 	pointTo(3, 0, 4) points to the 5th char of the 4th line
 	pointTo(0, 0, 7) points to the 8th char from the beginning
 	pointTo(0, 2, 0) points to the 3rd word from the beginning
-Returns false if the file hasn't been opened correctly
-	and when EOF is reached (!)
-	Otherwise true.
+Returns false if the file couldn't be opened or
+	if EOF has been reached (!), otherwise true
 */
 bool File::pointTo(uint16 Line, uint16 Word, uint16 Char) {
 	if (!pointToBeg()) return false;
@@ -203,7 +201,8 @@ bool File::pointTo(uint16 Line, uint16 Word, uint16 Char) {
 /*
 The two pointers inside the file are moved to the beginning
 The file is opened, if it wasn't already
-The file's eofbit is cleared 
+The file's eofbit is cleared
+Returns true if the file opened correctly, otherwise false
 */
 bool File::pointToBeg() {
 	if (!file.is_open() && !checkOpen()) return false;
@@ -211,6 +210,37 @@ bool File::pointToBeg() {
 	file.seekg(0);
 	file.seekp(0);
 	return true;
+}
+/*
+Retrieves the (start) position of the requested line/word/char
+Returns -1 if the file couldn't be opened or if
+	the specified position is out of bounds.
+*/
+std::streampos File::getPosition(uint16 Line, uint16 Word, uint16 Char) {
+	std::streampos GpointerBeginning = 0, PpointerBeginning = 0;
+	if (file.is_open()) {
+		GpointerBeginning = file.tellg();
+		PpointerBeginning = file.tellp();
+	}
+	if (!pointToBeg()) return -1;
+
+	str tempStr;
+	for (uint16 currentLine = 0; currentLine < Line; ++currentLine)	getline(file, tempStr);
+	for (uint16 currentWord = 0; currentWord < Word; ++currentWord) file >> tempStr;
+	if (Word != 0) ++Char;
+
+	std::streampos position = file.tellg() + (std::streampos)Char;
+	file.seekg(0, std::ios_base::end);
+	std::streampos pos = file.tellg();
+	if (position > file.tellg()) {	//FARE vedere se c'e' bisogno di >= ma penso di si'
+		position = -1;
+	}
+
+	file.clear(file.eof());
+	file.seekg(GpointerBeginning);
+	file.seekp(PpointerBeginning);
+
+	return position;
 }
 
 /*
@@ -233,17 +263,46 @@ uint16 File::countWords(str String) {
 
 	return nrWords;
 }
-
-
-File::File() : path(""), tempPath(defaultTempPath) {}
-File::File(str Path) : path(Path), tempPath("") {
-	for (char letter : Path) {
-		if (letter == '.') break;
-		tempPath += letter;
+/*
+Deletes all '\r' (Carriage Return) at the end of the string
+*/
+void File::truncEndCR(str & String) {
+	while (!String.empty() && String.back() == '\r') {
+		String.pop_back();
 	}
-
-	tempPath += defaultTempPath;
 }
+/*
+Gets all the content from the 1st file and copies it to the 2nd
+Files must be already open
+*/
+void File::moveFileContent(fstm & From, fstm & To) {
+	char tempChar;
+	while (1) {
+		tempChar = From.get();
+		if (!From.eof()) {
+			To << tempChar;
+		}
+		else return;
+	}
+}
+
+
+/*
+default constructor
+initializes path to an empty string
+	and the tempPath to its default value
+*/
+File::File() : path(""), tempPath(defaultTempPath) {}
+/*
+constructor with path
+initializes path to the corresponding parameter
+	and the tempPath to path + ".tmp"
+*/
+File::File(str Path) : path(Path), tempPath(Path + ".tmp") {}
+/*
+constructor with path and tempPath
+initializes path and tempPath to the corresponding parameters
+*/
 File::File(str Path, str TempPath) : path(Path), tempPath(TempPath) {}
 
 
@@ -305,15 +364,15 @@ uint16 File::getNrCharsWord(uint16 Line, uint16 Word) {
 	return (uint16)tempStr.length();
 }
 
-
+/*
+Removes '\r' at the end of the line
+*/
 str File::getLine(uint16 Line) {
 	if (!pointTo(Line, 0, 0)) return "";
 
 	str line;
 	getline(file, line);
-	if (line.back() == '\r') {
-		line.pop_back();
-	}
+	truncEndCR(line);
 
 	return line;
 }
@@ -359,17 +418,13 @@ str File::getLines(uint16 From, uint16 To) {
 
 		str lines;
 		getline(file, lines);
-		if (lines.back() == '\r') {
-			lines.pop_back();
-		}
+		truncEndCR(lines);
 
 		str tempStr;
 		for (uint16 currentLine = To; currentLine < From; ++currentLine) {
 			if (!getline(file, tempStr)) break;
-			if (tempStr.back() == '\r') {
-				tempStr.pop_back();
-			}
-			lines = tempStr + "\n" + lines;
+			truncEndCR(tempStr);
+			lines = tempStr + "\r\n" + lines;
 		}
 
 		return lines;
@@ -379,17 +434,13 @@ str File::getLines(uint16 From, uint16 To) {
 
 		str lines;
 		getline(file, lines);
-		if (lines.back() == '\r') {
-			lines.pop_back();
-		}
+		truncEndCR(lines);
 
 		str tempStr;
 		for (uint16 currentLine = From; currentLine < To; ++currentLine) {
 			if (!getline(file, tempStr)) break;
-			if (tempStr.back() == '\r') {
-				tempStr.pop_back();
-			}
-			lines += "\n" + tempStr;
+			truncEndCR(tempStr);
+			lines += "\r\n" + tempStr;
 		}
 
 		return lines;
@@ -510,37 +561,234 @@ str File::getChars(uint16 Line, uint16 Word, uint16 From, uint16 To) {
 	return chars;
 }
 
+/*
+Replaces a line using a temp file
+If the specified line is out of bounds some newlines get created
+Closes the file before returning, since it has been opened in a different way
+Returns false if the files couldn't be opened, otherwise true
+*/
 bool File::replaceLine(uint16 Line, str Replacement) {
-	if (file.is_open()) file.close();
-	file.open(path, std::ios::binary | std::ios::in | std::ios::out | std::ios::app); //FARE va bene app
+	bool fileEndsWithNewline = 0;
+	if (!pointToBeg()) return false;
+	file.seekg(-1, std::ios_base::end);
+	if (file.get() == '\n') fileEndsWithNewline = 1;
+
+	file.close();
+	file.open(path, std::ios::binary | std::ios::in | std::ios::app);
 	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios::binary | std::ios::out | std::ios::app);
+	fstm tempFile(tempPath.c_str(), std::ios::binary | std::ios::in | std::ios::out | std::ios::app);
 	if (!tempFile.is_open()) return false;
 
 	str tempStr;
-	bool notEof = 1;
 	int16 currentLine = 0;
-
+	truncEndCR(Replacement);
+	
+	if (!getline(file, tempStr)) {
+		tempStr = "";
+	}
+	else {
+		truncEndCR(tempStr);
+	}
+	if (currentLine++ == Line) tempFile << Replacement;
+	else tempFile << tempStr;
 	while (1) {
 		if (!getline(file, tempStr)) {
 			if (currentLine > Line) break;
-			tempStr = "\r";
+			tempStr = "";
 		}
-		if (currentLine++ == Line) tempFile << Replacement << "\r\n";
-		else tempFile << tempStr << '\n';
+		else {
+			truncEndCR(tempStr);
+		}
+		if (currentLine++ == Line) tempFile << "\r\n" << Replacement;
+		else tempFile << "\r\n" << tempStr;
+	}
+	if (fileEndsWithNewline) {
+		tempFile << "\r\n";
 	}
 
-	tempFile.close();
-	tempFile.open(tempPath.c_str(), std::ios::binary | std::ios::in | std::ios::app);
-
 	file.close();
-	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::in | std::ios::trunc);
+	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
+	tempFile.seekg(0);
 
-	while (getline(tempFile, tempStr))
-		file << tempStr << "\n";
+	moveFileContent(tempFile, file);
 
 	file.close();
 	tempFile.close();
 	std::remove(tempPath.c_str());
 	return true;
+}
+/*
+Replaces a word using a temp file
+Closes the file before returning, since it has been opened in a different way
+Returns false if the files couldn't be opened or if the
+	specified word is out of bounds, otherwise true
+*/
+bool File::replaceWord(uint16 Word, str Replacement) {
+	std::streampos wordPos = getPosition(0, Word, 0);
+	if (-1 == wordPos) return false;
+
+	if (file.is_open()) file.close();
+	file.open(path, std::ios::binary | std::ios::in | std::ios::app);
+	if (!file.is_open()) return false;
+	fstm tempFile(tempPath.c_str(), std::ios::binary | std::ios::in | std::ios::out | std::ios::app);
+	if (!tempFile.is_open()) {
+		file.close();
+		return false;
+	}
+
+	char tempChar;
+	int16 currentChar = 0;
+
+	while (1) {
+		tempChar = file.get();
+		if (!file.eof()) {
+			if (currentChar++ == wordPos) {
+				if (tempChar == '\n') {
+					tempFile << '\n';
+				}
+				while (!isspace(file.get())) {}
+				file.seekg(-1, std::ios::cur);
+
+				for (char letter : Replacement) {
+					tempFile << letter;
+				}
+			}
+			else {
+				tempFile << tempChar;
+			}
+		}
+		else break;
+	}
+
+	file.close();
+	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
+	tempFile.seekg(0);
+
+	moveFileContent(tempFile, file);
+
+	file.close();
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
+}
+/*
+Replaces a word in a line using a temp file
+Closes the file before returning, since it has been opened in a different way
+Returns false if the files couldn't be opened or if the
+	specified word is out of bounds, otherwise true
+*/
+bool File::replaceWord(uint16 Line, uint16 Word, str Replacement) {
+	std::streampos wordPos = getPosition(Line, Word, 0);
+	if (-1 == wordPos) return false;
+
+	if (file.is_open()) file.close();
+	file.open(path, std::ios::binary | std::ios::in | std::ios::app);
+	if (!file.is_open()) return false;
+	fstm tempFile(tempPath.c_str(), std::ios::binary | std::ios::in | std::ios::out | std::ios::app);
+	if (!tempFile.is_open()) {
+		file.close();
+		return false;
+	}
+
+	char tempChar;
+	int16 currentChar = 0;
+
+	while (1) {
+		tempChar = file.get();
+		if (!file.eof()) {
+			if (currentChar++ == wordPos) {
+				if (tempChar == '\n') {
+					tempFile << '\n';
+				}
+				while (!isspace(file.get())) {}
+				file.seekg(-1, std::ios::cur);
+
+				for (char letter : Replacement) {
+					tempFile << letter;
+				}
+
+				tempFile << (char)file.get();
+			}
+			else {
+				tempFile << tempChar;
+			}
+		}
+		else break;
+	}
+
+	file.close();
+	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
+	tempFile.seekg(0);
+
+	moveFileContent(tempFile, file);
+
+	file.close();
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
+}
+/*
+Replaces a char using a temp file
+Closes the file before returning, since it has been opened in a different way
+Returns false if the files couldn't be opened or if the
+	specified char is out of bounds, otherwise true
+*/
+bool File::replaceChar(uint16 Char, char Replacement) {
+	std::streampos charPos = getPosition(0, 0, Char);
+	if (-1 == charPos) return false;
+
+	if (file.is_open()) file.close();
+	file.open(path, std::ios::binary | std::ios::in | std::ios::app);
+	if (!file.is_open()) return false;
+	fstm tempFile(tempPath.c_str(), std::ios::binary | std::ios::in | std::ios::out | std::ios::app);
+	if (!tempFile.is_open()) {
+		file.close();
+		return false;
+	}
+
+	char tempChar;
+	int16 currentChar = 0;
+
+	while (1) {
+		tempChar = file.get();
+		if (!file.eof()) {
+			if (currentChar++ == charPos) {
+				tempFile << Replacement;
+			}
+			else {
+				tempFile << tempChar;
+			}
+		}
+		else break;
+	}
+
+	file.close();
+	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
+	tempFile.seekg(0);
+
+	moveFileContent(tempFile, file);
+
+	file.close();
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
+}
+bool File::replaceChar(uint16 Line, uint16 Char, char Replacement) {
+	return false;
+}
+bool File::replaceChar(uint16 Line, uint16 Word, uint16 Char, char Replacement) {
+	return false;
+}
+
+
+
+str File::string() {
+	pointToBeg();
+
+	str fileStr = "";
+	while (!file.eof()) {
+		fileStr += file.get();
+	}
+
+	return fileStr;
 }
