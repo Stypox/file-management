@@ -44,9 +44,11 @@ public:
 
 	bool pointTo(uint16 Line, uint16 Word, uint16 Char);				//i valori partono da 0 (0 = 1a riga/parola/carattere, 1 = 2a...); line e word vengono usati come offsets
 	bool pointToBeg();
+	std::streampos getPosition(uint16 Line, uint16 Word, uint16 Char);
 
 	uint16 countWords(str String);
-
+	void truncEndCR(str & String);
+	void moveFileContent(fstm & From, fstm & To);
 
 public:
 	File();
@@ -86,7 +88,7 @@ public:
 	bool replaceChar(uint16 Line, uint16 Char, char Replacement);
 	bool replaceChar(uint16 Line, uint16 Word, uint16 Char, char Replacement);
 
-	//rimuove linee/parole/caratteri. Forma relativa e non. Per le parole rimuove anche uno spazio
+	//rimuove linee/parole/caratteri. Per le parole rimuove anche uno spazio. Forma relativa e non. 
 	bool deleteLine(uint16);
 	bool deleteWord(uint16);
 	bool deleteWord(uint16, uint16);
@@ -170,7 +172,7 @@ public:
 
 	bool operator= (File);				//sostituisce il contenuto di questo file con quello del parametro
 	bool operator= (fstm);
-	File operator+ (File);					//ritorna un file con all'inizio il contenuto di questo file e alla fine quello del parametro
+	File operator+ (File);				//ritorna un file con all'inizio il contenuto di questo file e alla fine quello del parametro
 	File operator+ (fstm);
 	bool operator+= (File);				//come operator<<
 	bool operator+= (fstm);
@@ -181,16 +183,14 @@ public:
 	char operator[] (uint16 Pos);				//ritorna il carattere in posizione specificata dal parametro
 	bool operator== (File File);				//se i due file hanno lo stesso path ritorna 1
 	bool operator== (str Path);
-	bool hasSamePath(File File);
-	bool hasSamePath(str Path);
+	bool samePath(File File);
+	bool samePath(str Path);
 	bool operator!= (File File);				//se i due file non hanno lo stesso path ritorna 1
 	bool operator!= (str Path);
-	bool hasntSamePath(File File);
-	bool hasntSamePath(str Path);
 	operator char*();							//scrive tutto il file in un array di caratteri
-	char * toArray();
+	char * cString();
 	operator str();								//scrive tutto il file in una stringa
-	str toString();
+	str string();
 	operator bool();							//ritorna 1 se il file e' aperto
 	bool operator! ();							//ritorna 1 se il file e' chiuso
 };
