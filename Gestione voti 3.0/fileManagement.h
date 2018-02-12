@@ -33,10 +33,11 @@ private:
 	using uint32 = uint32_t;
 	using uint64 = uint64_t;
 	
+	const str defaultTempPath = "temp.tmp";
 
 public:
 	fstm file;
-	str path;
+	str path, tempPath;
 	
 
 	bool checkOpen();							//ritorna 1 se il file si è aperto senza problemi
@@ -49,7 +50,8 @@ public:
 
 public:
 	File();
-	File(str);
+	File(str Path);
+	File(str Path, str TempPath);
 
 
 	uint16 getNrLines();
