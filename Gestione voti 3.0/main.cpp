@@ -1,6 +1,43 @@
 #include <iostream>
+#include <fstream>
+#include <Windows.h>
 
 #include "fileManagement.h"
+/*
+std::fstream fIle("input1.txt", std::ios::binary | std::ios::in | std::ios::out);
+fIle >> test;
+fIle.seekg(0);
+fIle.put('b');
+
+if (!inFile.checkOpen()) return 0;
+inFile.file.put('t');
+inFile.pointTo(0, 0, 0);
+inFile.file >> test;
+std::cout << test;
+inFile.file >> test;
+std::cout << test << inFile.countWords("ciao, come va ?");
+
+inFile.pointTo(1, 1, 0);
+inFile.file >> test;
+std::cout << test;
+
+inFile.pointTo(0, 0, 0);
+std::cout << inFile.file.tellg() << inFile.file.tellp();
+inFile.file.put('T');
+
+inFile.file.close();
+*/
+/*
+std::cout << "l, w, c = lines, words, chars | nr = numero(di)\n\n";
+std::cout << "Linee:" << inFile.getNrLines() << " | Parole:" << inFile.getNrWords() << " | Byte:" << inFile.getNrChars() << "\n\n";
+std::cout << "nrw_l4:" << inFile.getNrWordsLine(3) << " | nrc_l4:" << inFile.getNrCharsLine(3) << " | nrc_w8:" << inFile.getNrCharsWord(7) << " | nrc_l3w5:" << inFile.getNrCharsWord(2, 4) << "\n\n";
+std::cout << "l6:" << inFile.getLine(5) << " | w3:" << inFile.getWord(2) << " | l3w2:" << inFile.getWord(2, 1) << " | c1:" << inFile.getChar(0)
+<< " | l2c3:" << inFile.getChar(1, 2) << " | l4w3c5:" << inFile.getChar(3, 2, 4) << "\n\n";
+
+std::cout << "c16-50:" << inFile.getChars(15, 49) << " | c50-16:" << inFile.getChars(49, 15) << " | l4c3-7:" << inFile.getChars(3, 2, 6)
+<< " | l4c7-3:" << inFile.getChars(3, 6, 2) << " | l4w2c2-5:" << inFile.getChars(3, 1, 1, 4) << " | l4w2c5-2:" << inFile.getChars(3, 1, 4, 1) << "\n\n";
+std::cout << "w2-4:" << inFile.getWords(1, 3) << " | w4-2:" << inFile.getWords(3, 1) << " | l2w2-4:" << inFile.getWords(1, 1, 3) << " | l2w4-2:" << inFile.getWords(1, 3, 1) << "\n\n";
+*/
 
 using str = std::string;
 using fstm = std::fstream;
@@ -22,27 +59,26 @@ void askEnd() {
 
 
 int main() {
-	File inFile("input1.txt");
-	
+	File inFile("input.txt");	
 	str test;
-	if (inFile.checkOpen()) test = "";
-	inFile.file >> test;
-	std::cout << test;
 
-	/*
-	std::cout << "l, w, c = lines, words, chars | nr = numero(di)\n\n";
-	std::cout << "Linee:" << Fin.getNrLines() << " | Parole:" << Fin.getNrWords() << " | Byte:" << Fin.getNrChars() << "\n\n";
-	std::cout << "nrw:l4= " << Fin.getNrWordsLine(3) << " | nrc:l4= " << Fin.getNrCharsLine(3) << " | nrc:w8= " << Fin.getNrCharsWord(7) << " | nrc:l3w5= " << Fin.getNrCharsWord(2, 4) << "\n\n";
+	test = inFile.getLine(0);
+	inFile.replaceLine(0, "Ciao");
+	std::cout << inFile.getLine(0);
+	inFile.replaceLine(0, test);
 
-	std::cout << "l6:" << Fin.getLine(5) << " | w3:" << Fin.getWord(2) << " | l3w2:" << Fin.getWord(2, 1) << " | c1:" << Fin.getChar(0)
-		<< " | l2c3:" << Fin.getChar(1, 2) << " | l4w3c5:" << Fin.getChar(3, 2, 4) << "\n\n";
-		
-	std::cout << "c15-50:" << Fin.getChars(14, 49) << " | c50-15:" << Fin.getChars(49, 14) << " | l4c3-7:" << Fin.getChars(3, 2, 6)
-		<< " | l4c7-3:" << Fin.getChars(3, 6, 2) << " | l4w2c2-5:" << Fin.getChars(3, 1, 1, 4) << " | l4w2c5-2:" << Fin.getChars(3, 1, 4, 1) << "\n\n";
-	std::cout << "w2-4:" << Fin.getWords(1, 3) << " | w4-2:" << Fin.getWords(3, 1) << " | l2w2-4:" << Fin.getWords(1, 1, 3) << " | l2w4-2:" << Fin.getWords(1, 3, 1) << "\n\n";
-	std::cout << "l4-3:" << Fin.getLines(3, 2) << " | l3-4:" << Fin.getLines(2, 3) << "\n\n";
-		;
-	*/
+	std::cout << '\n';
+	std::cout << '\r';
+	std::cout << '\r';
+	std::cout << '\r';
+	std::cout << '\r';
+	std::cout << '\r';
+	std::cout << '\r';
+	std::cout << '\r';
+
+
+
+	inFile.file.close();
 	askEnd();
 	return 0;
 }
