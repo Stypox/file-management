@@ -68,6 +68,7 @@ int main() {
 	std::cout << inFile.getLine(1);
 	inFile.replaceLine(1, test);
 
+
 	test = inFile.getWord(1);
 	inFile.replaceWord(1, "Parola1-");
 	std::cout << inFile.getWord(1);
@@ -78,10 +79,26 @@ int main() {
 	std::cout << inFile.getWord(1, 0);
 	inFile.replaceWord(1, 0, test);
 	
+
 	testChar = inFile.getChar(0);
-	inFile.replaceChar(0, '|');
+	inFile.replaceChar(0, 'A');
 	std::cout << inFile.getChar(0);
 	inFile.replaceChar(0, testChar);
+
+	testChar = inFile.getChar(1, 1);
+	inFile.replaceChar(1, 1, 'B');
+	std::cout << inFile.getChar(1, 1);
+	inFile.replaceChar(1, 1, testChar);
+
+	testChar = inFile.getChar(2, 2, 0);
+	inFile.replaceChar(2, 2, 0, 'C');
+	std::cout << inFile.getChar(2, 2, 0);
+	inFile.replaceChar(2, 2, 0, testChar);
+
+
+	std::cout << inFile.deleteChar(1, 1, 1);
+	std::cout << "\n\n" << inFile.string();
+
 
 	std::cout << '\n';
 	std::cout << '\r';
@@ -92,8 +109,6 @@ int main() {
 	std::cout << '\r';
 	std::cout << '\r';
 	std::cout << '\r';
-
-
 
 	inFile.file.close();
 	askEnd();
