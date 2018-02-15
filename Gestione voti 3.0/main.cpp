@@ -63,41 +63,54 @@ int main() {
 	char testChar;
 	str test;
 
-	test = inFile.getLine(1);
-	inFile.replaceLine(1, "Linea-");
+	//FARE testare meglio
+	//add and delete
+	inFile.addLine(0, "La-");				//l
+	std::cout << inFile.getLine(0);
+	inFile.deleteLine(0);
+	inFile.addWord(1, "Wa1-");				//w
+	std::cout << inFile.getWord(1);
+	inFile.deleteWord(1);
+	inFile.addWord(2, 2, "Wa2-");			//lw
+	std::cout << inFile.getWord(2, 2);
+	inFile.deleteWord(2, 2);
+	inFile.addChar(0, 'A');					//c
+	std::cout << inFile.getChar(0);
+	inFile.deleteChar(0);
+	inFile.addChar(1, 1, 'B');				//lc
+	std::cout << inFile.getChar(1, 1);
+	inFile.deleteChar(1, 1);
+	inFile.addChar(2, 2, 0, 'C');			//lwc
+	std::cout << inFile.getChar(2, 2, 0);
+	inFile.deleteChar(2, 2, 0);
+	
+	//replace
+	test = inFile.getLine(1);				//l
+	inFile.replaceLine(1, "Lr-");
 	std::cout << inFile.getLine(1);
 	inFile.replaceLine(1, test);
-
-
-	test = inFile.getWord(1);
-	inFile.replaceWord(1, "Parola1-");
+	test = inFile.getWord(1);				//w
+	inFile.replaceWord(1, "Wr1-");
 	std::cout << inFile.getWord(1);
 	inFile.replaceWord(1, test);
-
-	test = inFile.getWord(1, 0);
-	inFile.replaceWord(1, 0, "Parola2-");
+	test = inFile.getWord(1, 0);			//lw
+	inFile.replaceWord(1, 0, "Wr2-");
 	std::cout << inFile.getWord(1, 0);
 	inFile.replaceWord(1, 0, test);
-	
-
-	testChar = inFile.getChar(0);
-	inFile.replaceChar(0, 'A');
+	testChar = inFile.getChar(0);			//c
+	inFile.replaceChar(0, 'D');
 	std::cout << inFile.getChar(0);
 	inFile.replaceChar(0, testChar);
-
-	testChar = inFile.getChar(1, 1);
-	inFile.replaceChar(1, 1, 'B');
+	testChar = inFile.getChar(1, 1);		//lc
+	inFile.replaceChar(1, 1, 'E');
 	std::cout << inFile.getChar(1, 1);
 	inFile.replaceChar(1, 1, testChar);
-
-	testChar = inFile.getChar(2, 2, 0);
-	inFile.replaceChar(2, 2, 0, 'C');
+	testChar = inFile.getChar(2, 2, 0);		//lwc
+	inFile.replaceChar(2, 2, 0, 'F');
 	std::cout << inFile.getChar(2, 2, 0);
 	inFile.replaceChar(2, 2, 0, testChar);
 
-
-	std::cout << inFile.deleteChar(1, 1, 1);
-	std::cout << "\n\n" << inFile.string();
+	std::cout << "\n\n                         Intero file: " << inFile.getNrChars() << "byte\n" << inFile.string();
 
 
 	std::cout << '\n';
