@@ -1,11 +1,7 @@
-/*
-Forma relativa e non. = sia relativamente all'inizio del file che relativamente ad una linea.
-*/
-
-//FARE possibilita' di rimuovere (e se fattibile rimpiazzare) intervalli di caratteri/parole/linee,
-//per diminuire il tempo necessario in caso che si debbano rimpiazzare piu' caratteri/parole/linee consecutivi.
-
+//FARE possibilita' di rimuovere (e se fattibile rimpiazzare) intervalli di caratteri/parole/linee, per diminuire il tempo necessario in caso che si debbano rimpiazzare piu' caratteri/parole/linee consecutivi.
 //FARE deleteCurrentChar() (il carattere a cui si sta puntando adesso)
+//FARE nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
+//FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (str + '\n');" invece che "file << str << '\n';"
 
 #pragma once
 
@@ -42,11 +38,40 @@ private:
 	const str defaultTempExtension = ".tmp";
 
 public:
+	//eliminare FARE
+	void printSpaces(str string) {
+		for (char letter : string) {
+			switch (letter) {
+			case ' ':
+				std::cout << "S";
+				break;
+			case '\t':
+				std::cout << "T";
+				break;
+			case '\n':
+				std::cout << "N";
+				break;
+			case '\v':
+				std::cout << "V";
+				break;
+			case '\f':
+				std::cout << "F";
+				break;
+			case '\r':
+				std::cout << "R";
+				break;
+			default:
+				std::cout << letter;
+			}
+		}
+	}
 	fstm file;
 	str path, tempPath;
 	
 
 	/*
+	Opens the file in binary input-output mode
+		If the file doesn't exist it won't be created
 	Returns false if the file couldn't be opened, otherwise true
 	*/
 	bool checkOpen();
@@ -71,6 +96,13 @@ public:
 	Returns true if the file opened correctly, otherwise false
 	*/
 	bool pointToBeg();
+	/*
+	The file is opened, if it wasn't already
+	The two pointers inside the file are moved to the end
+	The file's eofbit is cleared FARE se va bene
+	Returns true if the file opened correctly, otherwise false
+	*/
+	bool pointToEnd();
 	/*
 	Retrieves the (start) position of the requested line/word/char
 	Maintains the original file's pointers' position
@@ -121,41 +153,163 @@ public:
 	*/
 	File(str Path, str TempPath);
 
-
+	/*
+	Returns the number of '\n'
+	Returns 0 if the file couldn't be opened
+	*/
 	uint16 getNrLines();
+	/*
+	Returns the number of words divided by spaces
+	Returns 0 if the file couldn't be opened
+	*/
 	uint16 getNrWords();
+	/*
+	Returns the number of words of a line divided by spaces
+	Returns 0 if the file couldn't be opened
+	*/
+	uint16 getNrWords(uint16 Line);
+	/*
+	Returns the number of chars (bytes)
+	Returns 0 if the file couldn't be opened
+	*/
 	uint16 getNrChars();
-	uint16 getNrWordsLine(uint16 Line);
-	uint16 getNrCharsLine(uint16 Line);
-	uint16 getNrCharsWord(uint16 Word);
-	uint16 getNrCharsWord(uint16 Line, uint16 Word);
+	/*
+	Returns the number of chars of a line
+	Doesn't count '\r' at the end of the line
+	Returns 0 if the file couldn't be opened
+	*/
+	uint16 getNrChars(uint16 Line);
+	/*
+	Returns the number of chars of a word in a line
+	Returns 0 if the file couldn't be opened
+	*/
+	uint16 getNrChars(uint16 Line, uint16 Word);
 
 	
+	/*
+	Returns a line removing all '\r' at the end of it
+	If the line is out of bounds "" is returned
+	*/
 	str getLine(uint16 Line);
+	/*
+	Returns a word
+	If the word is out of bounds "" is returned
+	*/
 	str getWord(uint16 Word);
+	/*
+	Returns a word in a line
+	If the word is out of bounds "" is returned
+	*/
 	str getWord(uint16 Line, uint16 Word);
+	/*
+	Returns a char
+	If the char is out of bounds 0 is returned
+	*/
 	char getChar(uint16 Char);
+	/*
+	Returns a char in a line
+	If the char is out of bounds 0 is returned
+	*/
 	char getChar(uint16 Line, uint16 Char);
+	/*
+	Returns a char in  a word in a line
+	If the char is out of bounds 0 is returned
+	*/
 	char getChar(uint16 Line, uint16 Word, uint16 Char);
 
-	//ottiene intervalli di linee/parole/caratteri. Se from < to vengono scritti dall'ultimo al primo
+
+	/*
+	Returns the interval of lines between From and To, both included
+	If some (or all) lines are out of bounds they just get ignored
+	If To > From the lines are returned in top-to-bottom order,
+		otherwise the order is inverted (bottom-to-top)
+	Removes all '\r' at the end of lines and adds '\r\n' between them
+	*/
 	str getLines(uint16 From, uint16 To);
+	/*
+	Returns the interval of words between From and To, both included
+	If some (or all) words are out of bounds they just get ignored
+	If To > From the words are returned in top-to-bottom order,
+		otherwise the order is inverted (bottom-to-top)
+	Separates words with ' ', replacing any other type of space
+	*/
 	str getWords(uint16 From, uint16 To);
+	/*
+	Returns the interval of words in a line between From and To, both included
+	If some (or all) words are out of bounds they just get ignored
+	If To > From the words are returned in top-to-bottom order,
+		otherwise the order is inverted (bottom-to-top)
+	Separates words with ' ', replacing any other type of space
+	*/
 	str getWords(uint16 Line, uint16 From, uint16 To);
+	/*
+	Returns the interval of chars between From and To, both included
+	If some (or all) chars are out of bounds they just get ignored
+	If To > From the chars are returned in top-to-bottom order,
+		otherwise the order is inverted (bottom-to-top)
+	*/
 	str getChars(uint16 From, uint16 To);
+	/*
+	Returns the interval of chars in a line between From and To, both included
+	If some (or all) chars are out of bounds they just get ignored
+	If To > From the chars are returned in top-to-bottom order,
+		otherwise the order is inverted (bottom-to-top)
+	*/
 	str getChars(uint16 Line, uint16 From, uint16 To);
+	/*
+	Returns the interval of chars in a word in a line between From and To, both included
+	If some (or all) chars are out of bounds they just get ignored
+	If To > From the chars are returned in top-to-bottom order,
+		otherwise the order is inverted (bottom-to-top)
+	*/
 	str getChars(uint16 Line, uint16 Word, uint16 From, uint16 To);
 
-	//aggiunge linee/parole/caratteri. Forma relativa e non.
-	bool addLine(uint16 Line, str ToAdd);		//aggiunge una linea nella posizione specificata
-	bool addWord(uint16 Word, str ToAdd);			//aggiunge una parola nella posizione specificata rispetto all'inizio del file
-	bool addWord(uint16 Line, uint16 Word, str ToAdd);		//aggiunge una parola nella posizione specificata della linea specificata
-	bool addChar(uint16 Char, char ToAdd);			//aggiunge un carattere nella posizione specificata rispetto all'inizio del file
-	bool addChar(uint16 Line, uint16 Char, char ToAdd);		//aggiunge un carattere nella posizione specificata della linea specificata
+	
+	/*
+	Adds a line using a temp file
+	Deletes all '\r' at the end of the line FARE
+	If the specified line is out of bounds some newlines get created
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened, otherwise true
+	*/
+	bool addLine(uint16 Line, str ToAdd);
+	/*
+	Adds a word using a temp file
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened or if the
+		specified word is out of bounds, otherwise true
+	*/
+	bool addWord(uint16 Word, str ToAdd);
+	/*
+	Adds a word in a line using a temp file
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened or if the
+		specified word is out of bounds, otherwise true
+	*/
+	bool addWord(uint16 Line, uint16 Word, str ToAdd);
+	/*
+	Adds a char
+	Returns false if the file couldn't be opened or if the
+		specified char is out of bounds, otherwise true
+	*/
+	bool addChar(uint16 Char, char ToAdd);
+	/*
+	Adds a char in a line
+	Returns false if the file couldn't be opened or if the
+	specified char is out of bounds, otherwise true
+	*/
+	bool addChar(uint16 Line, uint16 Char, char ToAdd);
+	/*
+	Adds a char in a word in a line
+	Returns false if the file couldn't be opened or if the
+	specified char is out of bounds, otherwise true
+	*/
 	bool addChar(uint16 Line, uint16 Word, uint16 Char, char ToAdd);
+
 
 	/*
 	Replaces a line using a temp file
+	Deletes all '\r' at the end of the line FARE
 	If the specified line is out of bounds some newlines get created
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened, otherwise true
@@ -163,36 +317,34 @@ public:
 	bool replaceLine(uint16 Line, str Replacement);
 	/*
 	Replaces a word using a temp file
-	 Closes files before returning, since they were opened in a not-default way
+	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
 	bool replaceWord(uint16 Word, str Replacement);
 	/*
 	Replaces a word in a line using a temp file
-	 Closes files before returning, since they were opened in a not-default way
+	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
 	bool replaceWord(uint16 Line, uint16 Word, str Replacement);
 	/*
-	Replaces a char using a temp file
-	 Closes files before returning, since they were opened in a not-default way
-	Returns false if the files couldn't be opened or if the
+	Replaces a char
+	Leaves the file open after returning
+	Returns false if the file couldn't be opened or if the
 		specified char is out of bounds, otherwise true
 	*/
 	bool replaceChar(uint16 Char, char Replacement);
 	/*
-	Replaces a char in a line using a temp file
-	 Closes files before returning, since they were opened in a not-default way
-	Returns false if the files couldn't be opened or if the
+	Replaces a char in a line
+	Returns false if the file couldn't be opened or if the
 		specified char is out of bounds, otherwise true
 	*/
 	bool replaceChar(uint16 Line, uint16 Char, char Replacement);
 	/*
-	Replaces a char in a word in a line using a temp file
-	 Closes files before returning, since they were opened in a not-default way
-	Returns false if the files couldn't be opened or if the
+	Replaces a char in a word in a line
+	Returns false if the file couldn't be opened or if the
 		specified char is out of bounds, otherwise true
 	*/
 	bool replaceChar(uint16 Line, uint16 Word, uint16 Char, char Replacement);
@@ -201,7 +353,7 @@ public:
 	/*
 	Deletes a line using a temp file
 	If the specified line is out of bounds nothing happens, returning true
-	 Closes files before returning, since they were opened in a not-default way
+	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened, otherwise true
 	*/
 	bool deleteLine(uint16 Line);
@@ -243,27 +395,27 @@ public:
 
 
 	//FARE vedere se metterli o no
-	//aggiunge linee/parole/caratteri in cima a file/linee/parole. Forma relativa e non.
-	bool affixLine(str = "");			//aggiunge una linea all'inizio del file
-	bool affixWord(str);				//aggiunge una parola all'inizio del file
-	bool affixWordLine(uint16, str);		//aggiunge una parola all'inizio della linea
-	bool affixChar(char);				//aggiunge un carattere all'inizio del file
-	bool affixCharWord(uint16, char);		//aggiunge un carattere prima della parola con posizione specificata rispetto all'inizio del file
-	bool affixCharWord(uint16, uint16, char);//aggiunge un carattere prima della parola con posizione specificata della linea specificata
-	bool affixCharLine(uint16, char);		//aggiunge un carattere all'inizio della linea specificata
+	bool affixLine(str ToAffix);
+	bool affixWord(str ToAffix);
+	bool affixWord(uint16 Line, str ToAffix);
+	bool affixChar(char ToAffix);
+	bool affixChar(uint16 Line, char ToAffix);
+	bool affixChar(uint16 Line, uint16 Word, char ToAffix);
 
 
-	//aggiunge linee/parole/caratteri in fondo a file/linee/parole. Forma relativa e non.
-	bool appendLine(str = "");			//aggiunge una linea alla fine del file
-	bool appendWord(str);				//aggiunge una parola alla fine del file
-	bool appendWordLine(uint16, str);		//aggiunge una parola alla fine della linea
-	bool appendChar(char);				//aggiunge un carattere alla fine del file
-	bool appendCharLine(uint16, char);		//aggiunge un carattere alla fine della linea specificata
-	bool appendCharWord(uint16, char);		//aggiunge un carattere dopo la parola con posizione specificata rispetto all'inizio del file
-	bool appendCharWord(uint16, uint16, char);//aggiunge un carattere dopo la parola con posizione specificata della linea specificata
+	bool appendLine(str ToAppend);
+	bool appendWord(str ToAppend);
+	bool appendWord(uint16 Line, str ToAppend);
+	bool appendChar(char ToAppend);
+	bool appendChar(uint16 Line, char ToAppend);
+	bool appendChar(uint16 Line, uint16 Word, char ToAppend);
 
 
-	//rimuove gli a capo alla fine del file
+	/*
+	Removes all newlines ('\r' and '\n') at the end using a temp file
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened, otherwise true
+	*/
 	bool deleteLastEmptyLines();
 
 
