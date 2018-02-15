@@ -5,6 +5,8 @@ Forma relativa e non. = sia relativamente all'inizio del file che relativamente 
 //FARE possibilita' di rimuovere (e se fattibile rimpiazzare) intervalli di caratteri/parole/linee,
 //per diminuire il tempo necessario in caso che si debbano rimpiazzare piu' caratteri/parole/linee consecutivi.
 
+//FARE deleteCurrentChar() (il carattere a cui si sta puntando adesso)
+
 #pragma once
 
 #include <iostream>
@@ -87,6 +89,14 @@ public:
 	*/
 	void truncEndCR(str & String);
 	/*
+	Opens file in read-mode and TempFile in read/write-mode
+		To be used when modifying file using a temporany file
+	If TempFile couldn't be opened file gets closed
+		since it was opened in a not-default way
+	Returns false if one of the files couldn't be opened, otherwise true
+	*/
+	bool openTempToModifyFile(fstm &TempFile);
+	/*
 	Gets all the content from the 1st file and copies it to the 2nd
 	Files must be already open
 	*/
@@ -117,10 +127,10 @@ public:
 	uint16 getNrChars();
 	uint16 getNrWordsLine(uint16 Line);
 	uint16 getNrCharsLine(uint16 Line);
-	uint16 getNrCharsWord(uint16 Word);					//parola con posizione specificata rispetto all'inizio del file
-	uint16 getNrCharsWord(uint16 Line, uint16 Word);			//parola con posizione specificata della linea specificata
+	uint16 getNrCharsWord(uint16 Word);
+	uint16 getNrCharsWord(uint16 Line, uint16 Word);
 
-	//ottiene linea/parola/carattere singoli
+	
 	str getLine(uint16 Line);
 	str getWord(uint16 Word);
 	str getWord(uint16 Line, uint16 Word);
@@ -137,12 +147,99 @@ public:
 	str getChars(uint16 Line, uint16 Word, uint16 From, uint16 To);
 
 	//aggiunge linee/parole/caratteri. Forma relativa e non.
-	bool addLine(uint16, str = "");		//aggiunge una linea (vuota) nella posizione specificata
-	bool addWord(uint16, str);			//aggiunge una parola nella posizione specificata rispetto all'inizio del file
-	bool addWord(uint16, uint16, str);		//aggiunge una parola nella posizione specificata della linea specificata
-	bool addChar(uint16, char);			//aggiunge un carattere nella posizione specificata rispetto all'inizio del file
-	bool addChar(uint16, uint16, char);		//aggiunge un carattere nella posizione specificata della linea specificata
-	bool addChar(uint16, uint16, uint16, char);
+	bool addLine(uint16 Line, str ToAdd);		//aggiunge una linea nella posizione specificata
+	bool addWord(uint16 Word, str ToAdd);			//aggiunge una parola nella posizione specificata rispetto all'inizio del file
+	bool addWord(uint16 Line, uint16 Word, str ToAdd);		//aggiunge una parola nella posizione specificata della linea specificata
+	bool addChar(uint16 Char, char ToAdd);			//aggiunge un carattere nella posizione specificata rispetto all'inizio del file
+	bool addChar(uint16 Line, uint16 Char, char ToAdd);		//aggiunge un carattere nella posizione specificata della linea specificata
+	bool addChar(uint16 Line, uint16 Word, uint16 Char, char ToAdd);
+
+	/*
+	Replaces a line using a temp file
+	If the specified line is out of bounds some newlines get created
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened, otherwise true
+	*/
+	bool replaceLine(uint16 Line, str Replacement);
+	/*
+	Replaces a word using a temp file
+	 Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened or if the
+		specified word is out of bounds, otherwise true
+	*/
+	bool replaceWord(uint16 Word, str Replacement);
+	/*
+	Replaces a word in a line using a temp file
+	 Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened or if the
+		specified word is out of bounds, otherwise true
+	*/
+	bool replaceWord(uint16 Line, uint16 Word, str Replacement);
+	/*
+	Replaces a char using a temp file
+	 Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened or if the
+		specified char is out of bounds, otherwise true
+	*/
+	bool replaceChar(uint16 Char, char Replacement);
+	/*
+	Replaces a char in a line using a temp file
+	 Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened or if the
+		specified char is out of bounds, otherwise true
+	*/
+	bool replaceChar(uint16 Line, uint16 Char, char Replacement);
+	/*
+	Replaces a char in a word in a line using a temp file
+	 Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened or if the
+		specified char is out of bounds, otherwise true
+	*/
+	bool replaceChar(uint16 Line, uint16 Word, uint16 Char, char Replacement);
+
+
+	/*
+	Deletes a line using a temp file
+	If the specified line is out of bounds nothing happens, returning true
+	 Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened, otherwise true
+	*/
+	bool deleteLine(uint16 Line);
+	/*
+	Deletes a word and a space after it using a temp file
+	If the specified word is out of bounds nothing happens, returning true
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened, otherwise true
+	*/
+	bool deleteWord(uint16 Word);
+	/*
+	Deletes a word and a space after it in a line using a temp file
+	If the specified word is out of bounds nothing happens, returning true
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened, otherwise true
+	*/
+	bool deleteWord(uint16 Line, uint16 Word);
+	/*
+	Deletes a char using a temp file
+	If the specified char is out of bounds nothing happens, returning true
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened, otherwise true
+	*/
+	bool deleteChar(uint16 Char);
+	/*
+	Deletes a char in a line using a temp file
+	If the specified char is out of bounds nothing happens, returning true
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened, otherwise true
+	*/
+	bool deleteChar(uint16 Line, uint16 Char);
+	/*
+	Deletes a char in a word in a line using a temp file
+	If the specified char is out of bounds nothing happens, returning true
+	Closes files before returning, since they were opened in a not-default way
+	Returns false if the files couldn't be opened, otherwise true
+	*/
+	bool deleteChar(uint16 Line, uint16 Word, uint16 Char);
 
 
 	//FARE vedere se metterli o no
@@ -164,57 +261,6 @@ public:
 	bool appendCharLine(uint16, char);		//aggiunge un carattere alla fine della linea specificata
 	bool appendCharWord(uint16, char);		//aggiunge un carattere dopo la parola con posizione specificata rispetto all'inizio del file
 	bool appendCharWord(uint16, uint16, char);//aggiunge un carattere dopo la parola con posizione specificata della linea specificata
-
-	/*
-	Replaces a line using a temp file
-	If the specified line is out of bounds some newlines get created
-	Closes the file before returning, since it has been opened in a different way
-	Returns false if the files couldn't be opened, otherwise true
-	*/
-	bool replaceLine(uint16 Line, str Replacement);
-	/*
-	Replaces a word using a temp file
-	Closes the file before returning, since it has been opened in a different way
-	Returns false if the files couldn't be opened or if the
-		specified word is out of bounds, otherwise true
-	*/
-	bool replaceWord(uint16 Word, str Replacement);
-	/*
-	Replaces a word in a line using a temp file
-	Closes the file before returning, since it has been opened in a different way
-	Returns false if the files couldn't be opened or if the
-		specified word is out of bounds, otherwise true
-	*/
-	bool replaceWord(uint16 Line, uint16 Word, str Replacement);
-	/*
-	Replaces a char using a temp file
-	Closes the file before returning, since it has been opened in a different way
-	Returns false if the files couldn't be opened or if the
-		specified char is out of bounds, otherwise true
-	*/
-	bool replaceChar(uint16 Char, char Replacement);
-	/*
-	Replaces a char in a line using a temp file
-	Closes the file before returning, since it has been opened in a different way
-	Returns false if the files couldn't be opened or if the
-		specified char is out of bounds, otherwise true
-	*/
-	bool replaceChar(uint16 Line, uint16 Char, char Replacement);
-	/*
-	Replaces a char in a word in a line using a temp file
-	Closes the file before returning, since it has been opened in a different way
-	Returns false if the files couldn't be opened or if the
-		specified char is out of bounds, otherwise true
-	*/
-	bool replaceChar(uint16 Line, uint16 Word, uint16 Char, char Replacement);
-
-	//rimuove linee/parole/caratteri. Per le parole rimuove anche uno spazio. Forma relativa e non. 
-	bool deleteLine(uint16 Line);
-	bool deleteWord(uint16 Word);
-	bool deleteWord(uint16 Line, uint16 Word);
-	bool deleteChar(uint16 Char);
-	bool deleteChar(uint16 Line, uint16 Char);
-	bool deleteChar(uint16 Line, uint16 Word, uint16 Char);
 
 
 	//rimuove gli a capo alla fine del file

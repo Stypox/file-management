@@ -1,9 +1,12 @@
+//FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (str + '\n');" invece che "file << str << '\n';"
+
 #pragma once
 
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <Windows.h>
 
 #include "fileManagement.h"
 
@@ -73,7 +76,7 @@ using uint32 = uint32_t;
 using uint64 = uint64_t;
 
 bool File::checkOpen() {
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app); //FARE va bene app
+	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
 	if (file.is_open()) return true;
 	return false;
 }
@@ -153,6 +156,21 @@ void File::truncEndCR(str & String) {
 	while (!String.empty() && String.back() == '\r') {
 		String.pop_back();
 	}
+}
+bool File::openTempToModifyFile(fstm & TempFile) {
+	if (file.is_open()) file.close();
+	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
+	if (!file.is_open()) return false;
+
+	//FARE controllare se serve ma penso di si'
+	if (TempFile.is_open()) file.close();
+	TempFile.open(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
+	if (!TempFile.is_open()) {
+		file.close();
+		return false;
+	}
+
+	return true;
 }
 void File::moveFileContent(fstm & From, fstm & To) {
 	char tempChar;
@@ -425,37 +443,262 @@ str File::getChars(uint16 Line, uint16 Word, uint16 From, uint16 To) {
 	return chars;
 }
 
+//FARE fattibile senza ricopiare tutto il file
+bool File::addLine(uint16 Line, str ToAdd) {
+	bool fileEndsWithNewline = false;
+	if (!pointToBeg()) return false;
+	file.seekg(-1, std::ios_base::end);
+	if (file.get() == '\n') fileEndsWithNewline = true;
+
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
+
+	str tempStr;
+	int16 currentLine = 0;
+	truncEndCR(ToAdd);
+
+
+	if (getline(file, tempStr)) {
+		truncEndCR(tempStr);
+	}
+	else {
+		tempStr = "";
+		fileEndsWithNewline = false;
+	}
+	if (currentLine++ == Line) {
+		tempFile << ToAdd << "\r\n" << tempStr;
+	}
+	else {
+		tempFile << tempStr;
+	}
+	while (1) {
+		if (getline(file, tempStr)) {
+			truncEndCR(tempStr);
+		}
+		else {
+			if (currentLine > Line) break;
+			tempStr = "";
+			fileEndsWithNewline = false;
+		}
+		if (currentLine++ == Line) tempFile << "\r\n" << ToAdd;
+		tempFile << "\r\n" << tempStr;
+	}
+	if (fileEndsWithNewline) {
+		tempFile << "\r\n";
+	}
+
+
+	file.close();
+	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	tempFile.seekg(0);
+
+
+	moveFileContent(tempFile, file);
+
+
+	file.close();
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
+}
+bool File::addWord(uint16 Word, str ToAdd) {
+	std::streampos wordPos = getPosition(0, Word, 0);
+	if (-1 == wordPos) return false;
+
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
+
+	char tempChar;
+	int16 currentChar = 0;
+
+
+	while (1) {
+		tempChar = file.get();
+		if (!file.eof()) {
+			if (currentChar++ == wordPos) {
+				for (char letter : ToAdd) {
+					tempFile << letter;
+				}
+				tempFile << ' ' << tempChar;
+			}
+			else {
+				tempFile << tempChar;
+			}
+		}
+		else break;
+	}
+
+
+	file.close();
+	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	tempFile.seekg(0);
+
+
+	moveFileContent(tempFile, file);
+
+
+	file.close();
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
+}
+bool File::addWord(uint16 Line, uint16 Word, str ToAdd) {
+	std::streampos wordPos = getPosition(Line, Word, 0);
+	if (-1 == wordPos) return false;
+
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
+
+	char tempChar;
+	int16 currentChar = 0;
+
+
+	while (1) {
+		tempChar = file.get();
+		if (!file.eof()) {
+			if (currentChar++ == wordPos) {
+				for (char letter : ToAdd) {
+					tempFile << letter;
+				}
+				tempFile << ' ' << tempChar;
+			}
+			else {
+				tempFile << tempChar;
+			}
+		}
+		else break;
+	}
+
+
+	file.close();
+	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	tempFile.seekg(0);
+
+
+	moveFileContent(tempFile, file);
+
+
+	file.close();
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
+}
+bool File::addChar(uint16 Char, char ToAdd) {
+	uint16 fileLength = getNrChars();
+
+
+	if (!pointTo(0, 0, Char)) return false;
+
+
+	char buffer;
+	std::streampos pointerPosition = file.tellg();
+
+	//FARE modo migliore ma sto impazzendo
+	while (pointerPosition < fileLength) {
+		file.seekg(pointerPosition);
+		buffer = file.get();
+		file.seekp(pointerPosition);
+		file.put(ToAdd);
+
+		ToAdd = buffer;
+		pointerPosition += 1;
+		if (file.eof()) break;
+	}
+	file.put(ToAdd);
+
+
+	return true;
+}
+bool File::addChar(uint16 Line, uint16 Char, char ToAdd) {
+	uint16 fileLength = getNrChars();
+
+
+	if (!pointTo(Line, 0, Char)) return false;
+
+
+	char buffer;
+	std::streampos pointerPosition = file.tellg();
+
+
+	while (pointerPosition < fileLength) {
+		file.seekg(pointerPosition);
+		buffer = file.get();
+		file.seekp(pointerPosition);
+		file.put(ToAdd);
+
+		ToAdd = buffer;
+		pointerPosition += 1;
+	}
+	file.put(ToAdd);
+
+
+	return true;
+}
+bool File::addChar(uint16 Line, uint16 Word, uint16 Char, char ToAdd) {
+	uint16 fileLength = getNrChars();
+
+
+	if (!pointTo(Line, Word, Char)) return false;
+
+
+	char buffer;
+	std::streampos pointerPosition = file.tellg();
+
+
+	while (pointerPosition < fileLength) {
+		file.seekg(pointerPosition);
+		buffer = file.get();
+		file.seekp(pointerPosition);
+		file.put(ToAdd);
+
+		ToAdd = buffer;
+		pointerPosition += 1;
+	}
+	file.put(ToAdd);
+
+
+	return true;
+}
+
 bool File::replaceLine(uint16 Line, str Replacement) {
 	bool fileEndsWithNewline = 0;
 	if (!pointToBeg()) return false;
 	file.seekg(-1, std::ios_base::end);
 	if (file.get() == '\n') fileEndsWithNewline = 1;
 
-	file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) return false;
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
 
 	str tempStr;
 	int16 currentLine = 0;
 	truncEndCR(Replacement);
 	
-	if (!getline(file, tempStr)) {
-		tempStr = "";
+
+	if (getline(file, tempStr)) {
+		truncEndCR(tempStr);
 	}
 	else {
-		truncEndCR(tempStr);
+		tempStr = "";
+		fileEndsWithNewline = false; //FARE vedere se va bene
 	}
 	if (currentLine++ == Line) tempFile << Replacement;
 	else tempFile << tempStr;
 	while (1) {
-		if (!getline(file, tempStr)) {
-			if (currentLine > Line) break;
-			tempStr = "";
+		if (getline(file, tempStr)) {
+			truncEndCR(tempStr);
 		}
 		else {
-			truncEndCR(tempStr);
+			if (currentLine > Line) break;
+			tempStr = "";
+			fileEndsWithNewline = false; //FARE vedere se va bene
 		}
 		if (currentLine++ == Line) tempFile << "\r\n" << Replacement;
 		else tempFile << "\r\n" << tempStr;
@@ -464,11 +707,14 @@ bool File::replaceLine(uint16 Line, str Replacement) {
 		tempFile << "\r\n";
 	}
 
+
 	file.close();
 	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
+
 	moveFileContent(tempFile, file);
+
 
 	file.close();
 	tempFile.close();
@@ -479,25 +725,22 @@ bool File::replaceWord(uint16 Word, str Replacement) {
 	std::streampos wordPos = getPosition(0, Word, 0);
 	if (-1 == wordPos) return false;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
 
 	char tempChar;
 	int16 currentChar = 0;
+
 
 	while (1) {
 		tempChar = file.get();
 		if (!file.eof()) {
 			if (currentChar++ == wordPos) {
-				if (tempChar == '\n') {
-					tempFile << '\n';
-				}
+				//if (tempChar == '\n') {
+				//	tempFile << '\n';
+				//}
 				while (!isspace(file.get())) {}
 				file.seekg(-1, std::ios_base::cur);
 
@@ -527,14 +770,10 @@ bool File::replaceWord(uint16 Line, uint16 Word, str Replacement) {
 	std::streampos wordPos = getPosition(Line, Word, 0);
 	if (-1 == wordPos) return false;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
 
 	char tempChar;
 	int16 currentChar = 0;
@@ -543,9 +782,6 @@ bool File::replaceWord(uint16 Line, uint16 Word, str Replacement) {
 		tempChar = file.get();
 		if (!file.eof()) {
 			if (currentChar++ == wordPos) {
-				if (tempChar == '\n') {
-					tempFile << '\n';
-				}
 				while (!isspace(file.get())) {}
 				file.seekg(-1, std::ios_base::cur);
 
@@ -562,11 +798,14 @@ bool File::replaceWord(uint16 Line, uint16 Word, str Replacement) {
 		else break;
 	}
 
+
 	file.close();
 	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
+
 	moveFileContent(tempFile, file);
+
 
 	file.close();
 	tempFile.close();
@@ -574,123 +813,24 @@ bool File::replaceWord(uint16 Line, uint16 Word, str Replacement) {
 	return true;
 }
 bool File::replaceChar(uint16 Char, char Replacement) {
-	std::streampos charPos = getPosition(0, 0, Char);
-	if (-1 == charPos) return false;
+	if (!pointTo(0, 0, Char)) return false;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+	file.put(Replacement);
 
-	char tempChar;
-	int16 currentChar = 0;
-
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ == charPos) {
-				tempFile << Replacement;
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-		else break;
-	}
-
-	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-	tempFile.seekg(0);
-
-	moveFileContent(tempFile, file);
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
 	return true;
 }
 bool File::replaceChar(uint16 Line, uint16 Char, char Replacement) {
-	std::streampos charPos = getPosition(Line, 0, Char);
-	if (-1 == charPos) return false;
+	if (!pointTo(Line, 0, Char)) return false;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+	file.put(Replacement);
 
-	char tempChar;
-	int16 currentChar = 0;
-
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ == charPos) {
-				tempFile << Replacement;
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-		else break;
-	}
-
-	file.close();
-	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
-	tempFile.seekg(0);
-
-	moveFileContent(tempFile, file);
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
 	return true;
 }
 bool File::replaceChar(uint16 Line, uint16 Word, uint16 Char, char Replacement) {
-	std::streampos charPos = getPosition(Line, Word, Char);
-	if (-1 == charPos) return false;
+	if (!pointTo(Line, Word, Char)) return false;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios::binary | std::ios::in | std::ios::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios::binary | std::ios::in | std::ios::out | std::ios::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+	file.put(Replacement);
 
-	char tempChar;
-	int16 currentChar = 0;
-
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ == charPos) {
-				tempFile << Replacement;
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-		else break;
-	}
-
-	file.close();
-	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
-	tempFile.seekg(0);
-
-	moveFileContent(tempFile, file);
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
 	return true;
 }
 
@@ -700,24 +840,21 @@ bool File::deleteLine(uint16 Line) {
 	file.seekg(-1, std::ios_base::end);
 	if (file.get() == '\n') fileEndsWithNewline = 1;
 
-	file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) return false;
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
 
 	bool firstIteration = 1;
 	str tempStr;
 	int16 currentLine = 0;
 
+
 	while (1) {
-		if (!getline(file, tempStr)) {
-			if (currentLine > Line) break;
-			tempStr = "";
-		}
-		else {
+		if (getline(file, tempStr)) {
 			truncEndCR(tempStr);
 		}
+		else break;
 		if (currentLine++ != Line) {
 			if (firstIteration) {
 				tempFile << tempStr;
@@ -732,11 +869,14 @@ bool File::deleteLine(uint16 Line) {
 		tempFile << "\r\n";
 	}
 
+
 	file.close();
 	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
 	tempFile.seekg(0);
 
+
 	moveFileContent(tempFile, file);
+
 
 	file.close();
 	tempFile.close();
@@ -745,32 +885,29 @@ bool File::deleteLine(uint16 Line) {
 }
 bool File::deleteWord(uint16 Word) {
 	std::streampos wordPos = getPosition(0, Word, 0);
-	if (-1 == wordPos) return false;
+	if (-1 == wordPos) return true;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
 
 	char tempChar;
 	int16 currentChar = 0;
+
 
 	while (1) {
 		tempChar = file.get();
 		if (!file.eof()) {
 			if (currentChar++ == wordPos) {
-				if (tempChar == '\n') {
-					tempFile << '\n';
-
-					while (!isspace(file.get())) {}
-					file.seekg(-1, std::ios_base::cur);
-				}
-				else {
-					while (!isspace(file.get())) {}
+				while (1) {
+					tempChar = file.get();
+					if (isspace(tempChar)) {
+						if (tempChar == '\r') {
+							tempFile << '\r';
+						}
+						break;
+					}
 				}
 			}
 			else {
@@ -780,11 +917,14 @@ bool File::deleteWord(uint16 Word) {
 		else break;
 	}
 
+
 	file.close();
 	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
+
 	moveFileContent(tempFile, file);
+
 
 	file.close();
 	tempFile.close();
@@ -793,32 +933,29 @@ bool File::deleteWord(uint16 Word) {
 }
 bool File::deleteWord(uint16 Line, uint16 Word) {
 	std::streampos wordPos = getPosition(Line, Word, 0);
-	if (-1 == wordPos) return false;
+	if (-1 == wordPos) return true;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
 
 	char tempChar;
 	int16 currentChar = 0;
+
 
 	while (1) {
 		tempChar = file.get();
 		if (!file.eof()) {
 			if (currentChar++ == wordPos) {
-				if (tempChar == '\n') {
-					tempFile << '\n';
-
-					while (!isspace(file.get())) {}
-					file.seekg(-1, std::ios_base::cur);
-				}
-				else {
-					while (!isspace(file.get())) {}
+				while (1) {
+					tempChar = file.get();
+					if (isspace(tempChar)) {
+						if (tempChar == '\r') {
+							tempFile << '\r';
+						}
+						break;
+					}
 				}
 			}
 			else {
@@ -828,11 +965,14 @@ bool File::deleteWord(uint16 Line, uint16 Word) {
 		else break;
 	}
 
+
 	file.close();
 	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
+
 	moveFileContent(tempFile, file);
+
 
 	file.close();
 	tempFile.close();
@@ -841,19 +981,16 @@ bool File::deleteWord(uint16 Line, uint16 Word) {
 }
 bool File::deleteChar(uint16 Char) {
 	std::streampos charPos = getPosition(0, 0, Char);
-	if (-1 == charPos) return false;
+	if (-1 == charPos) return true;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
 
 	char tempChar;
 	int16 currentChar = 0;
+
 
 	while (1) {
 		tempChar = file.get();
@@ -865,11 +1002,14 @@ bool File::deleteChar(uint16 Char) {
 		else break;
 	}
 
+
 	file.close();
 	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
+
 	moveFileContent(tempFile, file);
+
 
 	file.close();
 	tempFile.close();
@@ -878,19 +1018,16 @@ bool File::deleteChar(uint16 Char) {
 }
 bool File::deleteChar(uint16 Line, uint16 Char) {
 	std::streampos charPos = getPosition(Line, 0, Char);
-	if (-1 == charPos) return false;
+	if (-1 == charPos) return true;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
 
 	char tempChar;
 	int16 currentChar = 0;
+
 
 	while (1) {
 		tempChar = file.get();
@@ -902,11 +1039,14 @@ bool File::deleteChar(uint16 Line, uint16 Char) {
 		else break;
 	}
 
+
 	file.close();
 	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
+
 	moveFileContent(tempFile, file);
+
 
 	file.close();
 	tempFile.close();
@@ -915,19 +1055,16 @@ bool File::deleteChar(uint16 Line, uint16 Char) {
 }
 bool File::deleteChar(uint16 Line, uint16 Word, uint16 Char) {
 	std::streampos charPos = getPosition(Line, Word, Char);
-	if (-1 == charPos) return false;
+	if (-1 == charPos) return true;
 
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-	fstm tempFile(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!tempFile.is_open()) {
-		file.close();
-		return false;
-	}
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
 
 	char tempChar;
 	int16 currentChar = 0;
+
 
 	while (1) {
 		tempChar = file.get();
@@ -939,11 +1076,14 @@ bool File::deleteChar(uint16 Line, uint16 Word, uint16 Char) {
 		else break;
 	}
 
+
 	file.close();
 	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
+
 	moveFileContent(tempFile, file);
+
 
 	file.close();
 	tempFile.close();
@@ -985,3 +1125,4 @@ str File::string() {
 
 	return fileStr;
 }
+
