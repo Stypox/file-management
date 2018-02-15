@@ -1,5 +1,3 @@
-//FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (str + '\n');" invece che "file << str << '\n';"
-
 #pragma once
 
 #include <fstream>
@@ -10,59 +8,6 @@
 
 #include "fileManagement.h"
 
-/*
-VECCHIO REPLACELINE NON FUNZIONANTE
-bool File::replaceLine(uint16 Line, str Replacement) {
-if (!pointTo(Line, 0, 0)) return false;
-
-str buffer = Replacement;
-bool endLine = 1, eof = 0;
-char readChar;
-
-while ((readChar = file.get()) != '\n') {
-file.put(buffer[0]);
-buffer.erase(0);
-if (buffer.empty()) {
-endLine = 0;
-
-while ((readChar = file.get()) != '\n') {
-if (file.eof()) {
-eof = 1;
-break;
-}
-}
-
-break;
-}
-}
-
-if (eof && !endLine) {
-file.seekg(file.tellp());
-}
-
-while (!buffer.empty()) {
-buffer += readChar;
-file.put(buffer[0]);
-buffer.erase(0);
-
-if (file.eof()) {
-eof = 1;
-break;
-}
-
-readChar = file.get();
-}
-
-if (eof) {
-for (char letter : buffer) {
-file.putback(letter);
-}
-}
-
-
-return true;
-}
-*/
 using str = std::string;
 using fstm = std::fstream;
 using sstm = std::stringstream;
@@ -105,6 +50,13 @@ bool File::pointToBeg() {
 	file.clear(file.eofbit);
 	file.seekg(0);
 	file.seekp(0);
+	return true;
+}
+bool File::pointToEnd() {
+	if (!file.is_open() && !checkOpen()) return false;
+	file.clear(file.eofbit);
+	file.seekg(0, std::ios_base::end);
+	file.seekp(0, std::ios_base::end);
 	return true;
 }
 std::streampos File::getPosition(uint16 Line, uint16 Word, uint16 Char) {
@@ -207,14 +159,7 @@ uint16 File::getNrWords() {
 
 	return words;
 }
-uint16 File::getNrChars() {
-	if (!pointToBeg()) return 0;
-
-	file.seekg(0, std::ios_base::end);
-
-	return (uint16)file.tellg();
-}
-uint16 File::getNrWordsLine(uint16 Line) {
+uint16 File::getNrWords(uint16 Line) {
 	if (!pointTo(Line, 0, 0)) return 0;
 
 	str tempStr;
@@ -222,23 +167,23 @@ uint16 File::getNrWordsLine(uint16 Line) {
 
 	return countWords(tempStr);
 }
-uint16 File::getNrCharsLine(uint16 Line) {
+uint16 File::getNrChars() {
+	if (!pointToBeg()) return 0;
+
+	file.seekg(0, std::ios_base::end);
+
+	return (uint16)file.tellg();
+}
+uint16 File::getNrChars(uint16 Line) {
 	if (!pointTo(Line, 0, 0)) return 0;
 
 	str tempStr;
 	getline(file, tempStr);
 
+	truncEndCR(tempStr);
 	return (uint16)tempStr.length();
 }
-uint16 File::getNrCharsWord(uint16 Word) {
-	if (!pointTo(0, Word, 0)) return 0;
-
-	str tempStr;
-	file >> tempStr;
-
-	return (uint16)tempStr.length();
-}
-uint16 File::getNrCharsWord(uint16 Line, uint16 Word) {
+uint16 File::getNrChars(uint16 Line, uint16 Word) {
 	if (!pointTo(Line, Word, 0)) return 0;
 
 	str tempStr;
@@ -247,9 +192,7 @@ uint16 File::getNrCharsWord(uint16 Line, uint16 Word) {
 	return (uint16)tempStr.length();
 }
 
-/*
-Removes '\r' at the end of the line
-*/
+
 str File::getLine(uint16 Line) {
 	if (!pointTo(Line, 0, 0)) return "";
 
@@ -291,9 +234,6 @@ char File::getChar(uint16 Line, uint16 Word, uint16 Char) {
 	return file.get();
 }
 
-/*
-Removes '\r' at the end of lines and adds '\n' between them
-*/
 str File::getLines(uint16 From, uint16 To) {
 	if (To < From) {
 		if (!pointTo(To, 0, 0)) return "";
@@ -443,7 +383,8 @@ str File::getChars(uint16 Line, uint16 Word, uint16 From, uint16 To) {
 	return chars;
 }
 
-//FARE fattibile senza ricopiare tutto il file
+
+//FARE fattibili senza ricopiare tutto il file
 bool File::addLine(uint16 Line, str ToAdd) {
 	bool fileEndsWithNewline = false;
 	if (!pointToBeg()) return false;
@@ -457,7 +398,6 @@ bool File::addLine(uint16 Line, str ToAdd) {
 
 	str tempStr;
 	int16 currentLine = 0;
-	truncEndCR(ToAdd);
 
 
 	if (getline(file, tempStr)) {
@@ -608,7 +548,6 @@ bool File::addChar(uint16 Char, char ToAdd) {
 
 		ToAdd = buffer;
 		pointerPosition += 1;
-		if (file.eof()) break;
 	}
 	file.put(ToAdd);
 
@@ -679,7 +618,6 @@ bool File::replaceLine(uint16 Line, str Replacement) {
 
 	str tempStr;
 	int16 currentLine = 0;
-	truncEndCR(Replacement);
 	
 
 	if (getline(file, tempStr)) {
@@ -687,7 +625,7 @@ bool File::replaceLine(uint16 Line, str Replacement) {
 	}
 	else {
 		tempStr = "";
-		fileEndsWithNewline = false; //FARE vedere se va bene
+		fileEndsWithNewline = false;
 	}
 	if (currentLine++ == Line) tempFile << Replacement;
 	else tempFile << tempStr;
@@ -698,7 +636,7 @@ bool File::replaceLine(uint16 Line, str Replacement) {
 		else {
 			if (currentLine > Line) break;
 			tempStr = "";
-			fileEndsWithNewline = false; //FARE vedere se va bene
+			fileEndsWithNewline = false;
 		}
 		if (currentLine++ == Line) tempFile << "\r\n" << Replacement;
 		else tempFile << "\r\n" << tempStr;
@@ -1091,6 +1029,120 @@ bool File::deleteChar(uint16 Line, uint16 Word, uint16 Char) {
 	return true;
 }
 
+//FARE
+bool File::appendLine(str ToAppend) {
+	if (!pointToEnd()) return false;
+
+	file << "\r\n" << ToAppend;
+
+	return true;
+}
+bool File::appendWord(str ToAppend) {
+	if (!pointToEnd()) return false;
+
+	file << ' ' << ToAppend;
+
+	return true;
+}
+bool File::appendWord(uint16 Line, str ToAppend) {
+	uint16 fileLength = getNrChars();
+
+
+	if (!pointTo(Line, 0, 0)) return false;
+
+
+	while (file.get() != '\r' && !file.eof()) {}
+	if (!file.eof()) {
+		file.seekg(-1, std::ios_base::cur);
+	}
+
+
+	ToAppend = (str)" " + ToAppend;
+	uint16 fileNewLength = fileLength + (uint16)ToAppend.length();
+	std::streampos pointerPosition = file.tellg();
+	
+	std::cout << "\n" << fileLength << " " << fileNewLength << " " << ToAppend.length() << "\n";
+
+	while (pointerPosition < fileNewLength) {
+		std::cout << "\n" << pointerPosition << " ";
+		printSpaces(ToAppend);
+
+		file.seekg(pointerPosition);
+		ToAppend.push_back(file.get());
+		file.seekp(pointerPosition);
+		if (pointerPosition <= fileLength) {
+			file.put(ToAppend[0]);
+		}
+		else {
+			if (!pointToEnd()) return false;
+			file << ToAppend;
+			break;
+		}
+
+		ToAppend.erase(0, 1);
+		pointerPosition += 1;
+	}
+
+	return true;
+}
+bool File::appendChar(char ToAppend) {
+	if (!pointToEnd()) return false;
+
+	file << ToAppend;
+
+	return true;
+}
+bool File::appendChar(uint16 Line, char ToAppend) {
+	if (!pointTo(Line, 0, 0)) return false;
+
+	return true;
+}
+bool File::appendChar(uint16 Line, uint16 Word, char ToAppend) {
+	if (!pointTo(Line, Word, 0)) return false;
+
+	return true;
+}
+
+
+bool File::deleteLastEmptyLines() {
+	uint16 fileLength = getNrChars();
+
+
+	fstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
+	
+	uint16 endPosition = 0;
+	char tempChar;
+
+
+	for (uint16 pointer = 0; pointer < fileLength;) {
+		tempChar = file.get();
+		if (tempChar != '\n' && tempChar != '\r') {
+			endPosition = ++pointer;
+		}
+		else {
+			++pointer;
+		}
+		tempFile << tempChar;
+	}
+
+
+	file.close();
+	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
+	tempFile.seekg(0);
+
+
+	for (uint16 pointer = 0; pointer < endPosition; ++pointer) {
+		file << (char)tempFile.get();
+	}
+
+
+	file.close();
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
+}
 
 
 
@@ -1125,4 +1177,3 @@ str File::string() {
 
 	return fileStr;
 }
-
