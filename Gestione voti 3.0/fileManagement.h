@@ -60,6 +60,9 @@ public:
 			case '\r':
 				std::cout << "R";
 				break;
+			case -1:
+				std::cout << "-1";
+				break;
 			default:
 				std::cout << letter;
 			}

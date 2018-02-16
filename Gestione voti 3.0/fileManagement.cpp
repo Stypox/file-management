@@ -386,147 +386,123 @@ str File::getChars(uint16 Line, uint16 Word, uint16 From, uint16 To) {
 
 //FARE fattibili senza ricopiare tutto il file
 bool File::addLine(uint16 Line, str ToAdd) {
-	bool fileEndsWithNewline = false;
-	if (!pointToBeg()) return false;
-	file.seekg(-1, std::ios_base::end);
-	if (file.get() == '\n') fileEndsWithNewline = true;
+	uint16 fileLength = getNrChars();
 
 
-	fstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
-
-
-	str tempStr;
-	int16 currentLine = 0;
-
-
-	if (getline(file, tempStr)) {
-		truncEndCR(tempStr);
+	if (!pointTo(Line, 0, 0)) return false;
+	if (file.tellg() > 0) {
+		file.seekg(-1, std::ios_base::cur);
 	}
-	else {
-		tempStr = "";
-		fileEndsWithNewline = false;
-	}
-	if (currentLine++ == Line) {
-		tempFile << ToAdd << "\r\n" << tempStr;
-	}
-	else {
-		tempFile << tempStr;
-	}
+
+
 	while (1) {
-		if (getline(file, tempStr)) {
-			truncEndCR(tempStr);
-		}
+		if (file.tellg() <= (std::streampos)0) break;
+		if (file.get() == '\n') break;
 		else {
-			if (currentLine > Line) break;
-			tempStr = "";
-			fileEndsWithNewline = false;
+			file.seekg(-2, std::ios_base::cur);
 		}
-		if (currentLine++ == Line) tempFile << "\r\n" << ToAdd;
-		tempFile << "\r\n" << tempStr;
 	}
-	if (fileEndsWithNewline) {
-		tempFile << "\r\n";
+			
+	
+	ToAdd += (str)"\r\n";
+
+
+	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
+		file.seekg(pointerPosition);
+		ToAdd.push_back(file.get());
+
+		file.seekp(pointerPosition);
+		file.put(ToAdd[0]);
+		ToAdd.erase(0, 1);
 	}
 
 
-	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-	tempFile.seekg(0);
+	pointToEnd();
+	file << ToAdd;
 
 
-	moveFileContent(tempFile, file);
-
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
 	return true;
 }
 bool File::addWord(uint16 Word, str ToAdd) {
-	std::streampos wordPos = getPosition(0, Word, 0);
-	if (-1 == wordPos) return false;
+	uint16 fileLength = getNrChars();
 
 
-	fstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
-
-
-	char tempChar;
-	int16 currentChar = 0;
-
-
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ == wordPos) {
-				for (char letter : ToAdd) {
-					tempFile << letter;
-				}
-				tempFile << ' ' << tempChar;
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-		else break;
+	if (!pointTo(0, Word, 0)) return false;
+	if (file.tellg() > 0) {
+		file.seekg(-1, std::ios_base::cur);
 	}
 
 
-	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-	tempFile.seekg(0);
+	while (1) {
+		if (file.tellg() <= (std::streampos)0) {
+			ToAdd += (str)" ";
+			break;
+		}
+		if (isspace(file.get())) {
+			file.seekg(-2, std::ios_base::cur);
+		}
+		else {
+			ToAdd = (str)" " + ToAdd;
+			break;
+		}
+	}
 
 
-	moveFileContent(tempFile, file);
+	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
+		file.seekg(pointerPosition);
+		ToAdd.push_back(file.get());
+
+		file.seekp(pointerPosition);
+		file.put(ToAdd[0]);
+		ToAdd.erase(0, 1);
+	}
 
 
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
+	pointToEnd();
+	file << ToAdd;
+
+
 	return true;
 }
 bool File::addWord(uint16 Line, uint16 Word, str ToAdd) {
-	std::streampos wordPos = getPosition(Line, Word, 0);
-	if (-1 == wordPos) return false;
+	uint16 fileLength = getNrChars();
 
 
-	fstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
-
-
-	char tempChar;
-	int16 currentChar = 0;
-
-
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ == wordPos) {
-				for (char letter : ToAdd) {
-					tempFile << letter;
-				}
-				tempFile << ' ' << tempChar;
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-		else break;
+	if (!pointTo(Line, Word, 0)) return false;
+	if (file.tellg() > 0) {
+		file.seekg(-1, std::ios_base::cur);
 	}
 
 
-	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-	tempFile.seekg(0);
+	while (1) {
+		if (file.tellg() <= (std::streampos)0) {
+			ToAdd += (str)" ";
+			break;
+		}
+		if (isspace(file.get())) {
+			file.seekg(-2, std::ios_base::cur);
+		}
+		else {
+			ToAdd = (str)" " + ToAdd;
+			break;
+		}
+	}
 
 
-	moveFileContent(tempFile, file);
+	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
+		file.seekg(pointerPosition);
+		ToAdd.push_back(file.get());
+
+		file.seekp(pointerPosition);
+		file.put(ToAdd[0]);
+		ToAdd.erase(0, 1);
+	}
 
 
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
+	pointToEnd();
+	file << ToAdd;
+
+
 	return true;
 }
 bool File::addChar(uint16 Char, char ToAdd) {
@@ -1051,37 +1027,33 @@ bool File::appendWord(uint16 Line, str ToAppend) {
 	if (!pointTo(Line, 0, 0)) return false;
 
 
-	while (file.get() != '\r' && !file.eof()) {}
-	if (!file.eof()) {
-		file.seekg(-1, std::ios_base::cur);
+	while (1) {
+		if (file.get() == '\r') {
+			file.seekg(-1, std::ios_base::cur);
+			break;
+		}
+		if (file.eof()) {
+			break;
+		}
 	}
 
 
 	ToAppend = (str)" " + ToAppend;
-	uint16 fileNewLength = fileLength + (uint16)ToAppend.length();
-	std::streampos pointerPosition = file.tellg();
-	
-	std::cout << "\n" << fileLength << " " << fileNewLength << " " << ToAppend.length() << "\n";
 
-	while (pointerPosition < fileNewLength) {
-		std::cout << "\n" << pointerPosition << " ";
-		printSpaces(ToAppend);
 
+	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
 		file.seekg(pointerPosition);
 		ToAppend.push_back(file.get());
-		file.seekp(pointerPosition);
-		if (pointerPosition <= fileLength) {
-			file.put(ToAppend[0]);
-		}
-		else {
-			if (!pointToEnd()) return false;
-			file << ToAppend;
-			break;
-		}
 
+		file.seekp(pointerPosition);
+		file.put(ToAppend[0]);
 		ToAppend.erase(0, 1);
-		pointerPosition += 1;
 	}
+
+
+	pointToEnd();
+	file << ToAppend;
+
 
 	return true;
 }
