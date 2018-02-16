@@ -137,8 +137,10 @@ int main() {
 	//inFile.appendChar(' ');
 	//inFile.appendWord("");
 	//inFile.appendLine("\r\n");
-	inFile.appendWord(0, "Ciao");
+	//inFile.appendWord(0, "Ciao");
 
+	//FARE il 4 non va
+	inFile.addLine(4, "Ciao");
 	std::cout << "\n\n                         Intero file: " << inFile.getNrChars() << "byte\n";
 	printSpaces(inFile.string());
 
