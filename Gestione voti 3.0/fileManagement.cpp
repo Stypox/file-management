@@ -26,23 +26,55 @@ bool File::checkOpen() {
 	return false;
 }
 
-bool File::pointTo(uint16 Line, uint16 Word, uint16 Char) {
+//controllare che la modifica funzioni dappertutto FARE
+bool File::pointTo(uint32 Line, uint32 Word, uint32 Char) {
 	if (!pointToBeg()) return false;
 
-	str tempStr;
-	for (uint16 currentLine = 0; currentLine < Line; ++currentLine)	getline(file, tempStr);
-	for (uint16 currentWord = 0; currentWord < Word; ++currentWord) file >> tempStr;
-	if (Word != 0) {
-		while (isspace(file.get()));
-		file.seekg(-1, std::ios_base::cur);
+
+	if (Line != UINT32_MAX) {
+		for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+			while (file.get() != '\n') {
+				if (file.eof()) {
+					if (++currentLine < Line) return false;
+					break;
+				}
+			}
+		}
 	}
 
-	std::streampos position = file.tellg() + (std::streampos)Char;
-	file.seekg(0, std::ios_base::end);
-	if (position >= file.tellg()) return false;
-	
-	file.seekg(position);
-	file.seekp(position);
+
+	if (Word != UINT32_MAX) {
+		bool wasSpace = 1;
+		uint32 nrWords = 0;
+		++Word;
+
+		while (1) {
+			if (file.eof()) return false;
+			if (nrWords >= Word) {
+				file.seekg(-1, std::ios_base::cur);
+				break;
+			}
+			if (isspace(file.get())) wasSpace = 1;
+			else {
+				if (wasSpace) {
+					wasSpace = 0;
+					++nrWords;
+				}
+			}
+		}
+	}
+
+
+	if (Char != UINT32_MAX && Char != 0) {
+		std::streampos position = file.tellg() + (std::streampos)Char;
+		file.seekg(0, std::ios_base::end);
+		if (position >= file.tellg()) return false;
+
+		file.seekg(position);
+		file.seekp(position);
+	}
+
+
 	return true;
 }
 bool File::pointToBeg() {
@@ -59,7 +91,7 @@ bool File::pointToEnd() {
 	file.seekp(0, std::ios_base::end);
 	return true;
 }
-std::streampos File::getPosition(uint16 Line, uint16 Word, uint16 Char) {
+std::streampos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 	std::streampos GpointerBeginning = 0, PpointerBeginning = 0;
 	if (file.is_open()) {
 		GpointerBeginning = file.tellg();
@@ -67,39 +99,72 @@ std::streampos File::getPosition(uint16 Line, uint16 Word, uint16 Char) {
 	}
 	if (!pointToBeg()) return -1;
 
-	str tempStr;
-	for (uint16 currentLine = 0; currentLine < Line; ++currentLine)	getline(file, tempStr);
-	for (uint16 currentWord = 0; currentWord < Word; ++currentWord) file >> tempStr;
-	if (Word != 0) {
-		while (isspace(file.get()));
-		file.seekg(-1, std::ios_base::cur);
+
+	if (Line != UINT32_MAX) {
+		for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+			while (file.get() != '\n') {
+				if (file.eof()) {
+					if (++currentLine < Line) return -2;
+					break;
+				}
+			}
+		}
 	}
 
-	std::streampos position = file.tellg() + (std::streampos)Char;
-	file.seekg(0, std::ios_base::end);
-	if (position >= file.tellg()) {
-		position = -1;
+
+	if (Word != UINT32_MAX) {
+		bool wasSpace = 1;
+		uint32 nrWords = 0;
+		++Word;
+
+		while (1) {
+			if (file.eof()) return -2;
+			if (nrWords >= Word) {
+				file.seekg(-1, std::ios_base::cur);
+				break;
+			}
+			if (isspace(file.get())) wasSpace = 1;
+			else {
+				if (wasSpace) {
+					wasSpace = 0;
+					++nrWords;
+				}
+			}
+		}
 	}
+
+
+	std::streampos position = file.tellg();
+	if (Char != UINT32_MAX && Char != 0) {
+		position += (std::streampos)Char;
+		file.seekg(0, std::ios_base::end);
+		if (position >= file.tellg()) {
+			position = -2;
+		}
+	}
+
 
 	file.clear(file.eof());
 	file.seekg(GpointerBeginning);
 	file.seekp(PpointerBeginning);
 
+
 	return position;
 }
 
-uint16 File::countWords(str String) {
-	bool wasSpace = 1;
-	uint16 nrWords = 0;
 
-	for (uint16 currentChar = 0; currentChar < String.length(); ++currentChar) {
-		if (!isspace(String[currentChar])) {
+uint32 File::countWords(str String) {
+	bool wasSpace = 1;
+	uint32 nrWords = 0;
+
+	for (char letter : String) {
+		if (isspace(letter)) wasSpace = 1;
+		else {
 			if (wasSpace) {
 				wasSpace = 0;
 				++nrWords;
 			}
 		}
-		else wasSpace = 1;
 	}
 
 	return nrWords;
@@ -114,8 +179,7 @@ bool File::openTempToModifyFile(fstm & TempFile) {
 	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
 	if (!file.is_open()) return false;
 
-	//FARE controllare se serve ma penso di si'
-	if (TempFile.is_open()) file.close();
+	if (TempFile.is_open()) TempFile.close();
 	TempFile.open(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
 	if (!TempFile.is_open()) {
 		file.close();
@@ -141,25 +205,25 @@ File::File(str Path) : path(Path), tempPath(Path + defaultTempExtension) {}
 File::File(str Path, str TempPath) : path(Path), tempPath(TempPath) {}
 
 
-uint16 File::getNrLines() {
+uint32 File::getNrLines() {
 	if (!pointToBeg()) return 0;
 
-	uint16 lines = 0;
+	uint32 lines = 0;
 	str tempStr;
 	while (getline(file, tempStr)) lines++;
 
 	return lines;
 }
-uint16 File::getNrWords() {
+uint32 File::getNrWords() {
 	if (!pointToBeg()) return 0;
 
-	uint16 words = 0;
+	uint32 words = 0;
 	str tempStr;
 	while (file >> tempStr) words++;
 
 	return words;
 }
-uint16 File::getNrWords(uint16 Line) {
+uint32 File::getNrWords(uint32 Line) {
 	if (!pointTo(Line, 0, 0)) return 0;
 
 	str tempStr;
@@ -167,34 +231,34 @@ uint16 File::getNrWords(uint16 Line) {
 
 	return countWords(tempStr);
 }
-uint16 File::getNrChars() {
+uint32 File::getNrChars() {
 	if (!pointToBeg()) return 0;
 
 	file.seekg(0, std::ios_base::end);
 
-	return (uint16)file.tellg();
+	return (uint32)file.tellg();
 }
-uint16 File::getNrChars(uint16 Line) {
+uint32 File::getNrChars(uint32 Line) {
 	if (!pointTo(Line, 0, 0)) return 0;
 
 	str tempStr;
 	getline(file, tempStr);
 
 	truncEndCR(tempStr);
-	return (uint16)tempStr.length();
+	return (uint32)tempStr.length();
 }
-uint16 File::getNrChars(uint16 Line, uint16 Word) {
+uint32 File::getNrChars(uint32 Line, uint32 Word) {
 	if (!pointTo(Line, Word, 0)) return 0;
 
 	str tempStr;
 	file >> tempStr;
 
-	return (uint16)tempStr.length();
+	return (uint32)tempStr.length();
 }
 
 
-str File::getLine(uint16 Line) {
-	if (!pointTo(Line, 0, 0)) return "";
+str File::getLine(uint32 Line) {
+	if (!pointTo(Line, -1, -1)) return "";
 
 	str line;
 	getline(file, line);
@@ -202,48 +266,49 @@ str File::getLine(uint16 Line) {
 
 	return line;
 }
-str File::getWord(uint16 Word) {
-	if (!pointTo(0, Word, 0)) return "";
+str File::getWord(uint32 Word) {
+	if (!pointTo(-1, Word, -1)) return "";
 
 	str word;
 	file >> word;
 
 	return word;
 }
-str File::getWord(uint16 Line, uint16 Word) {
-	if (!pointTo(Line, Word, 0)) return "";
+str File::getWord(uint32 Line, uint32 Word) {
+	if (!pointTo(Line, Word, -1)) return "";
 
 	str word;
 	file >> word;
 
 	return word;
 }
-char File::getChar(uint16 Char) {
-	if (!pointTo(0, 0, Char)) return 0;
+char File::getChar(uint32 Char) {
+	if (!pointTo(-1, -1, Char)) return 0;
 
 	return file.get();
 }
-char File::getChar(uint16 Line, uint16 Char) {
-	if (!pointTo(Line, 0, Char)) return 0;
+char File::getChar(uint32 Line, uint32 Char) {
+	if (!pointTo(Line, -1, Char)) return 0;
 
 	return file.get();
 }
-char File::getChar(uint16 Line, uint16 Word, uint16 Char) {
+char File::getChar(uint32 Line, uint32 Word, uint32 Char) {
 	if (!pointTo(Line, Word, Char)) return 0;
 
 	return file.get();
 }
 
-str File::getLines(uint16 From, uint16 To) {
+
+str File::getLines(uint32 From, uint32 To) {
 	if (To < From) {
-		if (!pointTo(To, 0, 0)) return "";
+		if (!pointTo(To, -1, -1)) return "";
 
 		str lines;
 		getline(file, lines);
 		truncEndCR(lines);
 
 		str tempStr;
-		for (uint16 currentLine = To; currentLine < From; ++currentLine) {
+		for (uint32 currentLine = To; currentLine < From; ++currentLine) {
 			if (!getline(file, tempStr)) break;
 			truncEndCR(tempStr);
 			lines = tempStr + "\r\n" + lines;
@@ -252,14 +317,14 @@ str File::getLines(uint16 From, uint16 To) {
 		return lines;
 	}
 	else {
-		if (!pointTo(From, 0, 0)) return "";
+		if (!pointTo(From, -1, -1)) return "";
 
 		str lines;
 		getline(file, lines);
 		truncEndCR(lines);
 
 		str tempStr;
-		for (uint16 currentLine = From; currentLine < To; ++currentLine) {
+		for (uint32 currentLine = From; currentLine < To; ++currentLine) {
 			if (!getline(file, tempStr)) break;
 			truncEndCR(tempStr);
 			lines += "\r\n" + tempStr;
@@ -268,105 +333,105 @@ str File::getLines(uint16 From, uint16 To) {
 		return lines;
 	}
 }
-str File::getWords(uint16 From, uint16 To) {
+str File::getWords(uint32 From, uint32 To) {
 	str words;
 	if (To < From) {
-		if (!pointTo(0, To, 0)) return "";
+		if (!pointTo(-1, To, -1)) return "";
 		file >> words;
 
 		str tempStr;
-		for (uint16 currentWord = To; currentWord < From; ++currentWord) {
+		for (uint32 currentWord = To; currentWord < From; ++currentWord) {
 			file >> tempStr;
 			words = tempStr + " " + words;
 		}
 	}
 	else {
-		if (!pointTo(0, From, 0)) return "";
+		if (!pointTo(-1, From, -1)) return "";
 		file >> words;
 
 		str tempStr;
-		for (uint16 currentWord = From; currentWord < To; ++currentWord) {
+		for (uint32 currentWord = From; currentWord < To; ++currentWord) {
 			file >> tempStr;
 			words += " " + tempStr;
 		}
 	}
 	return words;
 }
-str File::getWords(uint16 Line, uint16 From, uint16 To) {
+str File::getWords(uint32 Line, uint32 From, uint32 To) {
 	str words;
 	if (To < From) {
-		if (!pointTo(Line, To, 0)) return "";
+		if (!pointTo(Line, To, -1)) return "";
 		file >> words;
 
 		str tempStr;
-		for (uint16 currentWord = To; currentWord < From; ++currentWord) {
+		for (uint32 currentWord = To; currentWord < From; ++currentWord) {
 			file >> tempStr;
 			words = tempStr + " " + words;
 		}
 	}
 	else {
-		if (!pointTo(Line, From, 0)) return "";
+		if (!pointTo(Line, From, -1)) return "";
 		file >> words;
 
 		str tempStr;
-		for (uint16 currentWord = From; currentWord < To; ++currentWord) {
+		for (uint32 currentWord = From; currentWord < To; ++currentWord) {
 			file >> tempStr;
 			words += " " + tempStr;
 		}
 	}
 	return words;
 }
-str File::getChars(uint16 From, uint16 To) {
+str File::getChars(uint32 From, uint32 To) {
 	str chars = "";
 	if (To < From) {
-		if (!pointTo(0, 0, To)) return "";
+		if (!pointTo(-1, -1, To)) return "";
 		chars += file.get();
 
-		for (uint16 currentChar = To; currentChar < From; ++currentChar) {
+		for (uint32 currentChar = To; currentChar < From; ++currentChar) {
 			if (file.eof()) break;
 			chars = (char)file.get() + chars;
 		}
 	}
 	else {
-		if (!pointTo(0, 0, From)) return "";
+		if (!pointTo(-1, -1, From)) return "";
 		chars += file.get();
 
-		for (uint16 currentChar = From; currentChar < To; ++currentChar) {
+		for (uint32 currentChar = From; currentChar < To; ++currentChar) {
 			if (file.eof()) break;
 			chars += file.get();
 		}
 	}
 	return chars;
 }
-str File::getChars(uint16 Line, uint16 From, uint16 To) {
+str File::getChars(uint32 Line, uint32 From, uint32 To) {
 	str chars = "";
 	if (To < From) {
-		if (!pointTo(Line, 0, To)) return "";
+		if (!pointTo(Line, -1, To)) return "";
 		chars += file.get();
 
-		for (uint16 currentChar = To; currentChar < From; ++currentChar) {
+		for (uint32 currentChar = To; currentChar < From; ++currentChar) {
 			if (file.eof()) break;
 			chars = (char)file.get() + chars;
 		}
 	}
 	else {
-		if (!pointTo(Line, 0, From)) return "";
+		if (!pointTo(Line, -1, From)) return "";
 		chars += file.get();
 
-		for (uint16 currentChar = From; currentChar < To; ++currentChar) {
+		for (uint32 currentChar = From; currentChar < To; ++currentChar) {
 			if (file.eof()) break;
 			chars += file.get();
 		}
 	}
 	return chars;
 }
-str File::getChars(uint16 Line, uint16 Word, uint16 From, uint16 To) {
+str File::getChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 	str chars = "";
 	if (To < From) {
 		if (!pointTo(Line, Word, To)) return "";
 		chars += file.get();
 
-		for (uint16 currentChar = To; currentChar < From; ++currentChar) {
+		for (uint32 currentChar = To; currentChar < From; ++currentChar) {
 			if (file.eof()) break;
 			chars = (char)file.get() + chars;
 		}
@@ -375,7 +440,7 @@ str File::getChars(uint16 Line, uint16 Word, uint16 From, uint16 To) {
 		if (!pointTo(Line, Word, From)) return "";
 		chars += file.get();
 
-		for (uint16 currentChar = From; currentChar < To; ++currentChar) {
+		for (uint32 currentChar = From; currentChar < To; ++currentChar) {
 			if (file.eof()) break;
 			chars += file.get();
 		}
@@ -384,12 +449,11 @@ str File::getChars(uint16 Line, uint16 Word, uint16 From, uint16 To) {
 }
 
 
-//FARE fattibili senza ricopiare tutto il file
-bool File::addLine(uint16 Line, str ToAdd) {
-	uint16 fileLength = getNrChars();
+bool File::addLine(uint32 Line, str ToAdd) {
+	uint32 fileLength = getNrChars();
 
 
-	if (!pointTo(Line, 0, 0)) return false;
+	if (!pointTo(Line, -1, -1)) return false;
 	if (file.tellg() > 0) {
 		file.seekg(-1, std::ios_base::cur);
 	}
@@ -423,11 +487,11 @@ bool File::addLine(uint16 Line, str ToAdd) {
 
 	return true;
 }
-bool File::addWord(uint16 Word, str ToAdd) {
-	uint16 fileLength = getNrChars();
+bool File::addWord(uint32 Word, str ToAdd) {
+	uint32 fileLength = getNrChars();
 
 
-	if (!pointTo(0, Word, 0)) return false;
+	if (!pointTo(-1, Word, -1)) return false;
 	if (file.tellg() > 0) {
 		file.seekg(-1, std::ios_base::cur);
 	}
@@ -464,11 +528,11 @@ bool File::addWord(uint16 Word, str ToAdd) {
 
 	return true;
 }
-bool File::addWord(uint16 Line, uint16 Word, str ToAdd) {
-	uint16 fileLength = getNrChars();
+bool File::addWord(uint32 Line, uint32 Word, str ToAdd) {
+	uint32 fileLength = getNrChars();
 
 
-	if (!pointTo(Line, Word, 0)) return false;
+	if (!pointTo(Line, Word, -1)) return false;
 	if (file.tellg() > 0) {
 		file.seekg(-1, std::ios_base::cur);
 	}
@@ -505,11 +569,11 @@ bool File::addWord(uint16 Line, uint16 Word, str ToAdd) {
 
 	return true;
 }
-bool File::addChar(uint16 Char, char ToAdd) {
-	uint16 fileLength = getNrChars();
+bool File::addChar(uint32 Char, char ToAdd) {
+	uint32 fileLength = getNrChars();
 
 
-	if (!pointTo(0, 0, Char)) return false;
+	if (!pointTo(-1, -1, Char)) return false;
 
 
 	char buffer;
@@ -530,11 +594,11 @@ bool File::addChar(uint16 Char, char ToAdd) {
 
 	return true;
 }
-bool File::addChar(uint16 Line, uint16 Char, char ToAdd) {
-	uint16 fileLength = getNrChars();
+bool File::addChar(uint32 Line, uint32 Char, char ToAdd) {
+	uint32 fileLength = getNrChars();
 
 
-	if (!pointTo(Line, 0, Char)) return false;
+	if (!pointTo(Line, -1, Char)) return false;
 
 
 	char buffer;
@@ -555,8 +619,8 @@ bool File::addChar(uint16 Line, uint16 Char, char ToAdd) {
 
 	return true;
 }
-bool File::addChar(uint16 Line, uint16 Word, uint16 Char, char ToAdd) {
-	uint16 fileLength = getNrChars();
+bool File::addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd) {
+	uint32 fileLength = getNrChars();
 
 
 	if (!pointTo(Line, Word, Char)) return false;
@@ -581,7 +645,8 @@ bool File::addChar(uint16 Line, uint16 Word, uint16 Char, char ToAdd) {
 	return true;
 }
 
-bool File::replaceLine(uint16 Line, str Replacement) {
+
+bool File::replaceLine(uint32 Line, str Replacement) {
 	bool fileEndsWithNewline = 0;
 	if (!pointToBeg()) return false;
 	file.seekg(-1, std::ios_base::end);
@@ -593,7 +658,7 @@ bool File::replaceLine(uint16 Line, str Replacement) {
 
 
 	str tempStr;
-	int16 currentLine = 0;
+	uint32 currentLine = 0;
 	
 
 	if (getline(file, tempStr)) {
@@ -635,9 +700,9 @@ bool File::replaceLine(uint16 Line, str Replacement) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::replaceWord(uint16 Word, str Replacement) {
-	std::streampos wordPos = getPosition(0, Word, 0);
-	if (-1 == wordPos) return false;
+bool File::replaceWord(uint32 Word, str Replacement) {
+	std::streampos wordPos = getPosition(-1, Word, -1);
+	if (-1 == wordPos || -2 == wordPos) return false;
 
 
 	fstm tempFile;
@@ -652,9 +717,6 @@ bool File::replaceWord(uint16 Word, str Replacement) {
 		tempChar = file.get();
 		if (!file.eof()) {
 			if (currentChar++ == wordPos) {
-				//if (tempChar == '\n') {
-				//	tempFile << '\n';
-				//}
 				while (!isspace(file.get())) {}
 				file.seekg(-1, std::ios_base::cur);
 
@@ -680,9 +742,10 @@ bool File::replaceWord(uint16 Word, str Replacement) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::replaceWord(uint16 Line, uint16 Word, str Replacement) {
-	std::streampos wordPos = getPosition(Line, Word, 0);
-	if (-1 == wordPos) return false;
+bool File::replaceWord(uint32 Line, uint32 Word, str Replacement) {
+	std::streampos wordPos = getPosition(Line, Word, -1);
+	if (-1 == wordPos || -2 == wordPos) return false;
+
 
 
 	fstm tempFile;
@@ -726,21 +789,21 @@ bool File::replaceWord(uint16 Line, uint16 Word, str Replacement) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::replaceChar(uint16 Char, char Replacement) {
-	if (!pointTo(0, 0, Char)) return false;
+bool File::replaceChar(uint32 Char, char Replacement) {
+	if (!pointTo(-1, -1, Char)) return false;
 
 	file.put(Replacement);
 
 	return true;
 }
-bool File::replaceChar(uint16 Line, uint16 Char, char Replacement) {
-	if (!pointTo(Line, 0, Char)) return false;
+bool File::replaceChar(uint32 Line, uint32 Char, char Replacement) {
+	if (!pointTo(Line, -1, Char)) return false;
 
 	file.put(Replacement);
 
 	return true;
 }
-bool File::replaceChar(uint16 Line, uint16 Word, uint16 Char, char Replacement) {
+bool File::replaceChar(uint32 Line, uint32 Word, uint32 Char, char Replacement) {
 	if (!pointTo(Line, Word, Char)) return false;
 
 	file.put(Replacement);
@@ -748,7 +811,8 @@ bool File::replaceChar(uint16 Line, uint16 Word, uint16 Char, char Replacement) 
 	return true;
 }
 
-bool File::deleteLine(uint16 Line) {
+
+bool File::deleteLine(uint32 Line) {
 	bool fileEndsWithNewline = 0;
 	if (!pointToBeg()) return false;
 	file.seekg(-1, std::ios_base::end);
@@ -761,7 +825,7 @@ bool File::deleteLine(uint16 Line) {
 
 	bool firstIteration = 1;
 	str tempStr;
-	int16 currentLine = 0;
+	uint32 currentLine = 0;
 
 
 	while (1) {
@@ -779,7 +843,7 @@ bool File::deleteLine(uint16 Line) {
 			}
 		}
 	}
-	if (fileEndsWithNewline) {
+	if (fileEndsWithNewline && currentLine != Line) {
 		tempFile << "\r\n";
 	}
 
@@ -797,18 +861,78 @@ bool File::deleteLine(uint16 Line) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::deleteWord(uint16 Word) {
-	std::streampos wordPos = getPosition(0, Word, 0);
-	if (-1 == wordPos) return true;
+bool File::deleteWord(uint32 Word) {
+	std::streampos wordPos = getPosition(-1, Word, -1);
+	if (-1 == wordPos) return false;
+	else if (-2 == wordPos) return true;
 
+
+	file.seekg(wordPos);
+	bool atEndLine = 0;
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (file.eof()) {
+			atEndLine = 1;
+			if (0 != wordPos) {
+				file.seekg(wordPos - (std::streampos)1);
+				if (file.get() != '\n') wordPos -= 1;
+			}
+			break;
+		}
+		if (isspace(tempChar)) {
+			if (tempChar == '\r') {
+				atEndLine = 1;
+				if (0 != wordPos) {
+					file.seekg(wordPos - (std::streampos)1);
+					if (file.get() != '\n') wordPos -= 1;
+				}
+			}
+			break;
+		}
+	}
+	
 
 	fstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
-	char tempChar;
-	int16 currentChar = 0;
-
+	uint32 currentChar = 0;
+	if (atEndLine) {
+		while (1) {
+			tempChar = file.get();
+			if (file.eof()) break;
+			if (currentChar++ == wordPos) {
+				file.get();
+				while (1) {
+					if (isspace(file.get())) {
+						tempFile << '\r';
+						break;
+					}
+					if (file.eof()) break;
+				}
+				if (file.eof()) break;
+			}
+			else {
+				tempFile << tempChar;
+			}
+		}
+	}
+	else {
+		while (1) {
+			tempChar = file.get();
+			if (file.eof()) break;
+			if (currentChar++ == wordPos) {
+				while (1) {
+					if (isspace(file.get()) || file.eof()) break;
+				}
+				if (file.eof()) break;
+			}
+			else {
+				tempFile << tempChar;
+			}
+		}
+	}
 
 	while (1) {
 		tempChar = file.get();
@@ -845,18 +969,78 @@ bool File::deleteWord(uint16 Word) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::deleteWord(uint16 Line, uint16 Word) {
-	std::streampos wordPos = getPosition(Line, Word, 0);
-	if (-1 == wordPos) return true;
+bool File::deleteWord(uint32 Line, uint32 Word) {
+	std::streampos wordPos = getPosition(Line, Word, -1);
+	if (-1 == wordPos) return false;
+	else if (-2 == wordPos) return true;
+
+
+	file.seekg(wordPos);
+	bool atEndLine = 0;
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (file.eof()) {
+			atEndLine = 1;
+			if (0 != wordPos) {
+				file.seekg(wordPos - (std::streampos)1);
+				if (file.get() != '\n') wordPos -= 1;
+			}
+			break;
+		}
+		if (isspace(tempChar)) {
+			if (tempChar == '\r') {
+				atEndLine = 1;
+				if (0 != wordPos) {
+					file.seekg(wordPos - (std::streampos)1);
+					if (file.get() != '\n') wordPos -= 1;
+				}
+			}
+			break;
+		}
+	}
 
 
 	fstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
-	char tempChar;
-	int16 currentChar = 0;
-
+	uint32 currentChar = 0;
+	if (atEndLine) {
+		while (1) {
+			tempChar = file.get();
+			if (file.eof()) break;
+			if (currentChar++ == wordPos) {
+				file.get();
+				while (1) {
+					if (isspace(file.get())) {
+						tempFile << '\r';
+						break;
+					}
+					if (file.eof()) break;
+				}
+				if (file.eof()) break;
+			}
+			else {
+				tempFile << tempChar;
+			}
+		}
+	}
+	else {
+		while (1) {
+			tempChar = file.get();
+			if (file.eof()) break;
+			if (currentChar++ == wordPos) {
+				while (1) {
+					if (isspace(file.get()) || file.eof()) break;
+				}
+				if (file.eof()) break;
+			}
+			else {
+				tempFile << tempChar;
+			}
+		}
+	}
 
 	while (1) {
 		tempChar = file.get();
@@ -893,9 +1077,10 @@ bool File::deleteWord(uint16 Line, uint16 Word) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::deleteChar(uint16 Char) {
-	std::streampos charPos = getPosition(0, 0, Char);
-	if (-1 == charPos) return true;
+bool File::deleteChar(uint32 Char) {
+	std::streampos charPos = getPosition(-1, -1, Char);
+	if (-1 == charPos) return false;
+	else if (-2 == charPos) return true;
 
 
 	fstm tempFile;
@@ -903,7 +1088,7 @@ bool File::deleteChar(uint16 Char) {
 
 
 	char tempChar;
-	int16 currentChar = 0;
+	uint32 currentChar = 0;
 
 
 	while (1) {
@@ -930,9 +1115,10 @@ bool File::deleteChar(uint16 Char) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::deleteChar(uint16 Line, uint16 Char) {
-	std::streampos charPos = getPosition(Line, 0, Char);
-	if (-1 == charPos) return true;
+bool File::deleteChar(uint32 Line, uint32 Char) {
+	std::streampos charPos = getPosition(Line, -1, Char);
+	if (-1 == charPos) return false;
+	else if (-2 == charPos) return true;
 
 
 	fstm tempFile;
@@ -940,7 +1126,7 @@ bool File::deleteChar(uint16 Line, uint16 Char) {
 
 
 	char tempChar;
-	int16 currentChar = 0;
+	uint32 currentChar = 0;
 
 
 	while (1) {
@@ -967,9 +1153,10 @@ bool File::deleteChar(uint16 Line, uint16 Char) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::deleteChar(uint16 Line, uint16 Word, uint16 Char) {
+bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 	std::streampos charPos = getPosition(Line, Word, Char);
-	if (-1 == charPos) return true;
+	if (-1 == charPos) return false;
+	else if (-2 == charPos) return true;
 
 
 	fstm tempFile;
@@ -977,7 +1164,7 @@ bool File::deleteChar(uint16 Line, uint16 Word, uint16 Char) {
 
 
 	char tempChar;
-	int16 currentChar = 0;
+	uint32 currentChar = 0;
 
 
 	while (1) {
@@ -1005,7 +1192,7 @@ bool File::deleteChar(uint16 Line, uint16 Word, uint16 Char) {
 	return true;
 }
 
-//FARE
+//testare FARE
 bool File::appendLine(str ToAppend) {
 	if (!pointToEnd()) return false;
 
@@ -1020,11 +1207,11 @@ bool File::appendWord(str ToAppend) {
 
 	return true;
 }
-bool File::appendWord(uint16 Line, str ToAppend) {
-	uint16 fileLength = getNrChars();
+bool File::appendWord(uint32 Line, str ToAppend) {
+	uint32 fileLength = getNrChars();
 
 
-	if (!pointTo(Line, 0, 0)) return false;
+	if (!pointTo(Line, -1, -1)) return false;
 
 
 	while (1) {
@@ -1064,31 +1251,89 @@ bool File::appendChar(char ToAppend) {
 
 	return true;
 }
-bool File::appendChar(uint16 Line, char ToAppend) {
-	if (!pointTo(Line, 0, 0)) return false;
+bool File::appendChar(uint32 Line, char ToAppend) {
+	uint32 fileLength = getNrChars();
+
+
+	if (!pointTo(Line, -1, -1)) return false;
+	while (1) {
+		if (file.get() == '\r') {
+			file.seekg(-1, std::ios_base::cur);
+			break;
+		}
+		if (file.eof()) {
+			pointToEnd();
+			break;
+		}
+	}
+
+
+	char buffer;
+	std::streampos pointerPosition = file.tellg();
+
+
+	while (pointerPosition < fileLength) {
+		file.seekg(pointerPosition);
+		buffer = file.get();
+		file.seekp(pointerPosition);
+		file.put(ToAppend);
+
+		ToAppend = buffer;
+		pointerPosition += 1;
+	}
+	file.put(ToAppend);
 
 	return true;
 }
-bool File::appendChar(uint16 Line, uint16 Word, char ToAppend) {
-	if (!pointTo(Line, Word, 0)) return false;
+bool File::appendChar(uint32 Line, uint32 Word, char ToAppend) {
+	uint32 fileLength = getNrChars();
+
+
+	if (!pointTo(Line, Word, -1)) return false;
+	while (1) {
+		if (!isspace(file.get())) {
+			file.seekg(-1, std::ios_base::cur);
+			break;
+		}
+		if (file.eof()) {
+			pointToEnd();
+			break;
+		}
+	}
+
+
+	char buffer;
+	std::streampos pointerPosition = file.tellg();
+
+
+	while (pointerPosition < fileLength) {
+		file.seekg(pointerPosition);
+		buffer = file.get();
+		file.seekp(pointerPosition);
+		file.put(ToAppend);
+
+		ToAppend = buffer;
+		pointerPosition += 1;
+	}
+	file.put(ToAppend);
 
 	return true;
 }
 
 
 bool File::deleteLastEmptyLines() {
-	uint16 fileLength = getNrChars();
+	uint32 fileLength = getNrChars();
 
 
 	fstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 	
-	uint16 endPosition = 0;
+	uint32 endPosition = 0;
 	char tempChar;
 
 
-	for (uint16 pointer = 0; pointer < fileLength;) {
+	for (uint32 pointer = 0; pointer < fileLength;) {
 		tempChar = file.get();
 		if (tempChar != '\n' && tempChar != '\r') {
 			endPosition = ++pointer;
@@ -1105,7 +1350,7 @@ bool File::deleteLastEmptyLines() {
 	tempFile.seekg(0);
 
 
-	for (uint16 pointer = 0; pointer < endPosition; ++pointer) {
+	for (uint32 pointer = 0; pointer < endPosition; ++pointer) {
 		file << (char)tempFile.get();
 	}
 
@@ -1119,7 +1364,7 @@ bool File::deleteLastEmptyLines() {
 
 
 //FARE non va
-File::operator std::string() {
+File::operator str() {
 	if (!pointToBeg()) return "";
 
 	char tempChar;
