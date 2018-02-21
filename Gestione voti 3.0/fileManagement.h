@@ -3,7 +3,8 @@
 //FARE nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
 //FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (str + '\n');" invece che "file << str << '\n';"
 //FARE for (char letter : file)
-//FARE specificare nella descrizione delle funzioni se lasciano il file aperto o no "Leaves the file opened in binary input-output mode"
+//FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit"
+//FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara impossibile da leggere o scrivere
 
 #pragma once
 
@@ -24,9 +25,7 @@ private:
 	using uint16 = uint16_t;
 	using uint32 = uint32_t;
 	using uint64 = uint64_t;
-	
-	const str defaultTempPath = "temp.tmp";
-	const str defaultTempExtension = ".tmp";
+
 
 	//togliere public FARE
 public:
@@ -65,6 +64,8 @@ public:
 	}
 	fstm file;
 	str path, tempPath;
+	//FARE usarli dappertutto
+	bool TempError, ExternalError;
 	
 
 	
@@ -109,7 +110,7 @@ public:
 	/*
 	Deletes all '\r' (Carriage Return) at the end of the string
 	*/
-	void truncEndCR(str & String);
+	void truncEndCR(str &String);
 	/*
 	Opens file in read-mode and TempFile in read/write-mode
 		To be used when modifying file using a temporany file
@@ -122,7 +123,7 @@ public:
 	Gets all the content from the 1st file and copies it to the 2nd
 	Files must be already open
 	*/
-	void moveFileContent(fstm & From, fstm & To);
+	void moveFileContent(fstm &From, fstm &To);
 
 public:
 	/*
@@ -162,7 +163,6 @@ public:
 	Returns the number of chars (bytes)
 	Returns 0 if the file couldn't be opened
 	*/
-	//FARE piu' efficiente usando stat
 	uint32 getNrChars();
 	/*
 	Returns the number of chars of a line
@@ -434,21 +434,21 @@ public:
 	bool create();
 	/*
 	Moves all the file's content to the new location
-	Leaves the file opened in binary input-output mode
+	Leaves the file open in binary input-output mode
 	Returns false if either the old path file or the new path file
 		couldn't be opened, otherwise true
 	*/
 	bool move(str newPath);
 	/*
 	Replaces the filename, extension included, with the new name
-	Leaves the file opened in binary input-output mode
+	Leaves the file open in binary input-output mode
 	Returns false if either the old path file or the new path file
 		couldn't be opened, otherwise true
 	*/
 	bool rename(str newName);
 	/*
 	Deletes all the file's content
-	Leaves the file opened in binary input-output mode
+	Leaves the file open in binary input-output mode
 	Returns false if the file couldn't be opened, otherwise true
 	*/
 	bool truncate();
@@ -478,11 +478,12 @@ public:
 	/*
 	Returns true if the file exists, otherwise false
 	*/
-	bool exists();
+	bool exists() const;
 	/*
 	Returns a stat object containing various infos about the file
 	*/
-	struct stat getStat();
+	struct stat stat();
+	//FARE aggiungere altro: stati del file calcolati con stat
 
 
 	/*
@@ -502,9 +503,9 @@ public:
 	*/
 	bool eof() const;
 	/*
-	Clears the file's end-of-file error state flag (eofbit)
+	Sets the file's end-of-file error state flag (eofbit) to a value
 	*/
-	void clearEof();
+	void eof(bool Value);
 	/*
 	Returns true if either failbit or badbit are set
 	Failbit is true if there were logical errors
@@ -512,22 +513,37 @@ public:
 	*/
 	bool fail() const;
 	/*
-	Clears the file's logical error state flag (failbit)
+	Sets the file's logical error state flag (failbit) to a value
 	*/
-	void clearFail();
+	void fail(bool Value);
 	/*
 	Returns the file's badbit, that is true if there were reading/writing errors
 	*/
 	bool bad() const;
 	/*
-	Clears the file's reading/writing error state flag (badbit)
+	Sets the file's reading/writing error state flag (badbit) to a value
 	*/
-	void clearBad();
+	void bad(bool Value);
+	/*
+	Returns true if there were errors while using the temp file
+	*/
+	bool tempErr() const;
+	/*
+	Sets the errors caused by the temp file state to a value
+	*/
+	void tempErr(bool Value);
+	/*
+	Returns true if there were errors while using an external file
+	*/
+	bool extErr() const;
+	/*
+	Sets the errors caused by external files state to a value
+	*/
+	void extErr(bool Value);
 	/*
 	Returns an object that contains all the infos about the file's error state flags
 	*/
 	std::ios_base::iostate rdstate() const;
-	//FARE aggiungere altro: stati del file calcolati con stat
 
 
 	/*
@@ -541,39 +557,123 @@ public:
 	void setPath(str Path);
 
 
-	bool operator>> (File);				//mette il contenuto di questo file all'inizio del parametro
-	bool operator>> (fstm);
-	bool operator>> (str);				//
-	bool operator>> (char *);			//funziona come std::fstream>>TYPE
-	bool operator>> (char);				//il file deve essere aperto
-	bool operator>> (int64);			//
+	/*
+	Affixes the content of the file to the parameter using a temp file
+	Leaves both files open in binary input-output mode
+	The operation fails if the file, the temp file or the parameter file couldn't be opened
+	If the parameter file couldn't be opened ExternalError is set to 1
+	Returns *this
+	*/
+	File& operator>> (File &Out);
+	/*
+	Affixes the content of the file to the parameter using a temp file
+	The parameter must be already open in binary input-output mode
+	Leaves both files open in binary input-output mode
+	The operation fails if the file or the temp file couldn't be opened
+		and if the parameter isn't already open
+	If the parameter isn't already open ExternalError is set to 1
+	Returns *this
+	*/
+	File& operator>> (fstm &Out);
+	/*
+	Like ofstream::operator>>
+	The file must be already open
+	Returns *this
+	*/
+	File& operator>> (str &Out);
+	/*
+	Like ofstream::operator>>
+	The file must be already open
+	Returns *this
+	*/
+	File& operator>> (char * &Out);
+	/*
+	Like ofstream::operator>>
+	The file must be already open
+	Returns *this
+	*/
+	File& operator>> (char &Out);
+	/*
+	Like ofstream::operator>>
+	The file must be already open
+	Returns *this
+	*/
+	File& operator>> (int64 &Out);
+	/*
+	Like ofstream::operator>>
+	The file must be already open
+	Returns *this
+	*/
+	File& operator>> (double &Out);
 
 
-	File operator<< (File);				//mette il contenuto del parametro alla fine di questo file 
-	File operator<< (fstm);
-	File operator<< (str);				//
-	File operator<< (char *);			//appende alla fine del file
-	File operator<< (char);				//
-	File operator<< (int64);			//
+	/*
+	Appends the content of the parameter to the file
+	Leaves both files open in binary input-output mode
+	The operation fails if the file or the parameter file couldn't be opened
+	If the parameter file couldn't be opened ExternalError is set to 1
+	Returns *this
+	*/
+	File& operator<< (File &In);
+	/*
+	Affixes the content of the file to the parameter using a temp file
+	The parameter must be already open in binary input-output mode
+	Leaves both files open in binary input-output mode
+	The operation fails if the file or the temp file couldn't be opened
+		and if the parameter isn't already open
+	If the parameter isn't already open ExternalError is set to 1
+	Returns *this
+	*/
+	File& operator<< (fstm &In);
+	/*
+	Like ofstream::operator<<
+	The file must be already open
+	Returns *this
+	*/
+	File& operator<< (str In);
+	/*
+	Like ofstream::operator<<
+	The file must be already open
+	Returns *this
+	*/
+	File& operator<< (const char * In);
+	/*
+	Like ofstream::operator<<
+	The file must be already open
+	Returns *this
+	*/
+	File& operator<< (char In);
+	/*
+	Like ofstream::operator<<
+	The file must be already open
+	Returns *this
+	*/
+	File& operator<< (int64 In);
+	/*
+	Like ofstream::operator<<
+	The file must be already open
+	Returns *this
+	*/
+	File& operator<< (double In);
 
 
-	bool operator= (File);				//sostituisce il contenuto di questo file con quello del parametro
-	bool operator= (fstm);
-	File operator+ (File);				//ritorna un file con all'inizio il contenuto di questo file e alla fine quello del parametro
-	File operator+ (fstm);
-	bool operator+= (File);				//come operator<<
-	bool operator+= (fstm);
-	bool operator^ (File);				//scambia il contenuto dei due files
-	bool operator^ (fstm);
+	File& operator= (File);				//sostituisce il contenuto di questo file con quello del parametro
+	File& operator= (fstm);
+	File& operator+ (File);				//ritorna un file con all'inizio il contenuto di questo file e alla fine quello del parametro
+	File& operator+ (fstm);
+	File& operator+= (File);				//come operator<<
+	File& operator+= (fstm);
+	File& operator^ (File);				//scambia il contenuto dei due files FARE vedere se metterli
+	File& operator^ (fstm);
 	
 
-	char operator[] (uint32 Pos);				//ritorna il carattere in posizione specificata dal parametro
-	bool operator== (File File);				//se i due file hanno lo stesso path ritorna 1
+	char operator[] (std::streampos Pos);				//ritorna il carattere in posizione specificata dal parametro
+	bool operator== (File Path);				//se i due file hanno lo stesso path ritorna 1
 	bool operator== (str Path);
-	bool samePath(File File);
-	bool samePath(str Path);
-	bool operator!= (File File);				//se i due file non hanno lo stesso path ritorna 1
-	bool operator!= (str Path);
+	bool operator!= (File Path);				//se i due file non hanno lo stesso path ritorna 1
+	bool operator!= (str Path);	
+
+
 	operator char*();							//scrive tutto il file in un array di caratteri
 	char * cString();
 	/*
@@ -588,6 +688,6 @@ public:
 	str string();
 	operator fstm();
 	fstm fstream();
-	operator bool();							//ritorna 1 se il file e' aperto
-	bool operator! ();							//ritorna 1 se il file e' chiuso
+	operator bool();							//ritorna 1 se il file non ha problemi ed e' aperto
+	bool operator! ();							//ritorna 1 se il file ha problemi o e' chiuso
 };

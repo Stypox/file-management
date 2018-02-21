@@ -86,9 +86,14 @@ void printSpaces(str string) {
 
 
 int main() {
-	File inFile("input3.txt");
-	std::cout << inFile.exists();
+	File inFile("input.txt");
+	File outFile("output.txt");
+	if (!outFile.exists()) outFile.create();
+	//fstm outFile("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+	//if (!outFile.is_open()) outFile.open("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
 
+	std::cout << (outFile << inFile);
+	std::cout << inFile.extErr() << inFile.eof();
 
 
 	//char testChar;
@@ -162,7 +167,8 @@ int main() {
 	std::cout << "";
 	std::cout << "";
 
-	inFile.file.close();
+	inFile.close();
+	outFile.close();
 	askEnd();
 	return 0;
 }
