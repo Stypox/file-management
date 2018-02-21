@@ -20,12 +20,6 @@ using uint16 = uint16_t;
 using uint32 = uint32_t;
 using uint64 = uint64_t;
 
-bool File::checkOpen() {
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
-	if (file.is_open()) return true;
-	return false;
-}
-
 //controllare che la modifica funzioni dappertutto FARE
 bool File::pointTo(uint32 Line, uint32 Word, uint32 Char) {
 	if (!pointToBeg()) return false;
@@ -78,14 +72,14 @@ bool File::pointTo(uint32 Line, uint32 Word, uint32 Char) {
 	return true;
 }
 bool File::pointToBeg() {
-	if (!file.is_open() && !checkOpen()) return false;
+	if (!file.is_open() && !open()) return false;
 	file.clear(file.eofbit);
 	file.seekg(0);
 	file.seekp(0);
 	return true;
 }
 bool File::pointToEnd() {
-	if (!file.is_open() && !checkOpen()) return false;
+	if (!file.is_open() && !open()) return false;
 	file.clear(file.eofbit);
 	file.seekg(0, std::ios_base::end);
 	file.seekp(0, std::ios_base::end);
@@ -180,7 +174,7 @@ bool File::openTempToModifyFile(fstm & TempFile) {
 	if (!file.is_open()) return false;
 
 	if (TempFile.is_open()) TempFile.close();
-	TempFile.open(tempPath.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
+	TempFile.open(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
 	if (!TempFile.is_open()) {
 		file.close();
 		return false;
@@ -232,11 +226,10 @@ uint32 File::getNrWords(uint32 Line) {
 	return countWords(tempStr);
 }
 uint32 File::getNrChars() {
-	if (!pointToBeg()) return 0;
+	struct stat buffer;
+	if (stat(path.c_str(), &buffer) != 0) return 0;
 
-	file.seekg(0, std::ios_base::end);
-
-	return (uint32)file.tellg();
+	return (uint32)buffer.st_size;
 }
 uint32 File::getNrChars(uint32 Line) {
 	if (!pointTo(Line, 0, 0)) return 0;
@@ -688,7 +681,7 @@ bool File::replaceLine(uint32 Line, str Replacement) {
 
 
 	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -732,7 +725,7 @@ bool File::replaceWord(uint32 Word, str Replacement) {
 	}
 
 	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 	moveFileContent(tempFile, file);
@@ -777,7 +770,7 @@ bool File::replaceWord(uint32 Line, uint32 Word, str Replacement) {
 
 
 	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open(path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -849,7 +842,7 @@ bool File::deleteLine(uint32 Line) {
 
 
 	file.close();
-	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
+	file.open(path, std::ios::binary | std::ios::out | std::ios::trunc);
 	tempFile.seekg(0);
 
 
@@ -957,7 +950,7 @@ bool File::deleteWord(uint32 Word) {
 
 
 	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -1065,7 +1058,7 @@ bool File::deleteWord(uint32 Line, uint32 Word) {
 
 
 	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -1103,7 +1096,7 @@ bool File::deleteChar(uint32 Char) {
 
 
 	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -1141,7 +1134,7 @@ bool File::deleteChar(uint32 Line, uint32 Char) {
 
 
 	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open(path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -1179,7 +1172,7 @@ bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 
 
 	file.close();
-	file.open(path.c_str(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -1346,7 +1339,7 @@ bool File::deleteLastEmptyLines() {
 
 
 	file.close();
-	file.open(path.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
+	file.open( path, std::ios::binary | std::ios::out | std::ios::trunc);
 	tempFile.seekg(0);
 
 
@@ -1361,6 +1354,111 @@ bool File::deleteLastEmptyLines() {
 	return true;
 }
 
+
+bool File::create() {
+	file.open(path, std::ios_base::app);
+	file.close();
+	if (open()) return true;
+	return false;
+}
+bool File::move(str newPath) {
+	if (file.is_open()) file.close();
+	file.open(newPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
+	if (!file.is_open()) return false;
+	fstm oldFile(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+	if (!oldFile.is_open()) {
+		file.close();
+		return false;
+	}
+
+	moveFileContent(oldFile, file);
+
+	oldFile.close();
+
+	std::remove(path.c_str());
+	path = newPath;
+	return true;
+}
+bool File::rename(str newName) {
+	str tempPath = path;
+	while (!tempPath.empty()) {
+		if (tempPath.back() == '/') break;
+		tempPath.pop_back();
+	}
+	tempPath += newName;
+	return move(tempPath);
+}
+bool File::truncate() {
+	if (file.is_open()) file.close();
+	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
+	if (file.is_open()) return true;
+	return false;
+}
+void File::remove() {
+	if (file.is_open()) file.close();
+	std::remove(path.c_str());
+}
+
+
+bool File::open() {
+	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+	if (file.is_open()) return true;
+	return false;
+}
+void File::close() {
+	if (file.is_open()) file.close();
+}
+bool File::isOpen() const {
+	return file.is_open();
+}
+
+
+bool File::exists() {
+	struct stat buffer;
+	return (stat(path.c_str(), &buffer) == 0);
+}
+struct stat File::getStat() {
+	struct stat buffer;
+	stat(path.c_str(), &buffer);
+	return buffer;
+}
+
+
+bool File::good() const {
+	return false;
+}
+void File::clear() {
+	file.clear();
+}
+bool File::eof() const {
+	return file.eof();
+}
+void File::clearEof() {
+	file.clear(file.eofbit);
+}
+bool File::fail() const {
+	return file.fail();
+}
+void File::clearFail() {
+	file.clear(file.failbit);
+}
+bool File::bad() const {
+	return file.bad();
+}
+void File::clearBad() {
+	file.clear(file.badbit);
+}
+std::ios_base::iostate File::rdstate() const {
+	return file.rdstate();
+}
+
+str File::getPath() const {
+	return path;
+}
+void File::setPath(str Path) {
+	if (file.is_open()) file.close();
+	path = Path;
+}
 
 
 //FARE non va
@@ -1394,3 +1492,4 @@ str File::string() {
 
 	return fileStr;
 }
+

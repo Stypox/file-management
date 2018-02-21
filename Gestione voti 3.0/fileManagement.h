@@ -3,6 +3,7 @@
 //FARE nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
 //FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (str + '\n');" invece che "file << str << '\n';"
 //FARE for (char letter : file)
+//FARE specificare nella descrizione delle funzioni se lasciano il file aperto o no "Leaves the file opened in binary input-output mode"
 
 #pragma once
 
@@ -27,6 +28,7 @@ private:
 	const str defaultTempPath = "temp.tmp";
 	const str defaultTempExtension = ".tmp";
 
+	//togliere public FARE
 public:
 	//eliminare FARE
 	void printSpaces(char Char) {
@@ -65,12 +67,6 @@ public:
 	str path, tempPath;
 	
 
-	/*
-	Opens the file in binary input-output mode
-		If the file doesn't exist it won't be created
-	Returns false if the file couldn't be opened, otherwise true
-	*/
-	bool checkOpen();
 	
 	/*
 	The two pointers inside the file are moved to the new position
@@ -166,6 +162,7 @@ public:
 	Returns the number of chars (bytes)
 	Returns 0 if the file couldn't be opened
 	*/
+	//FARE piu' efficiente usando stat
 	uint32 getNrChars();
 	/*
 	Returns the number of chars of a line
@@ -261,7 +258,6 @@ public:
 	
 	/*
 	Adds a line using a temp file
-	Deletes all '\r' at the end of the line FARE
 	If the specified line is out of bounds some newlines get created
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened, otherwise true
@@ -390,20 +386,35 @@ public:
 	bool deleteChar(uint32 Line, uint32 Word, uint32 Char);
 
 
-	//FARE vedere se metterli o no
-	bool affixLine(str ToAffix);
-	bool affixWord(str ToAffix);
-	bool affixWord(uint32 Line, str ToAffix);
-	bool affixChar(char ToAffix);
-	bool affixChar(uint32 Line, char ToAffix);
-	bool affixChar(uint32 Line, uint32 Word, char ToAffix);
-
-
+	/*
+	Adds a line (with endline before it) at the end of the file
+	Returns false if the file couldn't be opened, otherwise true
+	*/
 	bool appendLine(str ToAppend);
+	/*
+	Adds a word (with a space before it) at the end of the file
+	Returns false if the file couldn't be opened, otherwise true
+	*/
 	bool appendWord(str ToAppend);
+	/*
+	Adds a word (with a space before it) after the specified word
+	Returns false if the file couldn't be opened, otherwise true
+	*/
 	bool appendWord(uint32 Line, str ToAppend);
+	/*
+	Adds a char at the end of the file
+	Returns false if the file couldn't be opened, otherwise true
+	*/
 	bool appendChar(char ToAppend);
+	/*
+	Adds a char at the end of the specified line
+	Returns false if the file couldn't be opened, otherwise true
+	*/
 	bool appendChar(uint32 Line, char ToAppend);
+	/*
+	Adds a char at the end of the specified word
+	Returns false if the file couldn't be opened, otherwise true
+	*/
 	bool appendChar(uint32 Line, uint32 Word, char ToAppend);
 
 
@@ -415,32 +426,119 @@ public:
 	bool deleteLastEmptyLines();
 
 
+	/*
+	Creates the file using the current path
+	Leaves the file open in binary input-output mode
+	Returns false if it couldn't be created/opened, otherwise true
+	*/
 	bool create();
+	/*
+	Moves all the file's content to the new location
+	Leaves the file opened in binary input-output mode
+	Returns false if either the old path file or the new path file
+		couldn't be opened, otherwise true
+	*/
+	bool move(str newPath);
+	/*
+	Replaces the filename, extension included, with the new name
+	Leaves the file opened in binary input-output mode
+	Returns false if either the old path file or the new path file
+		couldn't be opened, otherwise true
+	*/
 	bool rename(str newName);
-	bool remove();
+	/*
+	Deletes all the file's content
+	Leaves the file opened in binary input-output mode
+	Returns false if the file couldn't be opened, otherwise true
+	*/
+	bool truncate();
+	/*
+	Removes the file
+	Automatically closes the file if it's open
+	*/
+	void remove();
 
 
-	bool open();  
+	/*
+	Opens the file in binary input-output mode
+	If the file doesn't exist it won't be created
+	Returns false if the file couldn't be opened, otherwise true
+	*/
+	bool open();
+	/*
+	Closes the file if it wasn't already
+	*/
 	void close();
-	bool exists();
+	/*
+	Returns true if the file is open, otherwise false
+	*/
 	bool isOpen() const;
-	bool isClosed() const;
 
+
+	/*
+	Returns true if the file exists, otherwise false
+	*/
+	bool exists();
+	/*
+	Returns a stat object containing various infos about the file
+	*/
+	struct stat getStat();
+
+
+	/*
+	Returns the file's goodbit, that is true only if
+		neither eofbit, failbit nor badbit are set
+	Eofbit is true if the end of file was reached
+		Failbit is true if there were logical errors
+		Badbit is true if there were reading or writing errors
+	*/
 	bool good() const;
+	/*
+	Clears all the file's error state flags (eofbit, failbit, badbit)
+	*/
 	void clear();
+	/*
+	Returns the file's eofbit, that is true if the end of file was reached
+	*/
 	bool eof() const;
+	/*
+	Clears the file's end-of-file error state flag (eofbit)
+	*/
 	void clearEof();
+	/*
+	Returns true if either failbit or badbit are set
+	Failbit is true if there were logical errors
+		Badbit is true if there were reading or writing errors
+	*/
 	bool fail() const;
+	/*
+	Clears the file's logical error state flag (failbit)
+	*/
 	void clearFail();
+	/*
+	Returns the file's badbit, that is true if there were reading/writing errors
+	*/
 	bool bad() const;
+	/*
+	Clears the file's reading/writing error state flag (badbit)
+	*/
 	void clearBad();
-	bool rdstate() const;
-	void clearRdstate();
-	//FARE aggiungere altro
+	/*
+	Returns an object that contains all the infos about the file's error state flags
+	*/
+	std::ios_base::iostate rdstate() const;
+	//FARE aggiungere altro: stati del file calcolati con stat
 
 
+	/*
+	Returns the currently set path
+	*/
 	str getPath() const;
-	bool setPath();
+	/*
+	Modifies the path used to open the file
+	Closes the file if it is open
+	*/
+	void setPath(str Path);
 
 
 	bool operator>> (File);				//mette il contenuto di questo file all'inizio del parametro
@@ -482,12 +580,14 @@ public:
 	Saves all the file in a string and returns it
 	Returns "" if the file couldn't be opened
 	*/
-	operator str(); //FARE non va
+	operator str();
 	/*
 	Saves all the file in a string and returns it
 	Returns "" if the file couldn't be opened
 	*/
 	str string();
+	operator fstm();
+	fstm fstream();
 	operator bool();							//ritorna 1 se il file e' aperto
 	bool operator! ();							//ritorna 1 se il file e' chiuso
 };

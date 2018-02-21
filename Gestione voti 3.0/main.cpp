@@ -9,7 +9,7 @@ fIle >> test;
 fIle.seekg(0);
 fIle.put('b');
 
-if (!inFile.checkOpen()) return 0;
+if (!inFile.open()) return 0;
 inFile.file.put('t');
 inFile.pointTo(0, 0, 0);
 inFile.file >> test;
@@ -86,66 +86,70 @@ void printSpaces(str string) {
 
 
 int main() {
-	File inFile("input.txt");
-	char testChar;
-	str test;
+	File inFile("input3.txt");
+	std::cout << inFile.exists();
 
-	//FARE testare meglio
-	//add and delete
-	inFile.addLine(0, "La-");				//l
-	std::cout << inFile.getLine(0);
-	inFile.deleteLine(0);
-	inFile.addWord(1, "Wa1-");				//w
-	std::cout << inFile.getWord(1);
-	inFile.deleteWord(1);
-	inFile.addWord(2, 2, "Wa2-");			//lw
-	std::cout << inFile.getWord(2, 2);
-	inFile.deleteWord(2, 2);
-	inFile.addChar(0, 'A');					//c
-	std::cout << inFile.getChar(0);
-	inFile.deleteChar(0);
-	inFile.addChar(1, 1, 'B');				//lc
-	std::cout << inFile.getChar(1, 1);
-	inFile.deleteChar(1, 1);
-	inFile.addChar(2, 2, 0, 'C');			//lwc
-	std::cout << inFile.getChar(2, 2, 0);
-	inFile.deleteChar(2, 2, 0);
-	
-	//replace
-	test = inFile.getLine(1);				//l
-	inFile.replaceLine(1, "Lr-");
-	std::cout << inFile.getLine(1);
-	inFile.replaceLine(1, test);
-	test = inFile.getWord(1);				//w
-	inFile.replaceWord(1, "Wr1-");
-	std::cout << inFile.getWord(1);
-	inFile.replaceWord(1, test);
-	test = inFile.getWord(1, 0);			//lw
-	inFile.replaceWord(1, 0, "Wr2-");
-	std::cout << inFile.getWord(1, 0);
-	inFile.replaceWord(1, 0, test);
-	testChar = inFile.getChar(0);			//c
-	inFile.replaceChar(0, 'D');
-	std::cout << inFile.getChar(0);
-	inFile.replaceChar(0, testChar);
-	testChar = inFile.getChar(1, 1);		//lc
-	inFile.replaceChar(1, 1, 'E');
-	std::cout << inFile.getChar(1, 1);
-	inFile.replaceChar(1, 1, testChar);
-	testChar = inFile.getChar(2, 2, 0);		//lwc
-	inFile.replaceChar(2, 2, 0, 'F');
-	std::cout << inFile.getChar(2, 2, 0);
-	inFile.replaceChar(2, 2, 0, testChar);
 
-	/*inFile.appendChar(' ');
-	inFile.appendWord("");
-	inFile.appendLine("\r\n");
-	inFile.appendWord(0, "Ciao");*/
 
-	//FARE fa cose strane
-	inFile.addLine(7, "Ciao");
-	std::cout << "\n\n                         Intero file: " << inFile.getNrChars() << "byte\n";
-	printSpaces(inFile);
+	//char testChar;
+	//str test;
+
+	////FARE testare meglio
+	////add and delete
+	//inFile.addLine(0, "La-");				//l
+	//std::cout << inFile.getLine(0);
+	//inFile.deleteLine(0);
+	//inFile.addWord(1, "Wa1-");				//w
+	//std::cout << inFile.getWord(1);
+	//inFile.deleteWord(1);
+	//inFile.addWord(2, 2, "Wa2-");			//lw
+	//std::cout << inFile.getWord(2, 2);
+	//inFile.deleteWord(2, 2);
+	//inFile.addChar(0, 'A');					//c
+	//std::cout << inFile.getChar(0);
+	//inFile.deleteChar(0);
+	//inFile.addChar(1, 1, 'B');				//lc
+	//std::cout << inFile.getChar(1, 1);
+	//inFile.deleteChar(1, 1);
+	//inFile.addChar(2, 2, 0, 'C');			//lwc
+	//std::cout << inFile.getChar(2, 2, 0);
+	//inFile.deleteChar(2, 2, 0);
+	//
+	////replace
+	//test = inFile.getLine(1);				//l
+	//inFile.replaceLine(1, "Lr-");
+	//std::cout << inFile.getLine(1);
+	//inFile.replaceLine(1, test);
+	//test = inFile.getWord(1);				//w
+	//inFile.replaceWord(1, "Wr1-");
+	//std::cout << inFile.getWord(1);
+	//inFile.replaceWord(1, test);
+	//test = inFile.getWord(1, 0);			//lw
+	//inFile.replaceWord(1, 0, "Wr2-");
+	//std::cout << inFile.getWord(1, 0);
+	//inFile.replaceWord(1, 0, test);
+	//testChar = inFile.getChar(0);			//c
+	//inFile.replaceChar(0, 'D');
+	//std::cout << inFile.getChar(0);
+	//inFile.replaceChar(0, testChar);
+	//testChar = inFile.getChar(1, 1);		//lc
+	//inFile.replaceChar(1, 1, 'E');
+	//std::cout << inFile.getChar(1, 1);
+	//inFile.replaceChar(1, 1, testChar);
+	//testChar = inFile.getChar(2, 2, 0);		//lwc
+	//inFile.replaceChar(2, 2, 0, 'F');
+	//std::cout << inFile.getChar(2, 2, 0);
+	//inFile.replaceChar(2, 2, 0, testChar);
+
+	///*inFile.appendChar(' ');
+	//inFile.appendWord("");
+	//inFile.appendLine("\r\n");
+	//inFile.appendWord(0, "Ciao");*/
+
+	////FARE fa cose strane
+	//inFile.addLine(7, "Ciao");
+	//std::cout << "\n\n                         Intero file: " << inFile.getNrChars() << "byte\n";
+	//printSpaces(inFile);
 
 
 	std::cout << "";
