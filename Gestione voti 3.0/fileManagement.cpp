@@ -20,6 +20,11 @@ using uint16 = uint16_t;
 using uint32 = uint32_t;
 using uint64 = uint64_t;
 
+
+constexpr char defaultTempPath[] = "temp.tmp";
+constexpr char defaultTempExtension[] = ".tmp";
+
+
 //controllare che la modifica funzioni dappertutto FARE
 bool File::pointTo(uint32 Line, uint32 Word, uint32 Char) {
 	if (!pointToBeg()) return false;
@@ -176,6 +181,7 @@ bool File::openTempToModifyFile(fstm & TempFile) {
 	if (TempFile.is_open()) TempFile.close();
 	TempFile.open(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
 	if (!TempFile.is_open()) {
+		TempError = 1;
 		file.close();
 		return false;
 	}
@@ -186,17 +192,15 @@ void File::moveFileContent(fstm & From, fstm & To) {
 	char tempChar;
 	while (1) {
 		tempChar = From.get();
-		if (!From.eof()) {
-			To << tempChar;
-		}
-		else return;
+		if (From.eof()) return;
+		To << tempChar;
 	}
 }
 
 
-File::File() : path(""), tempPath(defaultTempPath) {}
-File::File(str Path) : path(Path), tempPath(Path + defaultTempExtension) {}
-File::File(str Path, str TempPath) : path(Path), tempPath(TempPath) {}
+File::File() : path(""), tempPath(defaultTempPath), TempError(0), ExternalError(0) {}
+File::File(str Path) : path(Path), tempPath(Path + defaultTempExtension), TempError(0), ExternalError(0) {}
+File::File(str Path, str TempPath) : path(Path), tempPath(TempPath), TempError(0), ExternalError(0) {}
 
 
 uint32 File::getNrLines() {
@@ -227,7 +231,7 @@ uint32 File::getNrWords(uint32 Line) {
 }
 uint32 File::getNrChars() {
 	struct stat buffer;
-	if (stat(path.c_str(), &buffer) != 0) return 0;
+	if (::stat(path.c_str(), &buffer) != 0) return 0;
 
 	return (uint32)buffer.st_size;
 }
@@ -1380,13 +1384,13 @@ bool File::move(str newPath) {
 	return true;
 }
 bool File::rename(str newName) {
-	str tempPath = path;
-	while (!tempPath.empty()) {
-		if (tempPath.back() == '/') break;
-		tempPath.pop_back();
+	str newPath = path;
+	while (!newPath.empty()) {
+		if (newPath.back() == '/') break;
+		newPath.pop_back();
 	}
-	tempPath += newName;
-	return move(tempPath);
+	newPath += newName;
+	return move(newPath);
 }
 bool File::truncate() {
 	if (file.is_open()) file.close();
@@ -1413,17 +1417,18 @@ bool File::isOpen() const {
 }
 
 
-bool File::exists() {
+bool File::exists() const {
 	struct stat buffer;
-	return (stat(path.c_str(), &buffer) == 0);
+	return (::stat(path.c_str(), &buffer) == 0);
 }
-struct stat File::getStat() {
+struct stat File::stat() {
 	struct stat buffer;
-	stat(path.c_str(), &buffer);
+	::stat(path.c_str(), &buffer);
 	return buffer;
 }
 
 
+//da testare FARE
 bool File::good() const {
 	return false;
 }
@@ -1433,24 +1438,52 @@ void File::clear() {
 bool File::eof() const {
 	return file.eof();
 }
-void File::clearEof() {
-	file.clear(file.eofbit);
+void File::eof(bool Value) {
+	if (Value) {
+		file.setstate(file.eofbit);
+	}
+	else {
+		file.clear(file.eofbit);
+	}
 }
 bool File::fail() const {
 	return file.fail();
 }
-void File::clearFail() {
-	file.clear(file.failbit);
+void File::fail(bool Value) {
+	if (Value) {
+		file.setstate(file.failbit);
+	}
+	else {
+		file.clear(file.failbit);
+	}
 }
 bool File::bad() const {
 	return file.bad();
 }
-void File::clearBad() {
-	file.clear(file.badbit);
+void File::bad(bool Value) {
+	if (Value) {
+		file.setstate(file.badbit);
+	}
+	else {
+		file.clear(file.eofbit);
+	}
+}
+bool File::tempErr() const {
+	return TempError;
+}
+void File::tempErr(bool Value) {
+	TempError = Value;
+}
+bool File::extErr() const {
+	return ExternalError;
+}
+void File::extErr(bool Value) {
+	ExternalError = Value;
 }
 std::ios_base::iostate File::rdstate() const {
 	return file.rdstate();
 }
+
 
 str File::getPath() const {
 	return path;
@@ -1458,6 +1491,146 @@ str File::getPath() const {
 void File::setPath(str Path) {
 	if (file.is_open()) file.close();
 	path = Path;
+}
+
+
+File& File::operator>>(File &Out) {
+	if (!pointToBeg()) return *this;
+	if (!Out.pointToBeg()) {
+		ExternalError = 1;
+		//Out.ExternalError = 1; //FARE se metterlo o no, perche' Out ha gia' il suo errore contenuto nel failbit del suo file e l'errore non e' esterno ma interno
+		return *this;
+	}
+	fstm tempFile(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
+	if (!tempFile.is_open()) {
+		TempError = 1;
+		return *this;
+	}
+
+	moveFileContent(Out.file, tempFile);
+
+	Out.truncate();
+	moveFileContent(file, Out.file);
+
+	tempFile.seekg(0);
+	moveFileContent(tempFile, Out.file);
+
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return *this;
+}
+File& File::operator>>(fstm &Out) {
+	if (!pointToBeg()) return *this;
+	if (!Out.is_open()) {
+		ExternalError = 1;
+		return *this;
+	}
+	Out.clear(Out.eofbit);
+	Out.seekg(0);
+	fstm tempFile(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
+	if (!tempFile.is_open()) {
+		TempError = 1;
+		return *this;
+	}
+
+	moveFileContent(Out, tempFile);
+	
+	Out.clear(Out.eofbit);
+	Out.seekg(0);
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (file.eof()) break;
+		if (Out.eof()) {
+			Out << tempChar;
+		}
+		else {
+			Out.put(tempChar);
+		}
+	}
+
+	tempFile.seekg(0);
+	while (1) {
+		tempChar = tempFile.get();
+		if (tempFile.eof()) break;
+		if (Out.eof()) {
+			Out << tempChar;
+		}
+		else {
+			Out.put(tempChar);
+		}
+	}
+
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return *this;
+}
+File& File::operator>>(str &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(char * &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(char &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(int64 &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(double &Out) {
+	file >> Out;
+	return *this;
+}
+
+//bisogna mettere che se i due file puntano allo stesso file di bloccare tutto FARE
+File& File::operator<<(File &In) {
+	if (!pointToEnd()) return *this;
+	if (!In.pointToBeg()) {
+		ExternalError = 1;
+		//In.ExternalError = 1;
+		return *this;
+	}
+
+	moveFileContent(In.file, file);
+	std::cout << "C";
+	return *this;
+}
+File& File::operator<<(fstm &In) {
+	if (!pointToEnd()) return *this;
+	if (!In.is_open()) {
+		ExternalError = 1;
+		return *this;
+	}
+	In.clear(In.eofbit);
+	In.seekg(0);
+
+	moveFileContent(In, file);
+
+	return *this;
+}
+File& File::operator<<(str In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(const char * In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(char In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(int64 In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(double In) {
+	file << In;
+	return *this;
 }
 
 
@@ -1493,3 +1666,11 @@ str File::string() {
 	return fileStr;
 }
 
+File::operator bool() {
+	if (!file.is_open()) return false;
+	return !(file.eof() || file.fail() || file.bad() || TempError || ExternalError);
+}
+bool File::operator!() {
+	if (!file.is_open()) return true;
+	return file.eof() || file.fail() || file.bad() || TempError || ExternalError;
+}
