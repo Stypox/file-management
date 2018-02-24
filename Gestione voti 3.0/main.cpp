@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <Windows.h>
 
 #include "fileManagement.h"
@@ -39,7 +40,7 @@ std::cout << "c16-50:" << inFile.getChars(15, 49) << " | c50-16:" << inFile.getC
 std::cout << "w2-4:" << inFile.getWords(1, 3) << " | w4-2:" << inFile.getWords(3, 1) << " | l2w2-4:" << inFile.getWords(1, 1, 3) << " | l2w4-2:" << inFile.getWords(1, 3, 1) << "\n\n";
 */
 
-using str = std::string;
+using string = std::string;
 using fstm = std::fstream;
 using sstm = std::stringstream;
 using int8 = int8_t;
@@ -56,7 +57,7 @@ void askEnd() {
 	std::cin >> end;
 	return;
 }
-void printSpaces(str string) {
+void printSpaces(string string) {
 	for (char letter : string) {
 		switch (letter) {
 		case ' ':
@@ -88,16 +89,18 @@ void printSpaces(str string) {
 int main() {
 	File inFile("input.txt");
 	File outFile("output.txt");
-	if (!outFile.exists()) outFile.create();
+	outFile.open();
+	inFile.open();
+	//if (!outFile.exists()) outFile.create();
 	//fstm outFile("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out);
 	//if (!outFile.is_open()) outFile.open("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-
-	std::cout << (outFile << inFile);
-	std::cout << inFile.extErr() << inFile.eof();
+	FileState state = inFile.state();
+	std::cout << state.string();
+	state.save(outFile);
 
 
 	//char testChar;
-	//str test;
+	//string test;
 
 	////FARE testare meglio
 	////add and delete

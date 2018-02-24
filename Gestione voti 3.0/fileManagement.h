@@ -1,7 +1,7 @@
 //FARE possibilita' di rimuovere (e se fattibile rimpiazzare) intervalli di caratteri/parole/linee, per diminuire il tempo necessario in caso che si debbano rimpiazzare piu' caratteri/parole/linee consecutivi.
 //FARE deleteCurrentChar() (il carattere a cui si sta puntando adesso)
 //FARE nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
-//FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (str + '\n');" invece che "file << str << '\n';"
+//FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (string + '\n');" invece che "file << string << '\n';"
 //FARE for (char letter : file)
 //FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit"
 //FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara impossibile da leggere o scrivere
@@ -12,9 +12,9 @@
 #include <string>
 #include <fstream>
 
-class File {
+struct FileState {
 private:
-	using str = std::string;
+	using string = std::string;
 	using fstm = std::fstream;
 	using sstm = std::stringstream;
 	using int8 = int8_t;
@@ -26,7 +26,28 @@ private:
 	using uint32 = uint32_t;
 	using uint64 = uint64_t;
 
+public:
+	FileState(bool Open, bool Eof, bool Fail, bool Bad, bool TempErr, bool ExtErr);
+	bool open, eof, fail, bad, tempErr, extErr;
+	operator bool();
+	string str();
+	void save(File &file);
+};
 
+class File {
+	using string = std::string;
+	using fstm = std::fstream;
+	using sstm = std::stringstream;
+	using int8 = int8_t;
+	using int16 = int16_t;
+	using int32 = int32_t;
+	using int64 = int64_t;
+	using uint8 = uint8_t;
+	using uint16 = uint16_t;
+	using uint32 = uint32_t;
+	using uint64 = uint64_t;
+
+private:
 	//togliere public FARE
 public:
 	//eliminare FARE
@@ -57,13 +78,13 @@ public:
 			std::cout << Char;
 		}
 	}
-	void printSpaces(str string) {
+	void printSpaces(string string) {
 		for (char letter : string) {
 			printSpaces(letter);
 		}
 	}
 	fstm file;
-	str path, tempPath;
+	string path, tempPath;
 	//FARE usarli dappertutto
 	bool TempError, ExternalError;
 	
@@ -106,11 +127,11 @@ public:
 	Counts the number of words in a string,
 		based on the spaces between them.
 	*/
-	uint32 countWords(str String);
+	uint32 countWords(string String);
 	/*
 	Deletes all '\r' (Carriage Return) at the end of the string
 	*/
-	void truncEndCR(str &String);
+	void truncEndCR(string &String);
 	/*
 	Opens file in read-mode and TempFile in read/write-mode
 		To be used when modifying file using a temporany file
@@ -137,12 +158,12 @@ public:
 	initializes path to the corresponding parameter
 		and tempPath to path + defaultTempExtension
 	*/
-	File(str Path);
+	File(string Path);
 	/*
 	constructor with path and tempPath
 	initializes path and tempPath to the corresponding parameters
 	*/
-	File(str Path, str TempPath);
+	File(string Path, string TempPath);
 
 	/*
 	Returns the number of '\n'
@@ -181,17 +202,17 @@ public:
 	Returns a line removing all '\r' at the end of it
 	If the line is out of bounds "" is returned
 	*/
-	str getLine(uint32 Line);
+	string getLine(uint32 Line);
 	/*
 	Returns a word
 	If the word is out of bounds "" is returned
 	*/
-	str getWord(uint32 Word);
+	string getWord(uint32 Word);
 	/*
 	Returns a word in a line
 	If the word is out of bounds "" is returned
 	*/
-	str getWord(uint32 Line, uint32 Word);
+	string getWord(uint32 Line, uint32 Word);
 	/*
 	Returns a char
 	If the char is out of bounds 0 is returned
@@ -216,7 +237,7 @@ public:
 		otherwise the order is inverted (bottom-to-top)
 	Removes all '\r' at the end of lines and adds '\r\n' between them
 	*/
-	str getLines(uint32 From, uint32 To);
+	string getLines(uint32 From, uint32 To);
 	/*
 	Returns the interval of words between From and To, both included
 	If some (or all) words are out of bounds they just get ignored
@@ -224,7 +245,7 @@ public:
 		otherwise the order is inverted (bottom-to-top)
 	Separates words with ' ', replacing any other type of space
 	*/
-	str getWords(uint32 From, uint32 To);
+	string getWords(uint32 From, uint32 To);
 	/*
 	Returns the interval of words in a line between From and To, both included
 	If some (or all) words are out of bounds they just get ignored
@@ -232,28 +253,28 @@ public:
 		otherwise the order is inverted (bottom-to-top)
 	Separates words with ' ', replacing any other type of space
 	*/
-	str getWords(uint32 Line, uint32 From, uint32 To);
+	string getWords(uint32 Line, uint32 From, uint32 To);
 	/*
 	Returns the interval of chars between From and To, both included
 	If some (or all) chars are out of bounds they just get ignored
 	If To > From the chars are returned in top-to-bottom order,
 		otherwise the order is inverted (bottom-to-top)
 	*/
-	str getChars(uint32 From, uint32 To);
+	string getChars(uint32 From, uint32 To);
 	/*
 	Returns the interval of chars in a line between From and To, both included
 	If some (or all) chars are out of bounds they just get ignored
 	If To > From the chars are returned in top-to-bottom order,
 		otherwise the order is inverted (bottom-to-top)
 	*/
-	str getChars(uint32 Line, uint32 From, uint32 To);
+	string getChars(uint32 Line, uint32 From, uint32 To);
 	/*
 	Returns the interval of chars in a word in a line between From and To, both included
 	If some (or all) chars are out of bounds they just get ignored
 	If To > From the chars are returned in top-to-bottom order,
 		otherwise the order is inverted (bottom-to-top)
 	*/
-	str getChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
+	string getChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
 
 	
 	/*
@@ -262,21 +283,21 @@ public:
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened, otherwise true
 	*/
-	bool addLine(uint32 Line, str ToAdd);
+	bool addLine(uint32 Line, string ToAdd);
 	/*
 	Adds a word using a temp file
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
-	bool addWord(uint32 Word, str ToAdd);
+	bool addWord(uint32 Word, string ToAdd);
 	/*
 	Adds a word in a line using a temp file
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
-	bool addWord(uint32 Line, uint32 Word, str ToAdd);
+	bool addWord(uint32 Line, uint32 Word, string ToAdd);
 	/*
 	Adds a char
 	Returns false if the file couldn't be opened or if the
@@ -304,21 +325,21 @@ public:
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened, otherwise true
 	*/
-	bool replaceLine(uint32 Line, str Replacement);
+	bool replaceLine(uint32 Line, string Replacement);
 	/*
 	Replaces a word using a temp file
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
-	bool replaceWord(uint32 Word, str Replacement);
+	bool replaceWord(uint32 Word, string Replacement);
 	/*
 	Replaces a word in a line using a temp file
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
-	bool replaceWord(uint32 Line, uint32 Word, str Replacement);
+	bool replaceWord(uint32 Line, uint32 Word, string Replacement);
 	/*
 	Replaces a char
 	Leaves the file open after returning
@@ -390,17 +411,17 @@ public:
 	Adds a line (with endline before it) at the end of the file
 	Returns false if the file couldn't be opened, otherwise true
 	*/
-	bool appendLine(str ToAppend);
+	bool appendLine(string ToAppend);
 	/*
 	Adds a word (with a space before it) at the end of the file
 	Returns false if the file couldn't be opened, otherwise true
 	*/
-	bool appendWord(str ToAppend);
+	bool appendWord(string ToAppend);
 	/*
 	Adds a word (with a space before it) after the specified word
 	Returns false if the file couldn't be opened, otherwise true
 	*/
-	bool appendWord(uint32 Line, str ToAppend);
+	bool appendWord(uint32 Line, string ToAppend);
 	/*
 	Adds a char at the end of the file
 	Returns false if the file couldn't be opened, otherwise true
@@ -438,14 +459,14 @@ public:
 	Returns false if either the old path file or the new path file
 		couldn't be opened, otherwise true
 	*/
-	bool move(str newPath);
+	bool move(string newPath);
 	/*
 	Replaces the filename, extension included, with the new name
 	Leaves the file open in binary input-output mode
 	Returns false if either the old path file or the new path file
 		couldn't be opened, otherwise true
 	*/
-	bool rename(str newName);
+	bool rename(string newName);
 	/*
 	Deletes all the file's content
 	Leaves the file open in binary input-output mode
@@ -466,7 +487,7 @@ public:
 	*/
 	bool open();
 	/*
-	Closes the file if it wasn't already
+	Closes the file and clears all errors if it wasn't already open
 	*/
 	void close();
 	/*
@@ -482,48 +503,44 @@ public:
 	/*
 	Returns a stat object containing various infos about the file
 	*/
-	struct stat stat();
+	struct stat info();
 	//FARE aggiungere altro: stati del file calcolati con stat
 
 
 	/*
-	Returns the file's goodbit, that is true only if
-		neither eofbit, failbit nor badbit are set
-	Eofbit is true if the end of file was reached
-		Failbit is true if there were logical errors
-		Badbit is true if there were reading or writing errors
+	Returns true if no errors are set
 	*/
 	bool good() const;
 	/*
-	Clears all the file's error state flags (eofbit, failbit, badbit)
+	Clears all the errors: eofbit, failbit, badbit, TempError and ExternalError
 	*/
 	void clear();
 	/*
 	Returns the file's eofbit, that is true if the end of file was reached
 	*/
-	bool eof() const;
+	bool eofErr() const;
 	/*
 	Sets the file's end-of-file error state flag (eofbit) to a value
 	*/
-	void eof(bool Value);
+	void eofErr(bool Value);
 	/*
 	Returns true if either failbit or badbit are set
 	Failbit is true if there were logical errors
 		Badbit is true if there were reading or writing errors
 	*/
-	bool fail() const;
+	bool failErr() const;
 	/*
 	Sets the file's logical error state flag (failbit) to a value
 	*/
-	void fail(bool Value);
+	void failErr(bool Value);
 	/*
 	Returns the file's badbit, that is true if there were reading/writing errors
 	*/
-	bool bad() const;
+	bool badErr() const;
 	/*
 	Sets the file's reading/writing error state flag (badbit) to a value
 	*/
-	void bad(bool Value);
+	void badErr(bool Value);
 	/*
 	Returns true if there were errors while using the temp file
 	*/
@@ -543,24 +560,26 @@ public:
 	/*
 	Returns an object that contains all the infos about the file's error state flags
 	*/
-	std::ios_base::iostate rdstate() const;
+	FileState state() const;
+
 
 
 	/*
 	Returns the currently set path
 	*/
-	str getPath() const;
+	string getPath() const;
 	/*
 	Modifies the path used to open the file
 	Closes the file if it is open
 	*/
-	void setPath(str Path);
+	void setPath(string Path);
 
 
 	/*
 	Affixes the content of the file to the parameter using a temp file
 	Leaves both files open in binary input-output mode
 	The operation fails if the file, the temp file or the parameter file couldn't be opened
+	If the temp file couldn't be opened TempError is set to 1
 	If the parameter file couldn't be opened ExternalError is set to 1
 	Returns *this
 	*/
@@ -580,7 +599,7 @@ public:
 	The file must be already open
 	Returns *this
 	*/
-	File& operator>> (str &Out);
+	File& operator>> (string &Out);
 	/*
 	Like ofstream::operator>>
 	The file must be already open
@@ -630,7 +649,7 @@ public:
 	The file must be already open
 	Returns *this
 	*/
-	File& operator<< (str In);
+	File& operator<< (string In);
 	/*
 	Like ofstream::operator<<
 	The file must be already open
@@ -661,17 +680,22 @@ public:
 	File& operator= (fstm);
 	File& operator+ (File);				//ritorna un file con all'inizio il contenuto di questo file e alla fine quello del parametro
 	File& operator+ (fstm);
-	File& operator+= (File);				//come operator<<
+	File& operator+= (File);			//appende in fondo
 	File& operator+= (fstm);
+	File& operator+= (string In);
+	File& operator+= (const char * In);
+	File& operator+= (char In);
+	File& operator+= (int64 In);
+	File& operator+= (double In);
 	File& operator^ (File);				//scambia il contenuto dei due files FARE vedere se metterli
 	File& operator^ (fstm);
 	
 
 	char operator[] (std::streampos Pos);				//ritorna il carattere in posizione specificata dal parametro
 	bool operator== (File Path);				//se i due file hanno lo stesso path ritorna 1
-	bool operator== (str Path);
+	bool operator== (string Path);
 	bool operator!= (File Path);				//se i due file non hanno lo stesso path ritorna 1
-	bool operator!= (str Path);	
+	bool operator!= (string Path);	
 
 
 	operator char*();							//scrive tutto il file in un array di caratteri
@@ -680,12 +704,12 @@ public:
 	Saves all the file in a string and returns it
 	Returns "" if the file couldn't be opened
 	*/
-	operator str();
+	operator string();
 	/*
 	Saves all the file in a string and returns it
 	Returns "" if the file couldn't be opened
 	*/
-	str string();
+	string string();
 	operator fstm();
 	fstm fstream();
 	operator bool();							//ritorna 1 se il file non ha problemi ed e' aperto
