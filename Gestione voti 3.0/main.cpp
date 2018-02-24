@@ -40,9 +40,8 @@ std::cout << "c16-50:" << inFile.getChars(15, 49) << " | c50-16:" << inFile.getC
 std::cout << "w2-4:" << inFile.getWords(1, 3) << " | w4-2:" << inFile.getWords(3, 1) << " | l2w2-4:" << inFile.getWords(1, 1, 3) << " | l2w4-2:" << inFile.getWords(1, 3, 1) << "\n\n";
 */
 
-using string = std::string;
-using fstm = std::fstream;
-using sstm = std::stringstream;
+using Tstr = std::string;
+using Tfstm = std::fstream;
 using int8 = int8_t;
 using int16 = int16_t;
 using int32 = int32_t;
@@ -57,8 +56,8 @@ void askEnd() {
 	std::cin >> end;
 	return;
 }
-void printSpaces(string string) {
-	for (char letter : string) {
+void printSpaces(Tstr str) {
+	for (char letter : str) {
 		switch (letter) {
 		case ' ':
 			std::cout << "_";
@@ -92,15 +91,17 @@ int main() {
 	outFile.open();
 	inFile.open();
 	//if (!outFile.exists()) outFile.create();
-	//fstm outFile("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+	//Tfstm outFile("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out);
 	//if (!outFile.is_open()) outFile.open("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
 	FileState state = inFile.state();
-	std::cout << state.string();
+	if (state) std::cout << "PROBLEMI!\n";
+	else std::cout << "no problemo\n";
+	std::cout << state.str();
 	state.save(outFile);
 
 
 	//char testChar;
-	//string test;
+	//Tstr test;
 
 	////FARE testare meglio
 	////add and delete
