@@ -1,7 +1,7 @@
 //FARE possibilita' di rimuovere (e se fattibile rimpiazzare) intervalli di caratteri/parole/linee, per diminuire il tempo necessario in caso che si debbano rimpiazzare piu' caratteri/parole/linee consecutivi.
 //FARE deleteCurrentChar() (il carattere a cui si sta puntando adesso)
 //FARE nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
-//FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (string + '\n');" invece che "file << string << '\n';"
+//FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (Tstr + '\n');" invece che "file << Tstr << '\n';"
 //FARE for (char letter : file)
 //FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit"
 //FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara impossibile da leggere o scrivere
@@ -12,32 +12,23 @@
 #include <string>
 #include <fstream>
 
-struct FileState {
-private:
-	using string = std::string;
-	using fstm = std::fstream;
-	using sstm = std::stringstream;
-	using int8 = int8_t;
-	using int16 = int16_t;
-	using int32 = int32_t;
-	using int64 = int64_t;
-	using uint8 = uint8_t;
-	using uint16 = uint16_t;
-	using uint32 = uint32_t;
-	using uint64 = uint64_t;
+class File;
 
+struct FileState {
 public:
 	FileState(bool Open, bool Eof, bool Fail, bool Bad, bool TempErr, bool ExtErr);
 	bool open, eof, fail, bad, tempErr, extErr;
+
+	/*
+	*/
 	operator bool();
-	string str();
+	std::string str();
 	void save(File &file);
 };
 
 class File {
-	using string = std::string;
-	using fstm = std::fstream;
-	using sstm = std::stringstream;
+	using Tstr = std::string;
+	using Tfstm = std::fstream;
 	using int8 = int8_t;
 	using int16 = int16_t;
 	using int32 = int32_t;
@@ -78,13 +69,13 @@ public:
 			std::cout << Char;
 		}
 	}
-	void printSpaces(string string) {
-		for (char letter : string) {
+	void printSpaces(Tstr str) {
+		for (char letter : str) {
 			printSpaces(letter);
 		}
 	}
-	fstm file;
-	string path, tempPath;
+	Tfstm file;
+	Tstr path, tempPath;
 	//FARE usarli dappertutto
 	bool TempError, ExternalError;
 	
@@ -124,14 +115,14 @@ public:
 	std::streampos getPosition(uint32 Line, uint32 Word, uint32 Char);
 
 	/*
-	Counts the number of words in a string,
+	Counts the number of words in a Tstr,
 		based on the spaces between them.
 	*/
-	uint32 countWords(string String);
+	uint32 countWords(Tstr String);
 	/*
-	Deletes all '\r' (Carriage Return) at the end of the string
+	Deletes all '\r' (Carriage Return) at the end of the Tstr
 	*/
-	void truncEndCR(string &String);
+	void truncEndCR(Tstr &String);
 	/*
 	Opens file in read-mode and TempFile in read/write-mode
 		To be used when modifying file using a temporany file
@@ -139,17 +130,17 @@ public:
 		since it was opened in a not-default way
 	Returns false if one of the files couldn't be opened, otherwise true
 	*/
-	bool openTempToModifyFile(fstm &TempFile);
+	bool openTempToModifyFile(Tfstm &TempFile);
 	/*
 	Gets all the content from the 1st file and copies it to the 2nd
 	Files must be already open
 	*/
-	void moveFileContent(fstm &From, fstm &To);
+	void moveFileContent(Tfstm &From, Tfstm &To);
 
 public:
 	/*
 	default constructor
-	initializes path to an empty string
+	initializes path to an empty Tstr
 		and tempPath to defaultTempPath
 	*/
 	File();
@@ -158,12 +149,12 @@ public:
 	initializes path to the corresponding parameter
 		and tempPath to path + defaultTempExtension
 	*/
-	File(string Path);
+	File(Tstr Path);
 	/*
 	constructor with path and tempPath
 	initializes path and tempPath to the corresponding parameters
 	*/
-	File(string Path, string TempPath);
+	File(Tstr Path, Tstr TempPath);
 
 	/*
 	Returns the number of '\n'
@@ -202,17 +193,17 @@ public:
 	Returns a line removing all '\r' at the end of it
 	If the line is out of bounds "" is returned
 	*/
-	string getLine(uint32 Line);
+	Tstr getLine(uint32 Line);
 	/*
 	Returns a word
 	If the word is out of bounds "" is returned
 	*/
-	string getWord(uint32 Word);
+	Tstr getWord(uint32 Word);
 	/*
 	Returns a word in a line
 	If the word is out of bounds "" is returned
 	*/
-	string getWord(uint32 Line, uint32 Word);
+	Tstr getWord(uint32 Line, uint32 Word);
 	/*
 	Returns a char
 	If the char is out of bounds 0 is returned
@@ -237,7 +228,7 @@ public:
 		otherwise the order is inverted (bottom-to-top)
 	Removes all '\r' at the end of lines and adds '\r\n' between them
 	*/
-	string getLines(uint32 From, uint32 To);
+	Tstr getLines(uint32 From, uint32 To);
 	/*
 	Returns the interval of words between From and To, both included
 	If some (or all) words are out of bounds they just get ignored
@@ -245,7 +236,7 @@ public:
 		otherwise the order is inverted (bottom-to-top)
 	Separates words with ' ', replacing any other type of space
 	*/
-	string getWords(uint32 From, uint32 To);
+	Tstr getWords(uint32 From, uint32 To);
 	/*
 	Returns the interval of words in a line between From and To, both included
 	If some (or all) words are out of bounds they just get ignored
@@ -253,28 +244,28 @@ public:
 		otherwise the order is inverted (bottom-to-top)
 	Separates words with ' ', replacing any other type of space
 	*/
-	string getWords(uint32 Line, uint32 From, uint32 To);
+	Tstr getWords(uint32 Line, uint32 From, uint32 To);
 	/*
 	Returns the interval of chars between From and To, both included
 	If some (or all) chars are out of bounds they just get ignored
 	If To > From the chars are returned in top-to-bottom order,
 		otherwise the order is inverted (bottom-to-top)
 	*/
-	string getChars(uint32 From, uint32 To);
+	Tstr getChars(uint32 From, uint32 To);
 	/*
 	Returns the interval of chars in a line between From and To, both included
 	If some (or all) chars are out of bounds they just get ignored
 	If To > From the chars are returned in top-to-bottom order,
 		otherwise the order is inverted (bottom-to-top)
 	*/
-	string getChars(uint32 Line, uint32 From, uint32 To);
+	Tstr getChars(uint32 Line, uint32 From, uint32 To);
 	/*
 	Returns the interval of chars in a word in a line between From and To, both included
 	If some (or all) chars are out of bounds they just get ignored
 	If To > From the chars are returned in top-to-bottom order,
 		otherwise the order is inverted (bottom-to-top)
 	*/
-	string getChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
+	Tstr getChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
 
 	
 	/*
@@ -283,21 +274,21 @@ public:
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened, otherwise true
 	*/
-	bool addLine(uint32 Line, string ToAdd);
+	bool addLine(uint32 Line, Tstr ToAdd);
 	/*
 	Adds a word using a temp file
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
-	bool addWord(uint32 Word, string ToAdd);
+	bool addWord(uint32 Word, Tstr ToAdd);
 	/*
 	Adds a word in a line using a temp file
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
-	bool addWord(uint32 Line, uint32 Word, string ToAdd);
+	bool addWord(uint32 Line, uint32 Word, Tstr ToAdd);
 	/*
 	Adds a char
 	Returns false if the file couldn't be opened or if the
@@ -325,21 +316,21 @@ public:
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened, otherwise true
 	*/
-	bool replaceLine(uint32 Line, string Replacement);
+	bool replaceLine(uint32 Line, Tstr Replacement);
 	/*
 	Replaces a word using a temp file
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
-	bool replaceWord(uint32 Word, string Replacement);
+	bool replaceWord(uint32 Word, Tstr Replacement);
 	/*
 	Replaces a word in a line using a temp file
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened or if the
 		specified word is out of bounds, otherwise true
 	*/
-	bool replaceWord(uint32 Line, uint32 Word, string Replacement);
+	bool replaceWord(uint32 Line, uint32 Word, Tstr Replacement);
 	/*
 	Replaces a char
 	Leaves the file open after returning
@@ -411,17 +402,17 @@ public:
 	Adds a line (with endline before it) at the end of the file
 	Returns false if the file couldn't be opened, otherwise true
 	*/
-	bool appendLine(string ToAppend);
+	bool appendLine(Tstr ToAppend);
 	/*
 	Adds a word (with a space before it) at the end of the file
 	Returns false if the file couldn't be opened, otherwise true
 	*/
-	bool appendWord(string ToAppend);
+	bool appendWord(Tstr ToAppend);
 	/*
 	Adds a word (with a space before it) after the specified word
 	Returns false if the file couldn't be opened, otherwise true
 	*/
-	bool appendWord(uint32 Line, string ToAppend);
+	bool appendWord(uint32 Line, Tstr ToAppend);
 	/*
 	Adds a char at the end of the file
 	Returns false if the file couldn't be opened, otherwise true
@@ -459,14 +450,14 @@ public:
 	Returns false if either the old path file or the new path file
 		couldn't be opened, otherwise true
 	*/
-	bool move(string newPath);
+	bool move(Tstr newPath);
 	/*
 	Replaces the filename, extension included, with the new name
 	Leaves the file open in binary input-output mode
 	Returns false if either the old path file or the new path file
 		couldn't be opened, otherwise true
 	*/
-	bool rename(string newName);
+	bool rename(Tstr newName);
 	/*
 	Deletes all the file's content
 	Leaves the file open in binary input-output mode
@@ -567,12 +558,12 @@ public:
 	/*
 	Returns the currently set path
 	*/
-	string getPath() const;
+	Tstr getPath() const;
 	/*
 	Modifies the path used to open the file
 	Closes the file if it is open
 	*/
-	void setPath(string Path);
+	void setPath(Tstr Path);
 
 
 	/*
@@ -593,13 +584,13 @@ public:
 	If the parameter isn't already open ExternalError is set to 1
 	Returns *this
 	*/
-	File& operator>> (fstm &Out);
+	File& operator>> (Tfstm &Out);
 	/*
 	Like ofstream::operator>>
 	The file must be already open
 	Returns *this
 	*/
-	File& operator>> (string &Out);
+	File& operator>> (Tstr &Out);
 	/*
 	Like ofstream::operator>>
 	The file must be already open
@@ -643,13 +634,13 @@ public:
 	If the parameter isn't already open ExternalError is set to 1
 	Returns *this
 	*/
-	File& operator<< (fstm &In);
+	File& operator<< (Tfstm &In);
 	/*
 	Like ofstream::operator<<
 	The file must be already open
 	Returns *this
 	*/
-	File& operator<< (string In);
+	File& operator<< (Tstr In);
 	/*
 	Like ofstream::operator<<
 	The file must be already open
@@ -677,41 +668,41 @@ public:
 
 
 	File& operator= (File);				//sostituisce il contenuto di questo file con quello del parametro
-	File& operator= (fstm);
+	File& operator= (Tfstm);
 	File& operator+ (File);				//ritorna un file con all'inizio il contenuto di questo file e alla fine quello del parametro
-	File& operator+ (fstm);
+	File& operator+ (Tfstm);
 	File& operator+= (File);			//appende in fondo
-	File& operator+= (fstm);
-	File& operator+= (string In);
+	File& operator+= (Tfstm);
+	File& operator+= (Tstr In);
 	File& operator+= (const char * In);
 	File& operator+= (char In);
 	File& operator+= (int64 In);
 	File& operator+= (double In);
 	File& operator^ (File);				//scambia il contenuto dei due files FARE vedere se metterli
-	File& operator^ (fstm);
+	File& operator^ (Tfstm);
 	
 
 	char operator[] (std::streampos Pos);				//ritorna il carattere in posizione specificata dal parametro
 	bool operator== (File Path);				//se i due file hanno lo stesso path ritorna 1
-	bool operator== (string Path);
+	bool operator== (Tstr Path);
 	bool operator!= (File Path);				//se i due file non hanno lo stesso path ritorna 1
-	bool operator!= (string Path);	
+	bool operator!= (Tstr Path);	
 
 
 	operator char*();							//scrive tutto il file in un array di caratteri
 	char * cString();
 	/*
-	Saves all the file in a string and returns it
+	Saves all the file in a Tstr and returns it
 	Returns "" if the file couldn't be opened
 	*/
-	operator string();
+	operator Tstr();
 	/*
-	Saves all the file in a string and returns it
+	Saves all the file in a Tstr and returns it
 	Returns "" if the file couldn't be opened
 	*/
-	string string();
-	operator fstm();
-	fstm fstream();
+	Tstr string();
+	operator Tfstm();
+	Tfstm fstream();
 	operator bool();							//ritorna 1 se il file non ha problemi ed e' aperto
 	bool operator! ();							//ritorna 1 se il file ha problemi o e' chiuso
 };

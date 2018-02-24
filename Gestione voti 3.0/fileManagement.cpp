@@ -8,9 +8,8 @@
 
 #include "fileManagement.h"
 
-using string = std::string;
-using fstm = std::fstream;
-using sstm = std::stringstream;
+using Tstr = std::string;
+using Tfstm = std::fstream;
 using int8 = int8_t;
 using int16 = int16_t;
 using int32 = int32_t;
@@ -29,8 +28,8 @@ FileState::FileState(bool Open, bool Eof, bool Fail, bool Bad, bool TempErr, boo
 FileState::operator bool() {
 	return !open || eof || fail || bad || tempErr || extErr;
 }
-string FileState::str() {
-	string fileState = "open:";
+std::string FileState::str() {
+	std::string fileState = "open:";
 	fileState += (open) ? "1" : "0";
 	fileState += " eofErr:";
 	fileState += (eof) ? "1" : "0";
@@ -176,7 +175,7 @@ std::streampos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 }
 
 
-uint32 File::countWords(string String) {
+uint32 File::countWords(Tstr String) {
 	bool wasSpace = 1;
 	uint32 nrWords = 0;
 
@@ -192,12 +191,12 @@ uint32 File::countWords(string String) {
 
 	return nrWords;
 }
-void File::truncEndCR(string & String) {
+void File::truncEndCR(Tstr & String) {
 	while (!String.empty() && String.back() == '\r') {
 		String.pop_back();
 	}
 }
-bool File::openTempToModifyFile(fstm & TempFile) {
+bool File::openTempToModifyFile(Tfstm & TempFile) {
 	if (file.is_open()) file.close();
 	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
 	if (!file.is_open()) return false;
@@ -212,7 +211,7 @@ bool File::openTempToModifyFile(fstm & TempFile) {
 
 	return true;
 }
-void File::moveFileContent(fstm & From, fstm & To) {
+void File::moveFileContent(Tfstm & From, Tfstm & To) {
 	char tempChar;
 	while (1) {
 		tempChar = From.get();
@@ -223,15 +222,15 @@ void File::moveFileContent(fstm & From, fstm & To) {
 
 
 File::File() : path(""), tempPath(defaultTempPath), TempError(0), ExternalError(0) {}
-File::File(string Path) : path(Path), tempPath(Path + defaultTempExtension), TempError(0), ExternalError(0) {}
-File::File(string Path, string TempPath) : path(Path), tempPath(TempPath), TempError(0), ExternalError(0) {}
+File::File(Tstr Path) : path(Path), tempPath(Path + defaultTempExtension), TempError(0), ExternalError(0) {}
+File::File(Tstr Path, Tstr TempPath) : path(Path), tempPath(TempPath), TempError(0), ExternalError(0) {}
 
 
 uint32 File::getNrLines() {
 	if (!pointToBeg()) return 0;
 
 	uint32 lines = 0;
-	string tempStr;
+	Tstr tempStr;
 	while (getline(file, tempStr)) lines++;
 
 	return lines;
@@ -240,7 +239,7 @@ uint32 File::getNrWords() {
 	if (!pointToBeg()) return 0;
 
 	uint32 words = 0;
-	string tempStr;
+	Tstr tempStr;
 	while (file >> tempStr) words++;
 
 	return words;
@@ -248,7 +247,7 @@ uint32 File::getNrWords() {
 uint32 File::getNrWords(uint32 Line) {
 	if (!pointTo(Line, 0, 0)) return 0;
 
-	string tempStr;
+	Tstr tempStr;
 	getline(file, tempStr);
 
 	return countWords(tempStr);
@@ -262,7 +261,7 @@ uint32 File::getNrChars() {
 uint32 File::getNrChars(uint32 Line) {
 	if (!pointTo(Line, 0, 0)) return 0;
 
-	string tempStr;
+	Tstr tempStr;
 	getline(file, tempStr);
 
 	truncEndCR(tempStr);
@@ -271,34 +270,34 @@ uint32 File::getNrChars(uint32 Line) {
 uint32 File::getNrChars(uint32 Line, uint32 Word) {
 	if (!pointTo(Line, Word, 0)) return 0;
 
-	string tempStr;
+	Tstr tempStr;
 	file >> tempStr;
 
 	return (uint32)tempStr.length();
 }
 
 
-string File::getLine(uint32 Line) {
+Tstr File::getLine(uint32 Line) {
 	if (!pointTo(Line, -1, -1)) return "";
 
-	string line;
+	Tstr line;
 	getline(file, line);
 	truncEndCR(line);
 
 	return line;
 }
-string File::getWord(uint32 Word) {
+Tstr File::getWord(uint32 Word) {
 	if (!pointTo(-1, Word, -1)) return "";
 
-	string word;
+	Tstr word;
 	file >> word;
 
 	return word;
 }
-string File::getWord(uint32 Line, uint32 Word) {
+Tstr File::getWord(uint32 Line, uint32 Word) {
 	if (!pointTo(Line, Word, -1)) return "";
 
-	string word;
+	Tstr word;
 	file >> word;
 
 	return word;
@@ -320,15 +319,15 @@ char File::getChar(uint32 Line, uint32 Word, uint32 Char) {
 }
 
 
-string File::getLines(uint32 From, uint32 To) {
+Tstr File::getLines(uint32 From, uint32 To) {
 	if (To < From) {
 		if (!pointTo(To, -1, -1)) return "";
 
-		string lines;
+		Tstr lines;
 		getline(file, lines);
 		truncEndCR(lines);
 
-		string tempStr;
+		Tstr tempStr;
 		for (uint32 currentLine = To; currentLine < From; ++currentLine) {
 			if (!getline(file, tempStr)) break;
 			truncEndCR(tempStr);
@@ -340,11 +339,11 @@ string File::getLines(uint32 From, uint32 To) {
 	else {
 		if (!pointTo(From, -1, -1)) return "";
 
-		string lines;
+		Tstr lines;
 		getline(file, lines);
 		truncEndCR(lines);
 
-		string tempStr;
+		Tstr tempStr;
 		for (uint32 currentLine = From; currentLine < To; ++currentLine) {
 			if (!getline(file, tempStr)) break;
 			truncEndCR(tempStr);
@@ -354,13 +353,13 @@ string File::getLines(uint32 From, uint32 To) {
 		return lines;
 	}
 }
-string File::getWords(uint32 From, uint32 To) {
-	string words;
+Tstr File::getWords(uint32 From, uint32 To) {
+	Tstr words;
 	if (To < From) {
 		if (!pointTo(-1, To, -1)) return "";
 		file >> words;
 
-		string tempStr;
+		Tstr tempStr;
 		for (uint32 currentWord = To; currentWord < From; ++currentWord) {
 			file >> tempStr;
 			words = tempStr + " " + words;
@@ -370,7 +369,7 @@ string File::getWords(uint32 From, uint32 To) {
 		if (!pointTo(-1, From, -1)) return "";
 		file >> words;
 
-		string tempStr;
+		Tstr tempStr;
 		for (uint32 currentWord = From; currentWord < To; ++currentWord) {
 			file >> tempStr;
 			words += " " + tempStr;
@@ -378,13 +377,13 @@ string File::getWords(uint32 From, uint32 To) {
 	}
 	return words;
 }
-string File::getWords(uint32 Line, uint32 From, uint32 To) {
-	string words;
+Tstr File::getWords(uint32 Line, uint32 From, uint32 To) {
+	Tstr words;
 	if (To < From) {
 		if (!pointTo(Line, To, -1)) return "";
 		file >> words;
 
-		string tempStr;
+		Tstr tempStr;
 		for (uint32 currentWord = To; currentWord < From; ++currentWord) {
 			file >> tempStr;
 			words = tempStr + " " + words;
@@ -394,7 +393,7 @@ string File::getWords(uint32 Line, uint32 From, uint32 To) {
 		if (!pointTo(Line, From, -1)) return "";
 		file >> words;
 
-		string tempStr;
+		Tstr tempStr;
 		for (uint32 currentWord = From; currentWord < To; ++currentWord) {
 			file >> tempStr;
 			words += " " + tempStr;
@@ -402,8 +401,8 @@ string File::getWords(uint32 Line, uint32 From, uint32 To) {
 	}
 	return words;
 }
-string File::getChars(uint32 From, uint32 To) {
-	string chars = "";
+Tstr File::getChars(uint32 From, uint32 To) {
+	Tstr chars = "";
 	if (To < From) {
 		if (!pointTo(-1, -1, To)) return "";
 		chars += file.get();
@@ -424,8 +423,8 @@ string File::getChars(uint32 From, uint32 To) {
 	}
 	return chars;
 }
-string File::getChars(uint32 Line, uint32 From, uint32 To) {
-	string chars = "";
+Tstr File::getChars(uint32 Line, uint32 From, uint32 To) {
+	Tstr chars = "";
 	if (To < From) {
 		if (!pointTo(Line, -1, To)) return "";
 		chars += file.get();
@@ -446,8 +445,8 @@ string File::getChars(uint32 Line, uint32 From, uint32 To) {
 	}
 	return chars;
 }
-string File::getChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
-	string chars = "";
+Tstr File::getChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
+	Tstr chars = "";
 	if (To < From) {
 		if (!pointTo(Line, Word, To)) return "";
 		chars += file.get();
@@ -470,7 +469,7 @@ string File::getChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 }
 
 
-bool File::addLine(uint32 Line, string ToAdd) {
+bool File::addLine(uint32 Line, Tstr ToAdd) {
 	uint32 fileLength = getNrChars();
 
 
@@ -489,7 +488,7 @@ bool File::addLine(uint32 Line, string ToAdd) {
 	}
 			
 	
-	ToAdd += (string)"\r\n";
+	ToAdd += (Tstr)"\r\n";
 
 
 	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
@@ -508,7 +507,7 @@ bool File::addLine(uint32 Line, string ToAdd) {
 
 	return true;
 }
-bool File::addWord(uint32 Word, string ToAdd) {
+bool File::addWord(uint32 Word, Tstr ToAdd) {
 	uint32 fileLength = getNrChars();
 
 
@@ -520,14 +519,14 @@ bool File::addWord(uint32 Word, string ToAdd) {
 
 	while (1) {
 		if (file.tellg() <= (std::streampos)0) {
-			ToAdd += (string)" ";
+			ToAdd += (Tstr)" ";
 			break;
 		}
 		if (isspace(file.get())) {
 			file.seekg(-2, std::ios_base::cur);
 		}
 		else {
-			ToAdd = (string)" " + ToAdd;
+			ToAdd = (Tstr)" " + ToAdd;
 			break;
 		}
 	}
@@ -549,7 +548,7 @@ bool File::addWord(uint32 Word, string ToAdd) {
 
 	return true;
 }
-bool File::addWord(uint32 Line, uint32 Word, string ToAdd) {
+bool File::addWord(uint32 Line, uint32 Word, Tstr ToAdd) {
 	uint32 fileLength = getNrChars();
 
 
@@ -561,14 +560,14 @@ bool File::addWord(uint32 Line, uint32 Word, string ToAdd) {
 
 	while (1) {
 		if (file.tellg() <= (std::streampos)0) {
-			ToAdd += (string)" ";
+			ToAdd += (Tstr)" ";
 			break;
 		}
 		if (isspace(file.get())) {
 			file.seekg(-2, std::ios_base::cur);
 		}
 		else {
-			ToAdd = (string)" " + ToAdd;
+			ToAdd = (Tstr)" " + ToAdd;
 			break;
 		}
 	}
@@ -667,18 +666,18 @@ bool File::addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd) {
 }
 
 
-bool File::replaceLine(uint32 Line, string Replacement) {
+bool File::replaceLine(uint32 Line, Tstr Replacement) {
 	bool fileEndsWithNewline = 0;
 	if (!pointToBeg()) return false;
 	file.seekg(-1, std::ios_base::end);
 	if (file.get() == '\n') fileEndsWithNewline = 1;
 
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
-	string tempStr;
+	Tstr tempStr;
 	uint32 currentLine = 0;
 	
 
@@ -721,12 +720,12 @@ bool File::replaceLine(uint32 Line, string Replacement) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::replaceWord(uint32 Word, string Replacement) {
+bool File::replaceWord(uint32 Word, Tstr Replacement) {
 	std::streampos wordPos = getPosition(-1, Word, -1);
 	if (-1 == wordPos || -2 == wordPos) return false;
 
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
@@ -763,13 +762,13 @@ bool File::replaceWord(uint32 Word, string Replacement) {
 	std::remove(tempPath.c_str());
 	return true;
 }
-bool File::replaceWord(uint32 Line, uint32 Word, string Replacement) {
+bool File::replaceWord(uint32 Line, uint32 Word, Tstr Replacement) {
 	std::streampos wordPos = getPosition(Line, Word, -1);
 	if (-1 == wordPos || -2 == wordPos) return false;
 
 
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
@@ -840,12 +839,12 @@ bool File::deleteLine(uint32 Line) {
 	if (file.get() == '\n') fileEndsWithNewline = 1;
 
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
 	bool firstIteration = 1;
-	string tempStr;
+	Tstr tempStr;
 	uint32 currentLine = 0;
 
 
@@ -914,7 +913,7 @@ bool File::deleteWord(uint32 Word) {
 	}
 	
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
@@ -1022,7 +1021,7 @@ bool File::deleteWord(uint32 Line, uint32 Word) {
 	}
 
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
@@ -1104,7 +1103,7 @@ bool File::deleteChar(uint32 Char) {
 	else if (-2 == charPos) return true;
 
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
@@ -1142,7 +1141,7 @@ bool File::deleteChar(uint32 Line, uint32 Char) {
 	else if (-2 == charPos) return true;
 
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
@@ -1180,7 +1179,7 @@ bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 	else if (-2 == charPos) return true;
 
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
@@ -1214,21 +1213,21 @@ bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 }
 
 //testare FARE
-bool File::appendLine(string ToAppend) {
+bool File::appendLine(Tstr ToAppend) {
 	if (!pointToEnd()) return false;
 
 	file << "\r\n" << ToAppend;
 
 	return true;
 }
-bool File::appendWord(string ToAppend) {
+bool File::appendWord(Tstr ToAppend) {
 	if (!pointToEnd()) return false;
 
 	file << ' ' << ToAppend;
 
 	return true;
 }
-bool File::appendWord(uint32 Line, string ToAppend) {
+bool File::appendWord(uint32 Line, Tstr ToAppend) {
 	uint32 fileLength = getNrChars();
 
 
@@ -1246,7 +1245,7 @@ bool File::appendWord(uint32 Line, string ToAppend) {
 	}
 
 
-	ToAppend = (string)" " + ToAppend;
+	ToAppend = (Tstr)" " + ToAppend;
 
 
 	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
@@ -1346,7 +1345,7 @@ bool File::deleteLastEmptyLines() {
 	uint32 fileLength = getNrChars();
 
 
-	fstm tempFile;
+	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 	
@@ -1389,11 +1388,11 @@ bool File::create() {
 	if (open()) return true;
 	return false;
 }
-bool File::move(string newPath) {
+bool File::move(Tstr newPath) {
 	if (file.is_open()) file.close();
 	file.open(newPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
 	if (!file.is_open()) return false;
-	fstm oldFile(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+	Tfstm oldFile(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
 	if (!oldFile.is_open()) {
 		file.close();
 		return false;
@@ -1407,8 +1406,8 @@ bool File::move(string newPath) {
 	path = newPath;
 	return true;
 }
-bool File::rename(string newName) {
-	string newPath = path;
+bool File::rename(Tstr newName) {
+	Tstr newPath = path;
 	while (!newPath.empty()) {
 		if (newPath.back() == '/') break;
 		newPath.pop_back();
@@ -1507,14 +1506,14 @@ bool File::extErr() const {
 void File::extErr(bool Value) {
 	ExternalError = Value;
 }
-File::FileState File::state() const {
-	return File::FileState(file.is_open(), file.eof(), file.fail(), file.bad(), TempError, ExternalError);
+FileState File::state() const {
+	return FileState(file.is_open(), file.eof(), file.fail(), file.bad(), TempError, ExternalError);
 }
 
-string File::getPath() const {
+Tstr File::getPath() const {
 	return path;
 }
-void File::setPath(string Path) {
+void File::setPath(Tstr Path) {
 	if (file.is_open()) file.close();
 	path = Path;
 }
@@ -1527,7 +1526,7 @@ File& File::operator>>(File &Out) {
 		//Out.ExternalError = 1; //FARE se metterlo o no, perche' Out ha gia' il suo errore contenuto nel failbit del suo file e l'errore non e' esterno ma interno
 		return *this;
 	}
-	fstm tempFile(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
+	Tfstm tempFile(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
 	if (!tempFile.is_open()) {
 		TempError = 1;
 		return *this;
@@ -1545,7 +1544,7 @@ File& File::operator>>(File &Out) {
 	std::remove(tempPath.c_str());
 	return *this;
 }
-File& File::operator>>(fstm &Out) {
+File& File::operator>>(Tfstm &Out) {
 	if (!pointToBeg()) return *this;
 	if (!Out.is_open()) {
 		ExternalError = 1;
@@ -1553,7 +1552,7 @@ File& File::operator>>(fstm &Out) {
 	}
 	Out.clear(Out.eofbit);
 	Out.seekg(0);
-	fstm tempFile(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
+	Tfstm tempFile(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
 	if (!tempFile.is_open()) {
 		TempError = 1;
 		return *this;
@@ -1581,7 +1580,7 @@ File& File::operator>>(fstm &Out) {
 	std::remove(tempPath.c_str());
 	return *this;
 }
-File& File::operator>>(string &Out) {
+File& File::operator>>(Tstr &Out) {
 	file >> Out;
 	return *this;
 }
@@ -1614,7 +1613,7 @@ File& File::operator<<(File &In) {
 	moveFileContent(In.file, file);
 	return *this;
 }
-File& File::operator<<(fstm &In) {
+File& File::operator<<(Tfstm &In) {
 	if (!pointToEnd()) return *this;
 	if (!In.is_open()) {
 		ExternalError = 1;
@@ -1627,7 +1626,7 @@ File& File::operator<<(fstm &In) {
 
 	return *this;
 }
-File& File::operator<<(string In) {
+File& File::operator<<(Tstr In) {
 	file << In;
 	return *this;
 }
@@ -1650,11 +1649,11 @@ File& File::operator<<(double In) {
 
 
 //FARE non va
-File::operator string() {
+File::operator Tstr() {
 	if (!pointToBeg()) return "";
 
 	char tempChar;
-	string fileStr = "";
+	Tstr fileStr = "";
 	while (1) {
 		tempChar = file.get();
 		if (!file.eof()) {
@@ -1665,11 +1664,11 @@ File::operator string() {
 
 	return fileStr;
 }
-string File::string() {
+Tstr File::string() {
 	if (!pointToBeg()) return "";
 
 	char tempChar;
-	string fileStr = "";
+	Tstr fileStr = "";
 	while (1) {
 		tempChar = file.get();
 		if (!file.eof()) {
