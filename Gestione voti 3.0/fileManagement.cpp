@@ -175,11 +175,11 @@ std::streampos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 }
 
 
-uint32 File::countWords(Tstr String) {
+uint32 File::countWords(Tstr Text) {
 	bool wasSpace = 1;
 	uint32 nrWords = 0;
 
-	for (char letter : String) {
+	for (char letter : Text) {
 		if (isspace(letter)) wasSpace = 1;
 		else {
 			if (wasSpace) {
@@ -191,9 +191,9 @@ uint32 File::countWords(Tstr String) {
 
 	return nrWords;
 }
-void File::truncEndCR(Tstr & String) {
-	while (!String.empty() && String.back() == '\r') {
-		String.pop_back();
+void File::truncEndCR(Tstr & Text) {
+	while (!Text.empty() && Text.back() == '\r') {
+		Text.pop_back();
 	}
 }
 bool File::openTempToModifyFile(Tfstm & TempFile) {
@@ -1212,7 +1212,7 @@ bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 	return true;
 }
 
-//testare FARE
+
 bool File::appendLine(Tstr ToAppend) {
 	if (!pointToEnd()) return false;
 
@@ -1406,6 +1406,45 @@ bool File::move(Tstr newPath) {
 	path = newPath;
 	return true;
 }
+bool File::move(File & toOverwrite) {
+	if (!toOverwrite.truncate()) {
+		ExternalError = 1;
+		return false;
+	}
+	if (!pointToBeg()) return false;
+
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (file.eof()) break;
+		toOverwrite << tempChar;
+	}
+
+	return true;
+}
+bool File::swap(File & toSwap) {
+	if (!pointToBeg()) return false;
+	if (!toSwap.pointToBeg()) {
+		ExternalError = 1;
+		return false;
+	}
+	Tfstm tempFile(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app); //FARE potrebbe essere che il file esista gia'
+	if (!tempFile.is_open()) {
+		TempError = 1;
+		return false;
+	}
+
+	moveFileContent(file, tempFile);
+
+	truncate();
+	moveFileContent(toSwap.file, file);
+
+	toSwap.truncate();
+	tempFile.clear(tempFile.eofbit);
+	tempFile.seekg(0);
+	moveFileContent(tempFile, toSwap.file);
+	return true;
+}
 bool File::rename(Tstr newName) {
 	Tstr newPath = path;
 	while (!newPath.empty()) {
@@ -1509,6 +1548,7 @@ void File::extErr(bool Value) {
 FileState File::state() const {
 	return FileState(file.is_open(), file.eof(), file.fail(), file.bad(), TempError, ExternalError);
 }
+
 
 Tstr File::getPath() const {
 	return path;
@@ -1680,10 +1720,10 @@ Tstr File::string() {
 	return fileStr;
 }
 
+
 File::operator bool() {
 	return !(file.eof() || file.fail() || file.bad() || TempError || ExternalError);
 }
 bool File::operator!() {
 	return file.eof() || file.fail() || file.bad() || TempError || ExternalError;
 }
-

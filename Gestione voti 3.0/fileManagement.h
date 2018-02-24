@@ -452,6 +452,14 @@ public:
 	*/
 	bool move(Tstr newPath);
 	/*
+	Overwrites newFile with this file's content
+	Leaves the file open in binary input-output mode
+	Returns false if either the parameter or the file
+		couldn't be opened, otherwise true
+	*/
+	bool move(File &toOverwrite);
+	bool swap(File &toSwap);
+	/*
 	Replaces the filename, extension included, with the new name
 	Leaves the file open in binary input-output mode
 	Returns false if either the old path file or the new path file
@@ -667,10 +675,10 @@ public:
 	File& operator<< (double In);
 
 
-	File& operator= (File);				//sostituisce il contenuto di questo file con quello del parametro
-	File& operator= (Tfstm);
-	File& operator+ (File);				//ritorna un file con all'inizio il contenuto di questo file e alla fine quello del parametro
-	File& operator+ (Tfstm);
+	File& operator= (File);
+	File& operator= (Tstr newText);
+	Tstr& operator+ (File);				//ritorna un file con all'inizio il contenuto di questo file e alla fine quello del parametro
+	Tstr& operator+ (Tfstm);
 	File& operator+= (File);			//appende in fondo
 	File& operator+= (Tfstm);
 	File& operator+= (Tstr In);
@@ -678,8 +686,6 @@ public:
 	File& operator+= (char In);
 	File& operator+= (int64 In);
 	File& operator+= (double In);
-	File& operator^ (File);				//scambia il contenuto dei due files FARE vedere se metterli
-	File& operator^ (Tfstm);
 	
 
 	char operator[] (std::streampos Pos);				//ritorna il carattere in posizione specificata dal parametro
