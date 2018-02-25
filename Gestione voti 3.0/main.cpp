@@ -86,21 +86,19 @@ void printSpaces(Tstr str) {
 
 
 int main() {
+	char testChar;
+	Tstr test;
+
 	File inFile("input.txt");
 	File outFile("output.txt");
 	inFile.open();
 	outFile.open();
-	//if (!outFile.exists()) outFile.create();
-	//Tfstm outFile("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out);
-	//if (!outFile.is_open()) outFile.open("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	outFile = inFile;
-	std::cout << outFile.isOpen() << inFile.isOpen();
-	inFile.pointTo(2);
-	inFile << 'c';
-	outFile.pointTo(1);
-	outFile << 'b';
-	//char testChar;
-	//Tstr test;
+
+	while (inFile.get(testChar)) {
+		std::cout << testChar;
+	}
+
+
 
 	////FARE testare meglio
 	////add and delete
