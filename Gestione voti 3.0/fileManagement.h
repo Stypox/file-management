@@ -3,7 +3,7 @@
 //FARE nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
 //FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (Tstr + '\n');" invece che "file << Tstr << '\n';"
 //FARE for (char letter : file)
-//FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit"
+//FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit", "Moves/not the pointer"
 //FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara impossibile da leggere o scrivere
 //FARE una lista di cose da scrivere in ogni descrizione, come hanno fatto su glfw con @
 
@@ -39,7 +39,6 @@ class File {
 	using uint16 = uint16_t;
 	using uint32 = uint32_t;
 	using uint64 = uint64_t;
-
 
 
 private:
@@ -214,11 +213,53 @@ public:
 	uint32 getNrChars(uint32 Line, uint32 Word);
 
 	
-	bool put(char toPut);
-	Tstr nextLine();
-	Tstr nextWord();
-	char nextChar();
-
+	/*
+	Replaces the char at the pointer position
+	The file must be already open
+	Returns *this
+	*/
+	File& put(char ToPut);
+	/*
+	Returns all the characters after the pointer
+		until '\r\n' or the end of file are reached
+	The file must be already open
+	Returns "" if the file is not open
+	*/
+	Tstr getLine();
+	/*
+	Returns all the characters after the pointer
+		until a space or the end of file are reached
+	The file must be already open
+	Returns "" if the file is not open
+	*/
+	Tstr getWord();
+	/*
+	Returns the char at the pointer position
+	The file must be already open
+	Returns -1 if the file is not open or the end was reached
+	*/
+	char get();
+	//FARE spiegazioni qua sotto (!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
+	/*
+	Returns all the characters after the pointer
+	until '\r\n' or the end of file are reached
+	The file must be already open
+	Returns "" if the file is not open
+	*/
+	bool getLine(Tstr &Line);
+	/*
+	Returns all the characters after the pointer
+	until a space or the end of file are reached
+	The file must be already open
+	Returns "" if the file is not open
+	*/
+	bool getWord(Tstr &Word);
+	/*
+	Returns the char at the pointer position
+	The file must be already open
+	Returns -1 if the file is not open or the end was reached
+	*/
+	char get(char &Char);
 
 	/*
 	Returns a line removing all '\r' at the end of it
@@ -555,7 +596,7 @@ public:
 	/*
 	Returns the file's eofbit, that is true if the end of file was reached
 	*/
-	bool eofErr() const;
+	inline bool eofErr() const;
 	/*
 	Sets the file's end-of-file error state flag (eofbit) to a value
 	*/
@@ -565,7 +606,7 @@ public:
 	Failbit is true if there were logical errors
 		Badbit is true if there were reading or writing errors
 	*/
-	bool failErr() const;
+	inline bool failErr() const;
 	/*
 	Sets the file's logical error state flag (failbit) to a value
 	*/
@@ -573,7 +614,7 @@ public:
 	/*
 	Returns the file's badbit, that is true if there were reading/writing errors
 	*/
-	bool badErr() const;
+	inline bool badErr() const;
 	/*
 	Sets the file's reading/writing error state flag (badbit) to a value
 	*/

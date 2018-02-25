@@ -55,10 +55,10 @@ void FileState::save(File &file) {
 
 File::FilePosition::FilePosition(File * file, std::streampos Position) : file(file), position(Position) {}
 File::FilePosition::operator char() {
-	return file->getChar(position);
+	return file->getChar((uint32)position);
 }
 bool File::FilePosition::operator=(char newChar) {
-	return file->replaceChar(position, newChar);
+	return file->replaceChar((uint32)position, newChar);
 }
 
 
@@ -295,6 +295,58 @@ uint32 File::getNrChars(uint32 Line, uint32 Word) {
 	file >> tempStr;
 
 	return (uint32)tempStr.length();
+}
+
+
+File& File::put(char ToPut) {
+	file.put(ToPut);
+	file.seekg(file.tellg());
+	return *this;
+}
+Tstr File::getLine() {
+	if (!file.is_open()) return "";
+	Tstr line;
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (tempChar == '\r' || file.eof()) break;
+		line += tempChar;
+	}
+	file.ignore();
+	return line;
+}
+Tstr File::getWord() {
+	if (!file.is_open()) return "";
+	Tstr word;
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (!isspace(tempChar)) {
+			file.seekg(-1, std::ios_base::cur);
+			break;
+		}
+	}
+	while (1) {
+		tempChar = file.get();
+		if (isspace(tempChar) || file.eof()) break;
+		word += tempChar;
+	}
+	return word;
+}
+char File::get() {
+	return file.get();
+}
+bool File::getLine(Tstr &Line) {
+	Line = getLine();
+	return !Line.empty();
+}
+bool File::getWord(Tstr &Word) {
+	Word = getWord();
+	return !Word.empty();
+}
+char File::get(char &Char) {
+	Char = file.get();
+	return !file.eof();
 }
 
 
@@ -1521,7 +1573,7 @@ void File::clear() {
 	TempError = 0;
 	ExternalError = 0;
 }
-bool File::eofErr() const {
+inline bool File::eofErr() const {
 	return file.eof();
 }
 void File::eofErr(bool Value) {
@@ -1532,7 +1584,7 @@ void File::eofErr(bool Value) {
 		file.clear(file.eofbit);
 	}
 }
-bool File::failErr() const {
+inline bool File::failErr() const {
 	return file.fail();
 }
 void File::failErr(bool Value) {
@@ -1543,7 +1595,7 @@ void File::failErr(bool Value) {
 		file.clear(file.failbit);
 	}
 }
-bool File::badErr() const {
+inline bool File::badErr() const {
 	return file.bad();
 }
 void File::badErr(bool Value) {
