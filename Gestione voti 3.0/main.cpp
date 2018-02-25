@@ -93,9 +93,12 @@ int main() {
 	//if (!outFile.exists()) outFile.create();
 	//Tfstm outFile("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out);
 	//if (!outFile.is_open()) outFile.open("output.txt", std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	inFile.move(outFile);
-
-
+	outFile = inFile;
+	std::cout << outFile.isOpen() << inFile.isOpen();
+	inFile.pointTo(2);
+	inFile << 'c';
+	outFile.pointTo(1);
+	outFile << 'b';
 	//char testChar;
 	//Tstr test;
 

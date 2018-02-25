@@ -5,6 +5,7 @@
 //FARE for (char letter : file)
 //FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit"
 //FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara impossibile da leggere o scrivere
+//FARE una lista di cose da scrivere in ogni descrizione, come hanno fatto su glfw con @
 
 #pragma once
 
@@ -20,6 +21,7 @@ public:
 	bool open, eof, fail, bad, tempErr, extErr;
 
 	/*
+	Returns 
 	*/
 	operator bool();
 	std::string str();
@@ -38,8 +40,21 @@ class File {
 	using uint32 = uint32_t;
 	using uint64 = uint64_t;
 
+
+
 private:
-	//togliere public FARE
+	class FilePosition {
+		File * file;
+		std::streampos position;
+	public:
+		FilePosition(File * file, std::streampos Position);
+
+		operator char();
+		bool operator=(char newChar);
+	};
+
+
+	//FARE togliere public
 public:
 	//eliminare FARE
 	void printSpaces(char Char) {
@@ -79,40 +94,6 @@ public:
 	//FARE usarli dappertutto
 	bool TempError, ExternalError;
 	
-
-	
-	/*
-	The two pointers inside the file are moved to the new position
-	The file is opened, if it wasn't already
-	The indices start from 0: pointTo(0, 0, 0) points to the 1st char of the
-		1st word of the 1st line (not necessarily to the beginning of the file)
-	While 0 means "move to the first", -1 means "don't move"
-		So only pointTo(-1, -1, -1) will surely point to the beginning
-	Returns false if the file couldn't be opened or	if the
-		specified position is out of bounds, otherwise true
-	*/
-	bool pointTo(uint32 Line, uint32 Word, uint32 Char);
-	/*
-	The file is opened, if it wasn't already
-	The two pointers inside the file are moved to the beginning
-	The file's eofbit is cleared
-	Returns true if the file opened correctly, otherwise false
-	*/
-	bool pointToBeg();
-	/*
-	The file is opened, if it wasn't already
-	The two pointers inside the file are moved to the end
-	The file's eofbit is cleared FARE se va bene
-	Returns true if the file opened correctly, otherwise false
-	*/
-	bool pointToEnd();
-	/*
-	Retrieves the (start) position of the requested line/word/char
-	Maintains the original file's pointers' position
-	Returns -1 if the file couldn't be opened and
-		-2 if the specified position is out of bounds
-	*/
-	std::streampos getPosition(uint32 Line, uint32 Word, uint32 Char);
 
 	/*
 	Counts the number of words in a Tstr,
@@ -156,6 +137,49 @@ public:
 	*/
 	File(Tstr Path, Tstr TempPath);
 
+
+	/*
+	Moves the pointer to a new position
+	pointTo(1) means that the next character is the second
+	The file is opened, if it wasn't already
+	Leaves the file open in binary input-output mode
+	Returns false if the file couldn't be opened, otherwise true
+	*/
+	bool pointTo(std::streampos Position);
+	/*
+	Moves the pointer to a char in a word in a line
+	The indices start from 0: pointTo(0, 0, 0) points to the 1st char of the
+		1st word of the 1st line (not necessarily to the beginning of the file)
+	While 0 means "move to the first", -1 means "don't move"
+		So only pointTo(-1, -1, -1) will surely point to the beginning
+	The file is opened, if it wasn't already
+	Returns false if the file couldn't be opened or	if the
+		specified position is out of bounds, otherwise true
+	*/
+	bool pointTo(uint32 Line, uint32 Word, uint32 Char);
+	/*
+	The file is opened, if it wasn't already
+	The two pointers inside the file are moved to the beginning
+	The file's eofbit is cleared
+	Returns true if the file opened correctly, otherwise false
+	*/
+	bool pointToBeg();
+	/*
+	The file is opened, if it wasn't already
+	The two pointers inside the file are moved to the end
+	The file's eofbit is cleared FARE se va bene
+	Returns true if the file opened correctly, otherwise false
+	*/
+	bool pointToEnd();
+	/*
+	Retrieves the (start) position of the requested line/word/char
+	Maintains the original file's pointers' position
+	Returns -1 if the file couldn't be opened and
+	-2 if the specified position is out of bounds
+	*/
+	std::streampos getPosition(uint32 Line, uint32 Word, uint32 Char);
+
+
 	/*
 	Returns the number of '\n'
 	Returns 0 if the file couldn't be opened
@@ -173,7 +197,8 @@ public:
 	uint32 getNrWords(uint32 Line);
 	/*
 	Returns the number of chars (bytes)
-	Returns 0 if the file couldn't be opened
+	The file is neither opened nor closed
+	Returns 0 if the file couldn't be axcessed
 	*/
 	uint32 getNrChars();
 	/*
@@ -189,6 +214,12 @@ public:
 	uint32 getNrChars(uint32 Line, uint32 Word);
 
 	
+	bool put(char toPut);
+	Tstr nextLine();
+	Tstr nextWord();
+	char nextChar();
+
+
 	/*
 	Returns a line removing all '\r' at the end of it
 	If the line is out of bounds "" is returned
@@ -453,12 +484,20 @@ public:
 	bool move(Tstr newPath);
 	/*
 	Overwrites newFile with this file's content
-	Leaves the file open in binary input-output mode
+	Leaves all files open in binary input-output mode
+	Can set ExternalError
 	Returns false if either the parameter or the file
 		couldn't be opened, otherwise true
 	*/
 	bool move(File &toOverwrite);
-	bool swap(File &toSwap);
+	/*
+	Swaps the content of this file with toSwap using a temp file
+	Leaves all files open in binary input-output mode
+	Can set ExternalError and TempError
+	Returns false if either the parameter, the file or the
+		temp file couldn't be opened, otherwise true
+	*/
+	bool swap(File &Other);
 	/*
 	Replaces the filename, extension included, with the new name
 	Leaves the file open in binary input-output mode
@@ -503,7 +542,6 @@ public:
 	Returns a stat object containing various infos about the file
 	*/
 	struct stat info();
-	//FARE aggiungere altro: stati del file calcolati con stat
 
 
 	/*
@@ -557,14 +595,13 @@ public:
 	*/
 	void extErr(bool Value);
 	/*
-	Returns an object that contains all the infos about the file's error state flags
+	Returns an object that contains all the infos about the file's errors
 	*/
 	FileState state() const;
 
-
-
+	
 	/*
-	Returns the currently set path
+	Returns the path used to open the file
 	*/
 	Tstr getPath() const;
 	/*
@@ -572,6 +609,14 @@ public:
 	Closes the file if it is open
 	*/
 	void setPath(Tstr Path);
+	/*
+	Returns the path used to open the temp file
+	*/
+	Tstr getTempPath() const;
+	/*
+	Modifies the path used to open the temp file
+	*/
+	void setTempPath(Tstr TempPath);
 
 
 	/*
@@ -675,28 +720,76 @@ public:
 	File& operator<< (double In);
 
 
-	File& operator= (File);
-	File& operator= (Tstr newText);
-	Tstr& operator+ (File);				//ritorna un file con all'inizio il contenuto di questo file e alla fine quello del parametro
-	Tstr& operator+ (Tfstm);
-	File& operator+= (File);			//appende in fondo
-	File& operator+= (Tfstm);
-	File& operator+= (Tstr In);
-	File& operator+= (const char * In);
-	File& operator+= (char In);
-	File& operator+= (int64 In);
-	File& operator+= (double In);
+	//FARE vedere se mettere funzioni per supportare fstream ma sembra inutile. Eventualmente togliere anche sopra ^^^
+	/*
+	Copies the settings from the parameter into this file:
+		path, tempPath, errors, but not the file content
+	If the parameter is open the file will be opened too in binary input-output mode
+	Returns *this
+	*/
+	File& operator= (File &toCopy);
+	/*
+	Replaces all the content of this file with the parameter
+	The file is opened, if it wasn't already
+	Leaves the file open in binary input-output mode
+	Returns false if the file couldn't be opened, otherwise true
+	*/
+	bool operator= (Tstr newText);
+	/*
+	Returns a string with at the start the content of this
+		file and then the content of the parameter
+	The file is opened, if it wasn't already
+	Leaves the file open in binary input-output mode
+	If this file or the parameter file couldn't be opened
+		the returned string won't include them
+	*/
+	Tstr operator+ (File &toAdd);
+	/*
+	Returns a string with at the start the content
+		of this file and then the parameter
+	The file is opened, if it wasn't already
+	Leaves the file open in binary input-output mode
+	If this file couldn't be opened toAdd will be returned
+	*/
+	Tstr operator+ (Tstr toAdd);
+	/*
+	Appends the content of the parameter to this file
+	The file is opened, if it wasn't already
+	Leaves the file open in binary input-output mode
+	If this file couldn't be opened nothing happens
+	Returns *this
+	*/
+	File& operator+= (File &toAppend);
+	/*
+	Appends the parameter to this file
+	The file is opened, if it wasn't already
+	Leaves the file open in binary input-output mode
+	If this file couldn't be opened nothing happens
+	Returns *this
+	*/
+	File& operator+= (Tstr toAppend);
 	
 
-	char operator[] (std::streampos Pos);				//ritorna il carattere in posizione specificata dal parametro
-	bool operator== (File Path);				//se i due file hanno lo stesso path ritorna 1
-	bool operator== (Tstr Path);
-	bool operator!= (File Path);				//se i due file non hanno lo stesso path ritorna 1
-	bool operator!= (Tstr Path);	
+	/*
+	Returns a FilePosition object to get/modify the char
+		using operator char and operator=
+	*/
+	File::FilePosition operator[] (std::streampos Position);
+	/*
+	Returns true if the content of the files
+		is identic, otherwise false
+	Returns false if a file couldn't be opened
+	*/
+	bool operator== (File &toCompare);
+	/*
+	Returns false if the content of the files is identic, otherwise true
+	Returns true if either this file or the parameter file couldn't be opened
+	*/
+	bool operator!= (File &toCompare);
 
 
 	operator char*();							//scrive tutto il file in un array di caratteri
-	char * cString();
+	char * cStr();
 	/*
 	Saves all the file in a Tstr and returns it
 	Returns "" if the file couldn't be opened
@@ -706,8 +799,8 @@ public:
 	Saves all the file in a Tstr and returns it
 	Returns "" if the file couldn't be opened
 	*/
-	Tstr string();
-	operator Tfstm();
+	Tstr str();
+	operator Tfstm&();
 	Tfstm fstream();
 	operator bool();							//ritorna 1 se il file non ha problemi ed e' aperto
 	bool operator! ();							//ritorna 1 se il file ha problemi o e' chiuso

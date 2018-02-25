@@ -24,6 +24,8 @@ constexpr char defaultTempPath[] = "temp.tmp";
 constexpr char defaultTempExtension[] = ".tmp";
 
 
+
+
 FileState::FileState(bool Open, bool Eof, bool Fail, bool Bad, bool TempErr, bool ExtErr) : open(Open), eof(Eof), fail(Fail), bad(Bad), tempErr(TempErr), extErr(ExtErr) {}
 FileState::operator bool() {
 	return !open || eof || fail || bad || tempErr || extErr;
@@ -49,6 +51,76 @@ void FileState::save(File &file) {
 }
 
 
+
+
+File::FilePosition::FilePosition(File * file, std::streampos Position) : file(file), position(Position) {}
+File::FilePosition::operator char() {
+	return file->getChar(position);
+}
+bool File::FilePosition::operator=(char newChar) {
+	return file->replaceChar(position, newChar);
+}
+
+
+
+
+uint32 File::countWords(Tstr Text) {
+	bool wasSpace = 1;
+	uint32 nrWords = 0;
+
+	for (char letter : Text) {
+		if (isspace(letter)) wasSpace = 1;
+		else {
+			if (wasSpace) {
+				wasSpace = 0;
+				++nrWords;
+			}
+		}
+	}
+
+	return nrWords;
+}
+void File::truncEndCR(Tstr & Text) {
+	while (!Text.empty() && Text.back() == '\r') {
+		Text.pop_back();
+	}
+}
+bool File::openTempToModifyFile(Tfstm & TempFile) {
+	if (file.is_open()) file.close();
+	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
+	if (!file.is_open()) return false;
+
+	if (TempFile.is_open()) TempFile.close();
+	TempFile.open(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
+	if (!TempFile.is_open()) {
+		TempError = 1;
+		file.close();
+		return false;
+	}
+
+	return true;
+}
+void File::moveFileContent(Tfstm & From, Tfstm & To) {
+	char tempChar;
+	while (1) {
+		tempChar = From.get();
+		if (From.eof()) return;
+		To << tempChar;
+	}
+}
+
+
+File::File() : path(""), tempPath(defaultTempPath), TempError(0), ExternalError(0) {}
+File::File(Tstr Path) : path(Path), tempPath(Path + defaultTempExtension), TempError(0), ExternalError(0) {}
+File::File(Tstr Path, Tstr TempPath) : path(Path), tempPath(TempPath), TempError(0), ExternalError(0) {}
+
+
+bool File::pointTo(std::streampos Position) {
+	if (!file.is_open() && !open()) return false;
+	file.seekg(Position);
+	//FARE vedere se serve file.seekp
+	return true;
+}
 bool File::pointTo(uint32 Line, uint32 Word, uint32 Char) {
 	if (!pointToBeg()) return false;
 
@@ -103,14 +175,14 @@ bool File::pointToBeg() {
 	if (!file.is_open() && !open()) return false;
 	file.clear(file.eofbit);
 	file.seekg(0);
-	file.seekp(0);
+	//FARE vedere se serve file.seekp
 	return true;
 }
 bool File::pointToEnd() {
 	if (!file.is_open() && !open()) return false;
 	file.clear(file.eofbit);
 	file.seekg(0, std::ios_base::end);
-	file.seekp(0, std::ios_base::end);
+	//FARE vedere se serve file.seekp
 	return true;
 }
 std::streampos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
@@ -173,57 +245,6 @@ std::streampos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 
 	return position;
 }
-
-
-uint32 File::countWords(Tstr Text) {
-	bool wasSpace = 1;
-	uint32 nrWords = 0;
-
-	for (char letter : Text) {
-		if (isspace(letter)) wasSpace = 1;
-		else {
-			if (wasSpace) {
-				wasSpace = 0;
-				++nrWords;
-			}
-		}
-	}
-
-	return nrWords;
-}
-void File::truncEndCR(Tstr & Text) {
-	while (!Text.empty() && Text.back() == '\r') {
-		Text.pop_back();
-	}
-}
-bool File::openTempToModifyFile(Tfstm & TempFile) {
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
-	if (!file.is_open()) return false;
-
-	if (TempFile.is_open()) TempFile.close();
-	TempFile.open(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-	if (!TempFile.is_open()) {
-		TempError = 1;
-		file.close();
-		return false;
-	}
-
-	return true;
-}
-void File::moveFileContent(Tfstm & From, Tfstm & To) {
-	char tempChar;
-	while (1) {
-		tempChar = From.get();
-		if (From.eof()) return;
-		To << tempChar;
-	}
-}
-
-
-File::File() : path(""), tempPath(defaultTempPath), TempError(0), ExternalError(0) {}
-File::File(Tstr Path) : path(Path), tempPath(Path + defaultTempExtension), TempError(0), ExternalError(0) {}
-File::File(Tstr Path, Tstr TempPath) : path(Path), tempPath(TempPath), TempError(0), ExternalError(0) {}
 
 
 uint32 File::getNrLines() {
@@ -1422,9 +1443,9 @@ bool File::move(File & toOverwrite) {
 
 	return true;
 }
-bool File::swap(File & toSwap) {
+bool File::swap(File & Other) {
 	if (!pointToBeg()) return false;
-	if (!toSwap.pointToBeg()) {
+	if (!Other.pointToBeg()) {
 		ExternalError = 1;
 		return false;
 	}
@@ -1437,12 +1458,12 @@ bool File::swap(File & toSwap) {
 	moveFileContent(file, tempFile);
 
 	truncate();
-	moveFileContent(toSwap.file, file);
+	moveFileContent(Other.file, file);
 
-	toSwap.truncate();
+	Other.truncate();
 	tempFile.clear(tempFile.eofbit);
 	tempFile.seekg(0);
-	moveFileContent(tempFile, toSwap.file);
+	moveFileContent(tempFile, Other.file);
 	return true;
 }
 bool File::rename(Tstr newName) {
@@ -1556,6 +1577,12 @@ Tstr File::getPath() const {
 void File::setPath(Tstr Path) {
 	if (file.is_open()) file.close();
 	path = Path;
+}
+Tstr File::getTempPath() const {
+	return tempPath;
+}
+void File::setTempPath(Tstr TempPath) {
+	tempPath = TempPath;
 }
 
 
@@ -1688,6 +1715,87 @@ File& File::operator<<(double In) {
 }
 
 
+File& File::operator=(File &toCopy) {
+	close();
+	path = toCopy.path;
+	tempPath = toCopy.tempPath;
+
+	if (toCopy.isOpen()) {
+		open();
+
+		eofErr(toCopy.eofErr());
+		failErr(toCopy.failErr());
+		badErr(toCopy.badErr());
+		tempErr(toCopy.tempErr());
+		extErr(toCopy.extErr());
+
+		file.seekg(toCopy.file.tellg());
+	}
+	else {
+		eofErr(toCopy.eofErr());
+		failErr(toCopy.failErr());
+		badErr(toCopy.badErr());
+		tempErr(toCopy.tempErr());
+		extErr(toCopy.extErr());
+	}
+
+	return *this;
+}
+bool File::operator=(Tstr newText) {
+	if (!truncate()) return false;
+	
+	file << newText;
+
+	return true;
+}
+Tstr File::operator+(File &toAdd) {
+	return str() + toAdd.str();
+}
+Tstr File::operator+(Tstr toAdd) {
+	return str() + toAdd;
+}
+File& File::operator+=(File &toAppend) {
+	if (!pointToEnd()) return *this;
+	if (!toAppend.pointToBeg()) {
+		ExternalError = 1;
+		return *this;
+	}
+	moveFileContent(toAppend.file, file);
+	return *this;
+}
+File& File::operator+=(Tstr toAppend) {
+	if (!pointToEnd()) return *this;
+	file << toAppend;
+	return *this;
+}
+
+
+File::FilePosition File::operator[](std::streampos Position) {
+	return File::FilePosition(this, Position);
+}
+bool File::operator==(File &toCompare) {
+	if (!pointToBeg()) return false;
+	if (!toCompare.pointToBeg()) return false;
+
+	char tempCharThis, tempCharCompare;
+	while (1) {
+		tempCharThis = file.get();
+		tempCharCompare = toCompare.file.get();
+
+		if (file.eof()) {
+			if (toCompare.file.eof()) break;
+			else return false;
+		}
+
+		if (tempCharThis != tempCharCompare) return false;
+	}
+	return true;
+}
+bool File::operator!=(File &toCompare) {
+	return !operator==(toCompare);
+}
+
+
 //FARE non va
 File::operator Tstr() {
 	if (!pointToBeg()) return "";
@@ -1704,7 +1812,7 @@ File::operator Tstr() {
 
 	return fileStr;
 }
-Tstr File::string() {
+Tstr File::str() {
 	if (!pointToBeg()) return "";
 
 	char tempChar;
