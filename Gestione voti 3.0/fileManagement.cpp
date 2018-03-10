@@ -1,5 +1,5 @@
 #pragma once
-
+//TODO! replace seekp with seekg
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -10,6 +10,7 @@
 
 using Tstr = std::string;
 using Tfstm = std::fstream;
+using Tspos = std::streampos;
 using int8 = int8_t;
 using int16 = int16_t;
 using int32 = int32_t;
@@ -53,12 +54,12 @@ void FileState::save(File &file) {
 
 
 
-File::FilePosition::FilePosition(File * file, std::streampos Position) : file(file), position(Position) {}
-File::FilePosition::operator char() {
-	return file->getChar((uint32)position);
+FilePosition::FilePosition(File * file, uint32_t Position) : file(file), position(Position) {}
+FilePosition::operator char() {
+	return file->getChar(position);
 }
-bool File::FilePosition::operator=(char newChar) {
-	return file->replaceChar((uint32)position, newChar);
+bool FilePosition::operator=(char newChar) {
+	return file->replaceChar(position, newChar);
 }
 
 
@@ -87,11 +88,17 @@ void File::truncEndCR(Tstr & Text) {
 }
 bool File::openTempToModifyFile(Tfstm & TempFile) {
 	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app);
+	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app); //??
 	if (!file.is_open()) return false;
 
-	if (TempFile.is_open()) TempFile.close();
-	TempFile.open(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
+
+	struct stat buffer;
+	if (stat(tempPath.c_str(), &buffer) == 0) {
+		TempFile.open(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
+	}
+	else {
+		TempFile.open(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
+	}
 	if (!TempFile.is_open()) {
 		TempError = 1;
 		file.close();
@@ -108,15 +115,51 @@ void File::moveFileContent(Tfstm & From, Tfstm & To) {
 		To << tempChar;
 	}
 }
+bool File::deleteSection(Tspos From, Tspos To) {
+	if (From > To) std::swap(From, To);
+	Tfstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
+	uint32 currentPosition;
+	char tempChar;
+	file.clear();
+	file.seekg(0);
+	while (1) {
+		tempChar = file.get();
+		if (file.eof()) break;
+		if (currentPosition < From || currentPosition > To) {
+			tempFile << tempChar;
+		}
+		++currentPosition;
+	}
+
+
+	file.close();
+	file.open(path, std::ios::binary | std::ios::out | std::ios::trunc);
+	tempFile.seekg(0);
+
+
+	moveFileContent(tempFile, file);
+
+
+	file.close();
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
+}
 
 
 File::File() : path(""), tempPath(defaultTempPath), TempError(0), ExternalError(0) {}
 File::File(Tstr Path) : path(Path), tempPath(Path + defaultTempExtension), TempError(0), ExternalError(0) {}
 File::File(Tstr Path, Tstr TempPath) : path(Path), tempPath(TempPath), TempError(0), ExternalError(0) {}
+File::~File() {
+	close();
+}
 
 
-bool File::pointTo(std::streampos Position) {
+bool File::pointTo(Tspos Position) {
 	if (!file.is_open() && !open()) return false;
+	file.clear(file.eofbit);
 	file.seekg(Position);
 	//FARE vedere se serve file.seekp
 	return true;
@@ -160,7 +203,7 @@ bool File::pointTo(uint32 Line, uint32 Word, uint32 Char) {
 
 
 	if (Char != UINT32_MAX && Char != 0) {
-		std::streampos position = file.tellg() + (std::streampos)Char;
+		Tspos position = file.tellg() + (Tspos)Char;
 		file.seekg(0, std::ios_base::end);
 		if (position >= file.tellg()) return false;
 
@@ -185,8 +228,8 @@ bool File::pointToEnd() {
 	//FARE vedere se serve file.seekp
 	return true;
 }
-std::streampos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
-	std::streampos GpointerBeginning = 0, PpointerBeginning = 0;
+Tspos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
+	Tspos GpointerBeginning = 0, PpointerBeginning = 0;
 	if (file.is_open()) {
 		GpointerBeginning = file.tellg();
 		PpointerBeginning = file.tellp();
@@ -228,9 +271,9 @@ std::streampos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 	}
 
 
-	std::streampos position = file.tellg();
+	Tspos position = file.tellg();
 	if (Char != UINT32_MAX && Char != 0) {
-		position += (std::streampos)Char;
+		position += (Tspos)Char;
 		file.seekg(0, std::ios_base::end);
 		if (position >= file.tellg()) {
 			position = -2;
@@ -305,7 +348,8 @@ File& File::put(char ToPut) {
 }
 Tstr File::getLine() {
 	if (!file.is_open()) return "";
-	Tstr line;
+
+	Tstr line = "";
 	char tempChar;
 	while (1) {
 		tempChar = file.get();
@@ -313,10 +357,12 @@ Tstr File::getLine() {
 		line += tempChar;
 	}
 	file.ignore();
+
 	return line;
 }
 Tstr File::getWord() {
 	if (!file.is_open()) return "";
+
 	Tstr word;
 	char tempChar;
 	while (1) {
@@ -326,25 +372,54 @@ Tstr File::getWord() {
 			break;
 		}
 	}
+
 	while (1) {
 		tempChar = file.get();
 		if (isspace(tempChar) || file.eof()) break;
 		word += tempChar;
 	}
+
 	return word;
 }
 char File::get() {
 	return file.get();
 }
 bool File::getLine(Tstr &Line) {
-	Line = getLine();
-	return !Line.empty();
+	Line = "";
+	if (!file.is_open() || file.eof()) return false;
+
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (tempChar == '\r' || file.eof()) break;
+		Line += tempChar;
+	}
+	file.ignore();
+
+	return true;
 }
 bool File::getWord(Tstr &Word) {
-	Word = getWord();
-	return !Word.empty();
+	Word = "";
+	if (!file.is_open() || file.eof()) return false;
+
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (!isspace(tempChar)) {
+			file.seekg(-1, std::ios_base::cur);
+			break;
+		}
+	}
+
+	while (1) {
+		tempChar = file.get();
+		if (isspace(tempChar) || file.eof()) break;
+		Word += tempChar;
+	}
+
+	return true;
 }
-char File::get(char &Char) {
+bool File::get(char &Char) {
 	Char = file.get();
 	return !file.eof();
 }
@@ -542,6 +617,66 @@ Tstr File::getChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 }
 
 
+bool File::add(Tspos Pos, Tstr ToAdd) {
+	uint32 fileLength = getNrChars();
+
+
+	if (!pointTo(Pos)) return false;
+	
+
+	if (ToAdd.back() == '\0') ToAdd.pop_back();
+	for (Tspos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
+		file.seekg(pointerPosition);
+		ToAdd.push_back(file.get());
+
+		file.seekp(pointerPosition);
+		file.put(ToAdd[0]);
+		ToAdd.erase(0, 1);
+	}
+
+
+	pointToEnd();
+	file << ToAdd;
+
+
+	return true;
+}
+bool File::add(Tspos Pos, const char * ToAdd) {
+	return add(Pos, Tstr(ToAdd));
+}
+bool File::add(Tspos Pos, char ToAdd) {
+	return addChar((uint32)Pos, ToAdd);
+}
+bool File::add(Tspos Pos, int8 ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
+bool File::add(Tspos Pos, int16 ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
+bool File::add(Tspos Pos, int32 ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
+bool File::add(Tspos Pos, int64 ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
+bool File::add(Tspos Pos, uint8 ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
+bool File::add(Tspos Pos, uint16 ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
+bool File::add(Tspos Pos, uint32 ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
+bool File::add(Tspos Pos, uint64 ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
+bool File::add(Tspos Pos, float ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
+bool File::add(Tspos Pos, double ToAdd) {
+	return add(Pos, std::to_string(ToAdd));
+}
 bool File::addLine(uint32 Line, Tstr ToAdd) {
 	uint32 fileLength = getNrChars();
 
@@ -553,7 +688,7 @@ bool File::addLine(uint32 Line, Tstr ToAdd) {
 
 
 	while (1) {
-		if (file.tellg() <= (std::streampos)0) break;
+		if (file.tellg() <= (Tspos)0) break;
 		if (file.get() == '\n') break;
 		else {
 			file.seekg(-2, std::ios_base::cur);
@@ -564,7 +699,7 @@ bool File::addLine(uint32 Line, Tstr ToAdd) {
 	ToAdd += (Tstr)"\r\n";
 
 
-	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
+	for (Tspos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
 		file.seekg(pointerPosition);
 		ToAdd.push_back(file.get());
 
@@ -591,7 +726,7 @@ bool File::addWord(uint32 Word, Tstr ToAdd) {
 
 
 	while (1) {
-		if (file.tellg() <= (std::streampos)0) {
+		if (file.tellg() <= (Tspos)0) {
 			ToAdd += (Tstr)" ";
 			break;
 		}
@@ -605,7 +740,7 @@ bool File::addWord(uint32 Word, Tstr ToAdd) {
 	}
 
 
-	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
+	for (Tspos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
 		file.seekg(pointerPosition);
 		ToAdd.push_back(file.get());
 
@@ -632,7 +767,7 @@ bool File::addWord(uint32 Line, uint32 Word, Tstr ToAdd) {
 
 
 	while (1) {
-		if (file.tellg() <= (std::streampos)0) {
+		if (file.tellg() <= (Tspos)0) {
 			ToAdd += (Tstr)" ";
 			break;
 		}
@@ -646,7 +781,7 @@ bool File::addWord(uint32 Line, uint32 Word, Tstr ToAdd) {
 	}
 
 
-	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
+	for (Tspos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
 		file.seekg(pointerPosition);
 		ToAdd.push_back(file.get());
 
@@ -670,7 +805,7 @@ bool File::addChar(uint32 Char, char ToAdd) {
 
 
 	char buffer;
-	std::streampos pointerPosition = file.tellg();
+	Tspos pointerPosition = file.tellg();
 
 	//FARE modo migliore ma sto impazzendo
 	while (pointerPosition < fileLength) {
@@ -695,7 +830,7 @@ bool File::addChar(uint32 Line, uint32 Char, char ToAdd) {
 
 
 	char buffer;
-	std::streampos pointerPosition = file.tellg();
+	Tspos pointerPosition = file.tellg();
 
 
 	while (pointerPosition < fileLength) {
@@ -720,7 +855,7 @@ bool File::addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd) {
 
 
 	char buffer;
-	std::streampos pointerPosition = file.tellg();
+	Tspos pointerPosition = file.tellg();
 
 
 	while (pointerPosition < fileLength) {
@@ -794,7 +929,7 @@ bool File::replaceLine(uint32 Line, Tstr Replacement) {
 	return true;
 }
 bool File::replaceWord(uint32 Word, Tstr Replacement) {
-	std::streampos wordPos = getPosition(-1, Word, -1);
+	Tspos wordPos = getPosition(-1, Word, -1);
 	if (-1 == wordPos || -2 == wordPos) return false;
 
 
@@ -836,7 +971,7 @@ bool File::replaceWord(uint32 Word, Tstr Replacement) {
 	return true;
 }
 bool File::replaceWord(uint32 Line, uint32 Word, Tstr Replacement) {
-	std::streampos wordPos = getPosition(Line, Word, -1);
+	Tspos wordPos = getPosition(Line, Word, -1);
 	if (-1 == wordPos || -2 == wordPos) return false;
 
 
@@ -955,7 +1090,7 @@ bool File::deleteLine(uint32 Line) {
 	return true;
 }
 bool File::deleteWord(uint32 Word) {
-	std::streampos wordPos = getPosition(-1, Word, -1);
+	Tspos wordPos = getPosition(-1, Word, -1);
 	if (-1 == wordPos) return false;
 	else if (-2 == wordPos) return true;
 
@@ -968,7 +1103,7 @@ bool File::deleteWord(uint32 Word) {
 		if (file.eof()) {
 			atEndLine = 1;
 			if (0 != wordPos) {
-				file.seekg(wordPos - (std::streampos)1);
+				file.seekg(wordPos - (Tspos)1);
 				if (file.get() != '\n') wordPos -= 1;
 			}
 			break;
@@ -977,7 +1112,7 @@ bool File::deleteWord(uint32 Word) {
 			if (tempChar == '\r') {
 				atEndLine = 1;
 				if (0 != wordPos) {
-					file.seekg(wordPos - (std::streampos)1);
+					file.seekg(wordPos - (Tspos)1);
 					if (file.get() != '\n') wordPos -= 1;
 				}
 			}
@@ -1063,7 +1198,7 @@ bool File::deleteWord(uint32 Word) {
 	return true;
 }
 bool File::deleteWord(uint32 Line, uint32 Word) {
-	std::streampos wordPos = getPosition(Line, Word, -1);
+	Tspos wordPos = getPosition(Line, Word, -1);
 	if (-1 == wordPos) return false;
 	else if (-2 == wordPos) return true;
 
@@ -1076,7 +1211,7 @@ bool File::deleteWord(uint32 Line, uint32 Word) {
 		if (file.eof()) {
 			atEndLine = 1;
 			if (0 != wordPos) {
-				file.seekg(wordPos - (std::streampos)1);
+				file.seekg(wordPos - (Tspos)1);
 				if (file.get() != '\n') wordPos -= 1;
 			}
 			break;
@@ -1085,7 +1220,7 @@ bool File::deleteWord(uint32 Line, uint32 Word) {
 			if (tempChar == '\r') {
 				atEndLine = 1;
 				if (0 != wordPos) {
-					file.seekg(wordPos - (std::streampos)1);
+					file.seekg(wordPos - (Tspos)1);
 					if (file.get() != '\n') wordPos -= 1;
 				}
 			}
@@ -1171,7 +1306,7 @@ bool File::deleteWord(uint32 Line, uint32 Word) {
 	return true;
 }
 bool File::deleteChar(uint32 Char) {
-	std::streampos charPos = getPosition(-1, -1, Char);
+	Tspos charPos = getPosition(-1, -1, Char);
 	if (-1 == charPos) return false;
 	else if (-2 == charPos) return true;
 
@@ -1209,7 +1344,7 @@ bool File::deleteChar(uint32 Char) {
 	return true;
 }
 bool File::deleteChar(uint32 Line, uint32 Char) {
-	std::streampos charPos = getPosition(Line, -1, Char);
+	Tspos charPos = getPosition(Line, -1, Char);
 	if (-1 == charPos) return false;
 	else if (-2 == charPos) return true;
 
@@ -1247,7 +1382,7 @@ bool File::deleteChar(uint32 Line, uint32 Char) {
 	return true;
 }
 bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
-	std::streampos charPos = getPosition(Line, Word, Char);
+	Tspos charPos = getPosition(Line, Word, Char);
 	if (-1 == charPos) return false;
 	else if (-2 == charPos) return true;
 
@@ -1286,19 +1421,130 @@ bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 }
 
 
-bool File::appendLine(Tstr ToAppend) {
+bool File::deleteLines(uint32 From, uint32 To) {
+	bool fileEndsWithNewline = 0;
+	if (!pointToBeg()) return false;
+	file.seekg(-1, std::ios_base::end);
+	if (file.get() == '\n') fileEndsWithNewline = 1;
+
+
+	Tfstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
+
+	if (From > To) {
+		std::swap(From, To);
+	}
+	
+
+	bool firstIteration = 1;
+	Tstr tempStr;
+	uint32 currentLine = 0;
+
+
+	while (1) {
+		if (getline(file, tempStr)) {
+			truncEndCR(tempStr);
+		}
+		else break;
+		if (currentLine < From || currentLine > To) {
+			if (firstIteration) {
+				tempFile << tempStr;
+				firstIteration = 0;
+			}
+			else {
+				tempFile << "\r\n" << tempStr;
+			}
+		}
+		++currentLine;
+	}
+	if (fileEndsWithNewline && (currentLine < From || currentLine > To)) {
+		tempFile << "\r\n";
+	}
+
+
+	file.close();
+	file.open(path, std::ios::binary | std::ios::out | std::ios::trunc);
+	tempFile.seekg(0);
+
+
+	moveFileContent(tempFile, file);
+
+
+	file.close();
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
+}
+bool File::deleteWords(uint32 From, uint32 To) {
+	return true;
+}
+bool File::deleteWords(uint32 Line, uint32 From, uint32 To) {
+	return true;
+}
+bool File::deleteChars(uint32 From, uint32 To) {
+	return true;
+}
+bool File::deleteChars(uint32 Line, uint32 From, uint32 To) {
+	return true;
+}
+bool File::deleteChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
+	return true;
+}
+
+
+bool File::append(Tstr ToAppend) {
 	if (!pointToEnd()) return false;
 
-	file << "\r\n" << ToAppend;
+	file << ToAppend;
 
 	return true;
 }
-bool File::appendWord(Tstr ToAppend) {
+bool File::append(char * ToAppend) {
+	return append(Tstr(ToAppend));
+}
+bool File::append(char ToAppend) {
 	if (!pointToEnd()) return false;
 
-	file << ' ' << ToAppend;
+	file << ToAppend;
 
 	return true;
+}
+bool File::append(int8 ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::append(int16 ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::append(int32 ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::append(int64 ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::append(uint8 ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::append(uint16 ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::append(uint32 ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::append(uint64 ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::append(float ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::append(double ToAppend) {
+	return append(std::to_string(ToAppend));
+}
+bool File::appendLine(Tstr ToAppend) {
+	return append("\r\n" + ToAppend);
+}
+bool File::appendWord(Tstr ToAppend) {
+	return append(" " + ToAppend);
 }
 bool File::appendWord(uint32 Line, Tstr ToAppend) {
 	uint32 fileLength = getNrChars();
@@ -1321,7 +1567,7 @@ bool File::appendWord(uint32 Line, Tstr ToAppend) {
 	ToAppend = (Tstr)" " + ToAppend;
 
 
-	for (std::streampos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
+	for (Tspos pointerPosition = file.tellg(); pointerPosition < fileLength; pointerPosition += 1) {
 		file.seekg(pointerPosition);
 		ToAppend.push_back(file.get());
 
@@ -1338,11 +1584,7 @@ bool File::appendWord(uint32 Line, Tstr ToAppend) {
 	return true;
 }
 bool File::appendChar(char ToAppend) {
-	if (!pointToEnd()) return false;
-
-	file << ToAppend;
-
-	return true;
+	return append(ToAppend);
 }
 bool File::appendChar(uint32 Line, char ToAppend) {
 	uint32 fileLength = getNrChars();
@@ -1362,7 +1604,7 @@ bool File::appendChar(uint32 Line, char ToAppend) {
 
 
 	char buffer;
-	std::streampos pointerPosition = file.tellg();
+	Tspos pointerPosition = file.tellg();
 
 
 	while (pointerPosition < fileLength) {
@@ -1396,7 +1638,7 @@ bool File::appendChar(uint32 Line, uint32 Word, char ToAppend) {
 
 
 	char buffer;
-	std::streampos pointerPosition = file.tellg();
+	Tspos pointerPosition = file.tellg();
 
 
 	while (pointerPosition < fileLength) {
@@ -1566,14 +1808,14 @@ struct stat File::info() {
 
 //da testare FARE
 bool File::good() const {
-	return file.good() && !TempError && !ExternalError;
+	return bool(this);
 }
 void File::clear() {
 	file.clear();
 	TempError = 0;
 	ExternalError = 0;
 }
-inline bool File::eofErr() const {
+bool File::eofErr() const {
 	return file.eof();
 }
 void File::eofErr(bool Value) {
@@ -1584,7 +1826,7 @@ void File::eofErr(bool Value) {
 		file.clear(file.eofbit);
 	}
 }
-inline bool File::failErr() const {
+bool File::failErr() const {
 	return file.fail();
 }
 void File::failErr(bool Value) {
@@ -1595,7 +1837,7 @@ void File::failErr(bool Value) {
 		file.clear(file.failbit);
 	}
 }
-inline bool File::badErr() const {
+bool File::badErr() const {
 	return file.bad();
 }
 void File::badErr(bool Value) {
@@ -1703,7 +1945,7 @@ File& File::operator>>(Tstr &Out) {
 	file >> Out;
 	return *this;
 }
-File& File::operator>>(char * &Out) {
+File& File::operator>>(char * Out) {
 	file >> Out;
 	return *this;
 }
@@ -1711,7 +1953,39 @@ File& File::operator>>(char &Out) {
 	file >> Out;
 	return *this;
 }
+File& File::operator>>(uint8 &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(uint16 &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(uint32 &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(uint64 &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(int8 &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(int16 &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(int32 &Out) {
+	file >> Out;
+	return *this;
+}
 File& File::operator>>(int64 &Out) {
+	file >> Out;
+	return *this;
+}
+File& File::operator>>(float &Out) {
 	file >> Out;
 	return *this;
 }
@@ -1757,7 +2031,35 @@ File& File::operator<<(char In) {
 	file << In;
 	return *this;
 }
+File& File::operator<<(int8 In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(int16 In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(int32 In) {
+	file << In;
+	return *this;
+}
 File& File::operator<<(int64 In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(uint8 In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(uint16 In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(uint32 In) {
+	file << In;
+	return *this;
+}
+File& File::operator<<(uint64 In) {
 	file << In;
 	return *this;
 }
@@ -1765,46 +2067,50 @@ File& File::operator<<(double In) {
 	file << In;
 	return *this;
 }
+File& File::operator<<(float In) {
+	file << In;
+	return *this;
+}
 
 
-File& File::operator=(File &toCopy) {
+File& File::operator=(File &Source) {
 	close();
-	path = toCopy.path;
-	tempPath = toCopy.tempPath;
+	path = Source.path;
+	tempPath = Source.tempPath;
 
-	if (toCopy.isOpen()) {
+	if (Source.isOpen()) {
 		open();
 
-		eofErr(toCopy.eofErr());
-		failErr(toCopy.failErr());
-		badErr(toCopy.badErr());
-		tempErr(toCopy.tempErr());
-		extErr(toCopy.extErr());
+		eofErr(Source.eofErr());
+		failErr(Source.failErr());
+		badErr(Source.badErr());
+		tempErr(Source.tempErr());
+		extErr(Source.extErr());
 
-		file.seekg(toCopy.file.tellg());
+		file.seekg(Source.file.tellg());
 	}
 	else {
-		eofErr(toCopy.eofErr());
-		failErr(toCopy.failErr());
-		badErr(toCopy.badErr());
-		tempErr(toCopy.tempErr());
-		extErr(toCopy.extErr());
+		eofErr(Source.eofErr());
+		failErr(Source.failErr());
+		badErr(Source.badErr());
+		tempErr(Source.tempErr());
+		extErr(Source.extErr());
 	}
 
 	return *this;
 }
-bool File::operator=(Tstr newText) {
+bool File::operator=(Tstr NewText) {
 	if (!truncate()) return false;
 	
-	file << newText;
+	file << NewText;
 
 	return true;
 }
-Tstr File::operator+(File &toAdd) {
-	return str() + toAdd.str();
+Tstr File::operator+(File &ToAdd) {
+	return str() + ToAdd.str();
 }
-Tstr File::operator+(Tstr toAdd) {
-	return str() + toAdd;
+Tstr File::operator+(Tstr ToAdd) {
+	return str() + ToAdd;
 }
 File& File::operator+=(File &toAppend) {
 	if (!pointToEnd()) return *this;
@@ -1822,8 +2128,8 @@ File& File::operator+=(Tstr toAppend) {
 }
 
 
-File::FilePosition File::operator[](std::streampos Position) {
-	return File::FilePosition(this, Position);
+FilePosition File::operator[](uint32 Position) {
+	return FilePosition(this, Position);
 }
 bool File::operator==(File &toCompare) {
 	if (!pointToBeg()) return false;
@@ -1848,9 +2154,8 @@ bool File::operator!=(File &toCompare) {
 }
 
 
-//FARE non va
-File::operator Tstr() {
-	if (!pointToBeg()) return "";
+const char * File::cStr() {
+	if (!pointToBeg()) return nullptr;
 
 	char tempChar;
 	Tstr fileStr = "";
@@ -1862,7 +2167,10 @@ File::operator Tstr() {
 		else break;
 	}
 
-	return fileStr;
+	return fileStr.c_str();
+}
+File::operator Tstr() {
+	return str();
 }
 Tstr File::str() {
 	if (!pointToBeg()) return "";
@@ -1879,8 +2187,6 @@ Tstr File::str() {
 
 	return fileStr;
 }
-
-
 File::operator bool() {
 	return !(file.eof() || file.fail() || file.bad() || TempError || ExternalError);
 }
