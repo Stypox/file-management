@@ -85,8 +85,7 @@ void printSpaces(Tstr str) {
 
 
 int main() {
-	char testChar;
-	Tstr test;
+	Tstr tempString;
 
 
 	File f1("f1.txt");
@@ -94,89 +93,20 @@ int main() {
 	File backup("backup.txt");
 	backup.move(f1);
 	backup.move(f2);
-	f1.close();
+	backup.close();
 	f1.open();
 	f2.open();
 	
 
-	f1.deleteLines(10, 2);
-
+	f1.deleteWord(5);
+	
 
 	std::cout << "\n\n";
 	printSpaces(f1);
 	std::cout << "\n\n";
 	printSpaces(f2);
 
-	////FARE testare meglio
-	////add and delete
-	//f1.addLine(0, "La-");				//l
-	//std::cout << f1.getLine(0);
-	//f1.deleteLine(0);
-	//f1.addWord(1, "Wa1-");				//w
-	//std::cout << f1.getWord(1);
-	//f1.deleteWord(1);
-	//f1.addWord(2, 2, "Wa2-");			//lw
-	//std::cout << f1.getWord(2, 2);
-	//f1.deleteWord(2, 2);
-	//f1.addChar(0, 'A');					//c
-	//std::cout << f1.getChar(0);
-	//f1.deleteChar(0);
-	//f1.addChar(1, 1, 'B');				//lc
-	//std::cout << f1.getChar(1, 1);
-	//f1.deleteChar(1, 1);
-	//f1.addChar(2, 2, 0, 'C');			//lwc
-	//std::cout << f1.getChar(2, 2, 0);
-	//f1.deleteChar(2, 2, 0);
-	//
-	////replace
-	//test = f1.getLine(1);				//l
-	//f1.replaceLine(1, "Lr-");
-	//std::cout << f1.getLine(1);
-	//f1.replaceLine(1, test);
-	//test = f1.getWord(1);				//w
-	//f1.replaceWord(1, "Wr1-");
-	//std::cout << f1.getWord(1);
-	//f1.replaceWord(1, test);
-	//test = f1.getWord(1, 0);			//lw
-	//f1.replaceWord(1, 0, "Wr2-");
-	//std::cout << f1.getWord(1, 0);
-	//f1.replaceWord(1, 0, test);
-	//testChar = f1.getChar(0);			//c
-	//f1.replaceChar(0, 'D');
-	//std::cout << f1.getChar(0);
-	//f1.replaceChar(0, testChar);
-	//testChar = f1.getChar(1, 1);		//lc
-	//f1.replaceChar(1, 1, 'E');
-	//std::cout << f1.getChar(1, 1);
-	//f1.replaceChar(1, 1, testChar);
-	//testChar = f1.getChar(2, 2, 0);		//lwc
-	//f1.replaceChar(2, 2, 0, 'F');
-	//std::cout << f1.getChar(2, 2, 0);
-	//f1.replaceChar(2, 2, 0, testChar);
 
-	///*f1.appendChar(' ');
-	//f1.appendWord("");
-	//f1.appendLine("\r\n");
-	//f1.appendWord(0, "Ciao");*/
-
-	////FARE fa cose strane
-	//f1.addLine(7, "Ciao");
-	//std::cout << "\n\n                         Intero file: " << f1.getNrChars() << "byte\n";
-	//printSpaces(f1);
-
-
-	std::cout << "";
-	std::cout << "";
-	std::cout << "";
-	std::cout << "";
-	std::cout << "";
-	std::cout << "";
-	std::cout << "";
-	std::cout << "";
-	std::cout << "";
-
-	f1.close();
-	f2.close();
 	askEnd();
 	return 0;
 }

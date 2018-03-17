@@ -85,7 +85,6 @@ private:
 public:
 	Tfstm file;
 	Tstr path, tempPath;
-	//FARE usarli dappertutto
 	bool TempError, ExternalError;
 	
 
@@ -113,10 +112,29 @@ public:
 	*/
 	void moveFileContent(Tfstm &From, Tfstm &To);
 	/*
-	Deletes all the chars from From to To, both included
+	Retrieves the (start) position of the requested line/word/char
+	Moves the pointer to the new position
+	Returns -1 if the file couldn't be opened and
+	-2 if the specified position is out of bounds
+	*/
+	Tspos getPositionMove(uint32 Line, uint32 Word, uint32 Char);
 
+
+	/*
+	Replaces all the characters between From and To with Replacement
+	Uses a temp file if the size of replacement is smaller than To-From
+	*/
+	bool replaceSection(Tspos From, Tspos To, Tstr Replacement);
+	/*
+	Deletes all the chars between From and To, both included
+	Uses a temp file
+	The file is opened, if it wasn't already
+	Leaves the file open in binary input-output mode
+	Returns false if the files couldn't be opened, otherwise true
 	*/
 	bool deleteSection(Tspos From, Tspos To);
+
+
 public:
 	/*
 	Default constructor
@@ -452,8 +470,8 @@ public:
 	*/
 	bool deleteLine(uint32 Line);
 	/*
-	Deletes a word and a space using a temp file
-	The space is deleted after if it's not \r, otherwise before
+	Deletes a word and all the spaces after it using a temp file
+	The spaces are deleted if it's not \r
 	If the specified word is out of bounds nothing happens, returning true
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened, otherwise true

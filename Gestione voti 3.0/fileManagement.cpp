@@ -87,9 +87,14 @@ void File::truncEndCR(Tstr & Text) {
 	}
 }
 bool File::openTempToModifyFile(Tfstm & TempFile) {
-	if (file.is_open()) file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app); //??
-	if (!file.is_open()) return false;
+	if (!file.is_open()) {
+		file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app); //??
+		if (!file.is_open()) return false;
+	}
+	else {
+		file.clear(file.eofbit);
+		file.seekg(0);
+	}
 
 
 	struct stat buffer;
@@ -115,15 +120,129 @@ void File::moveFileContent(Tfstm & From, Tfstm & To) {
 		To << tempChar;
 	}
 }
+Tspos File::getPositionMove(uint32 Line, uint32 Word, uint32 Char) {
+	if (!pointToBeg()) return -1;
+
+
+	if (Line != UINT32_MAX) {
+		for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+			while (file.get() != '\n') {
+				if (file.eof()) return -2;
+			}
+		}
+	}
+
+
+	if (Word != UINT32_MAX) {
+		bool wasSpace = 1;
+		uint32 nrWords = 0;
+		++Word;
+
+		while (1) {
+			if (file.eof()) return -2;
+			if (nrWords >= Word) {
+				file.seekg(-1, std::ios_base::cur);
+				break;
+			}
+			if (isspace(file.get())) wasSpace = 1;
+			else {
+				if (wasSpace) {
+					wasSpace = 0;
+					++nrWords;
+				}
+			}
+		}
+	}
+
+
+	Tspos position = file.tellg();
+	if (Char != UINT32_MAX && Char != 0) {
+		position += (Tspos)Char;
+		if (position >= getNrChars()) {
+			position = -2;
+		}
+	}
+
+
+	return position;
+}
+
+
+bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
+	uint32 oldSize = (uint32)To - (uint32)From + 1,
+		newSize = Replacement.size();
+
+	
+	if (oldSize > newSize) {
+		Tfstm tempFile;
+		if (!openTempToModifyFile(tempFile)) return false;
+
+		char tempChar;
+		uint32 currentChar = 0;
+		while (1) {
+			tempChar = file.get();
+			if (file.eof()) break;
+			if (currentChar >= From && currentChar <= To) {
+				tempFile << Replacement;
+				file.seekg(1 + (uint32)To);
+				currentChar += 1 + (uint32)To;
+			}
+			else {
+				tempFile << tempChar;
+				++currentChar;
+			}
+		}
+
+
+		file.close();
+		file.open(path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+		tempFile.seekg(0);
+
+
+		moveFileContent(tempFile, file);
+
+
+		file.close();
+		tempFile.close();
+		std::remove(tempPath.c_str());
+	}
+
+	
+	else if (oldSize < newSize) {
+		uint32 fileLength = getNrChars();
+		if (!pointTo(From)) return false;
+
+		file << Replacement.substr(0, oldSize);
+		Tstr buffer = Replacement.substr(oldSize, newSize - oldSize);
+
+		for (Tspos pointerPosition = oldSize + From; pointerPosition < fileLength; pointerPosition += 1) {
+			file.seekg(pointerPosition);
+			buffer.push_back(file.get());
+
+			file.seekp(pointerPosition);
+			file.put(buffer[0]);
+			buffer.erase(0, 1);
+		}
+
+		file << buffer;
+	}
+	
+
+	else {
+		if (!pointTo(From)) return false;
+		file << Replacement;
+	}
+
+
+	return true;
+}
 bool File::deleteSection(Tspos From, Tspos To) {
-	if (From > To) std::swap(From, To);
 	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
-	uint32 currentPosition;
+
+	uint32 currentPosition = 0;
 	char tempChar;
-	file.clear();
-	file.seekg(0);
 	while (1) {
 		tempChar = file.get();
 		if (file.eof()) break;
@@ -135,7 +254,7 @@ bool File::deleteSection(Tspos From, Tspos To) {
 
 
 	file.close();
-	file.open(path, std::ios::binary | std::ios::out | std::ios::trunc);
+	file.open(path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -171,10 +290,7 @@ bool File::pointTo(uint32 Line, uint32 Word, uint32 Char) {
 	if (Line != UINT32_MAX) {
 		for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 			while (file.get() != '\n') {
-				if (file.eof()) {
-					if (++currentLine < Line) return false;
-					break;
-				}
+				if (file.eof()) return false;
 			}
 		}
 	}
@@ -240,10 +356,7 @@ Tspos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 	if (Line != UINT32_MAX) {
 		for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 			while (file.get() != '\n') {
-				if (file.eof()) {
-					if (++currentLine < Line) return -2;
-					break;
-				}
+				if (file.eof()) return -2;
 			}
 		}
 	}
@@ -318,7 +431,7 @@ uint32 File::getNrWords(uint32 Line) {
 }
 uint32 File::getNrChars() {
 	struct stat buffer;
-	if (::stat(path.c_str(), &buffer) != 0) return 0;
+	if (::stat("f1.txt", &buffer) != 0) return 0;
 
 	return (uint32)buffer.st_size;
 }
@@ -938,25 +1051,23 @@ bool File::replaceWord(uint32 Word, Tstr Replacement) {
 
 
 	char tempChar;
-	int16 currentChar = 0;
+	int32 currentChar = 0;
 
 
 	while (1) {
 		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ == wordPos) {
-				while (!isspace(file.get())) {}
-				file.seekg(-1, std::ios_base::cur);
+		if (file.eof()) break;
+		if (currentChar++ == wordPos) {
+			while (!isspace(file.get())) {}
+			file.seekg(-1, std::ios_base::cur);
 
-				for (char letter : Replacement) {
-					tempFile << letter;
-				}
-			}
-			else {
-				tempFile << tempChar;
+			for (char letter : Replacement) {
+				tempFile << letter;
 			}
 		}
-		else break;
+		else {
+			tempFile << tempChar;
+		}
 	}
 
 	file.close();
@@ -981,26 +1092,24 @@ bool File::replaceWord(uint32 Line, uint32 Word, Tstr Replacement) {
 
 
 	char tempChar;
-	int16 currentChar = 0;
+	int32 currentChar = 0;
 
 	while (1) {
 		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ == wordPos) {
-				while (!isspace(file.get())) {}
-				file.seekg(-1, std::ios_base::cur);
+		if (file.eof()) break;
+		if (currentChar++ == wordPos) {
+			while (!isspace(file.get())) {}
+			file.seekg(-1, std::ios_base::cur);
 
-				for (char letter : Replacement) {
-					tempFile << letter;
-				}
+			for (char letter : Replacement) {
+				tempFile << letter;
+			}
 
-				tempFile << (char)file.get();
-			}
-			else {
-				tempFile << tempChar;
-			}
+			tempFile << (char)file.get();
 		}
-		else break;
+		else {
+			tempFile << tempChar;
+		}
 	}
 
 
@@ -1041,382 +1150,55 @@ bool File::replaceChar(uint32 Line, uint32 Word, uint32 Char, char Replacement) 
 
 
 bool File::deleteLine(uint32 Line) {
-	bool fileEndsWithNewline = 0;
-	if (!pointToBeg()) return false;
-	file.seekg(-1, std::ios_base::end);
-	if (file.get() == '\n') fileEndsWithNewline = 1;
+	Tspos from, to;
+	from = getPositionMove(Line, -1, -1);
+	if (from == (Tspos)-2) return true;
+	to = getPositionMove(Line + 1, -1, -1);
 
-
-	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
-
-
-	bool firstIteration = 1;
-	Tstr tempStr;
-	uint32 currentLine = 0;
-
-
-	while (1) {
-		if (getline(file, tempStr)) {
-			truncEndCR(tempStr);
-		}
-		else break;
-		if (currentLine++ != Line) {
-			if (firstIteration) {
-				tempFile << tempStr;
-				firstIteration = 0;
-			}
-			else {
-				tempFile << "\r\n" << tempStr;
-			}
-		}
+	if (to == (Tspos)-2) {
+		return deleteSection(from - (Tspos)2, getNrChars() - 1);
 	}
-	if (fileEndsWithNewline && currentLine != Line) {
-		tempFile << "\r\n";
-	}
-
-
-	file.close();
-	file.open(path, std::ios::binary | std::ios::out | std::ios::trunc);
-	tempFile.seekg(0);
-
-
-	moveFileContent(tempFile, file);
-
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
-	return true;
+	return deleteSection(from, (uint32)to - 1);
 }
 bool File::deleteWord(uint32 Word) {
-	Tspos wordPos = getPosition(-1, Word, -1);
-	if (-1 == wordPos) return false;
-	else if (-2 == wordPos) return true;
+	Tspos from, to;
+	from = getPositionMove(-1, Word, -1);
+	if (from == (Tspos)-2) return true;
 
-
-	file.seekg(wordPos);
-	bool atEndLine = 0;
 	char tempChar;
 	while (1) {
 		tempChar = file.get();
-		if (file.eof()) {
-			atEndLine = 1;
-			if (0 != wordPos) {
-				file.seekg(wordPos - (Tspos)1);
-				if (file.get() != '\n') wordPos -= 1;
-			}
-			break;
-		}
+		if (file.eof()) return deleteSection(from, getNrChars() - 1);
 		if (isspace(tempChar)) {
 			if (tempChar == '\r') {
-				atEndLine = 1;
-				if (0 != wordPos) {
-					file.seekg(wordPos - (Tspos)1);
-					if (file.get() != '\n') wordPos -= 1;
+				return deleteSection(from, file.tellg() - (Tspos)2);
+			}
+			while (1) {
+				tempChar = file.get();
+				if (file.eof()) return deleteSection(from, getNrChars() - 1);
+				if (!isspace(tempChar) || tempChar == '\r') {
+					return deleteSection(from, file.tellg() - (Tspos)2);
 				}
-			}
-			break;
-		}
-	}
-	
-
-	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
-
-
-	uint32 currentChar = 0;
-	if (atEndLine) {
-		while (1) {
-			tempChar = file.get();
-			if (file.eof()) break;
-			if (currentChar++ == wordPos) {
-				file.get();
-				while (1) {
-					if (isspace(file.get())) {
-						tempFile << '\r';
-						break;
-					}
-					if (file.eof()) break;
-				}
-				if (file.eof()) break;
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-	}
-	else {
-		while (1) {
-			tempChar = file.get();
-			if (file.eof()) break;
-			if (currentChar++ == wordPos) {
-				while (1) {
-					if (isspace(file.get()) || file.eof()) break;
-				}
-				if (file.eof()) break;
-			}
-			else {
-				tempFile << tempChar;
 			}
 		}
 	}
 
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ == wordPos) {
-				while (1) {
-					tempChar = file.get();
-					if (isspace(tempChar)) {
-						if (tempChar == '\r') {
-							tempFile << '\r';
-						}
-						break;
-					}
-				}
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-		else break;
+	to = getPositionMove(-1, Word + 1, -1);
+	if (to == (Tspos)-2) {
+		return deleteSection(from, getNrChars() - 1);
 	}
-
-
-	file.close();
-	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-	tempFile.seekg(0);
-
-
-	moveFileContent(tempFile, file);
-
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
-	return true;
+	return deleteSection(from, to - (Tspos)1);
 }
 bool File::deleteWord(uint32 Line, uint32 Word) {
-	Tspos wordPos = getPosition(Line, Word, -1);
-	if (-1 == wordPos) return false;
-	else if (-2 == wordPos) return true;
-
-
-	file.seekg(wordPos);
-	bool atEndLine = 0;
-	char tempChar;
-	while (1) {
-		tempChar = file.get();
-		if (file.eof()) {
-			atEndLine = 1;
-			if (0 != wordPos) {
-				file.seekg(wordPos - (Tspos)1);
-				if (file.get() != '\n') wordPos -= 1;
-			}
-			break;
-		}
-		if (isspace(tempChar)) {
-			if (tempChar == '\r') {
-				atEndLine = 1;
-				if (0 != wordPos) {
-					file.seekg(wordPos - (Tspos)1);
-					if (file.get() != '\n') wordPos -= 1;
-				}
-			}
-			break;
-		}
-	}
-
-
-	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
-
-
-	uint32 currentChar = 0;
-	if (atEndLine) {
-		while (1) {
-			tempChar = file.get();
-			if (file.eof()) break;
-			if (currentChar++ == wordPos) {
-				file.get();
-				while (1) {
-					if (isspace(file.get())) {
-						tempFile << '\r';
-						break;
-					}
-					if (file.eof()) break;
-				}
-				if (file.eof()) break;
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-	}
-	else {
-		while (1) {
-			tempChar = file.get();
-			if (file.eof()) break;
-			if (currentChar++ == wordPos) {
-				while (1) {
-					if (isspace(file.get()) || file.eof()) break;
-				}
-				if (file.eof()) break;
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-	}
-
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ == wordPos) {
-				while (1) {
-					tempChar = file.get();
-					if (isspace(tempChar)) {
-						if (tempChar == '\r') {
-							tempFile << '\r';
-						}
-						break;
-					}
-				}
-			}
-			else {
-				tempFile << tempChar;
-			}
-		}
-		else break;
-	}
-
-
-	file.close();
-	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-	tempFile.seekg(0);
-
-
-	moveFileContent(tempFile, file);
-
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
 	return true;
 }
 bool File::deleteChar(uint32 Char) {
-	Tspos charPos = getPosition(-1, -1, Char);
-	if (-1 == charPos) return false;
-	else if (-2 == charPos) return true;
-
-
-	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
-
-
-	char tempChar;
-	uint32 currentChar = 0;
-
-
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ != charPos) {
-				tempFile << tempChar;
-			}
-		}
-		else break;
-	}
-
-
-	file.close();
-	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-	tempFile.seekg(0);
-
-
-	moveFileContent(tempFile, file);
-
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
 	return true;
 }
 bool File::deleteChar(uint32 Line, uint32 Char) {
-	Tspos charPos = getPosition(Line, -1, Char);
-	if (-1 == charPos) return false;
-	else if (-2 == charPos) return true;
-
-
-	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
-
-
-	char tempChar;
-	uint32 currentChar = 0;
-
-
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ != charPos) {
-				tempFile << tempChar;
-			}
-		}
-		else break;
-	}
-
-
-	file.close();
-	file.open(path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-	tempFile.seekg(0);
-
-
-	moveFileContent(tempFile, file);
-
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
 	return true;
 }
 bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
-	Tspos charPos = getPosition(Line, Word, Char);
-	if (-1 == charPos) return false;
-	else if (-2 == charPos) return true;
-
-
-	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
-
-
-	char tempChar;
-	uint32 currentChar = 0;
-
-
-	while (1) {
-		tempChar = file.get();
-		if (!file.eof()) {
-			if (currentChar++ != charPos) {
-				tempFile << tempChar;
-			}
-		}
-		else break;
-	}
-
-
-	file.close();
-	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-	tempFile.seekg(0);
-
-
-	moveFileContent(tempFile, file);
-
-
-	file.close();
-	tempFile.close();
-	std::remove(tempPath.c_str());
 	return true;
 }
 
@@ -1464,7 +1246,7 @@ bool File::deleteLines(uint32 From, uint32 To) {
 
 
 	file.close();
-	file.open(path, std::ios::binary | std::ios::out | std::ios::trunc);
+	file.open(path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -1681,7 +1463,7 @@ bool File::deleteLastEmptyLines() {
 
 
 	file.close();
-	file.open( path, std::ios::binary | std::ios::out | std::ios::trunc);
+	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -1705,9 +1487,12 @@ bool File::create() {
 }
 bool File::move(Tstr newPath) {
 	if (file.is_open()) file.close();
-	file.open(newPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-	if (!file.is_open()) return false;
-	Tfstm oldFile(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+	file.open(newPath, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	if (!file.is_open()) {
+		ExternalError = 1;
+		return false;
+	}
+	Tfstm oldFile(path, std::ios_base::binary | std::ios_base::in);
 	if (!oldFile.is_open()) {
 		file.close();
 		return false;
@@ -1716,7 +1501,7 @@ bool File::move(Tstr newPath) {
 	moveFileContent(oldFile, file);
 
 	oldFile.close();
-
+	file.close();
 	std::remove(path.c_str());
 	path = newPath;
 	return true;
@@ -1735,6 +1520,7 @@ bool File::move(File & toOverwrite) {
 		toOverwrite << tempChar;
 	}
 
+	toOverwrite.close();
 	return true;
 }
 bool File::swap(File & Other) {
