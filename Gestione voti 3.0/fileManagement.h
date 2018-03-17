@@ -285,6 +285,7 @@ public:
 	*/
 	bool get(char &Char);
 
+
 	/*
 	Returns a line removing all '\r' at the end of it
 	If the line is out of bounds "" is returned
@@ -632,6 +633,11 @@ public:
 	Returns true if the file is open, otherwise false
 	*/
 	bool isOpen() const;
+	/*
+	Closes and reopens the file to force it to save all the changes
+	Returns false if the file isn't already open or couldn't be opened, otherwise true
+	*/
+	bool update();
 
 
 	/*
@@ -729,16 +735,6 @@ public:
 	*/
 	File& operator>> (File &Out);
 	/*
-	Affixes the content of the file to the parameter using a temp file
-	The parameter must be already open in binary input-output mode
-	Leaves both files open in binary input-output mode
-	The operation fails if the file or the temp file couldn't be opened
-		and if the parameter isn't already open
-	If the parameter isn't already open ExternalError is set to 1
-	Returns *this
-	*/
-	File& operator>> (Tfstm &Out);
-	/*
 	Like ofstream::operator>>
 	The file must be already open
 	Returns *this
@@ -757,7 +753,7 @@ public:
 	*/
 	File& operator>> (char &Out);
 	/*
-	Like ofstream::operator>>
+	Like ofstream::operator>> but gets the parameter as a number
 	The file must be already open
 	Returns *this
 	*/
@@ -781,7 +777,7 @@ public:
 	*/
 	File& operator>> (int64 &Out);
 	/*
-	Like ofstream::operator>>
+	Like ofstream::operator>> but gets the parameter as a number
 	The file must be already open
 	Returns *this
 	*/
@@ -827,16 +823,6 @@ public:
 	*/
 	File& operator<< (File &In);
 	/*
-	Affixes the content of the file to the parameter using a temp file
-	The parameter must be already open in binary input-output mode
-	Leaves both files open in binary input-output mode
-	The operation fails if the file or the temp file couldn't be opened
-		and if the parameter isn't already open
-	If the parameter isn't already open ExternalError is set to 1
-	Returns *this
-	*/
-	File& operator<< (Tfstm &In);
-	/*
 	Like ofstream::operator<<
 	The file must be already open
 	Returns *this
@@ -855,7 +841,7 @@ public:
 	*/
 	File& operator<< (char In);
 	/*
-	Like ofstream::operator<<
+	Like ofstream::operator<< but inserts the parameter as a number
 	The file must be already open
 	Returns *this
 	*/
@@ -879,7 +865,7 @@ public:
 	*/
 	File& operator<< (int64 In);
 	/*
-	Like ofstream::operator<<
+	Like ofstream::operator<< but inserts the parameter as a number
 	The file must be already open
 	Returns *this
 	*/
@@ -1014,3 +1000,5 @@ public:
 	*/
 	bool operator!();
 };
+
+std::string operator+ (std::string First, File &Second);

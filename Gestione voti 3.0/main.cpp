@@ -99,12 +99,14 @@ int main() {
 	f2.open();
 	
 	
-	f1.deleteChars(2, 53);
+	std::cout << f1.addChar(2, 'x');
 	
 
-	std::cout << "\n\n";
+	f1.update();
+	f2.update();
+	std::cout << "\n\n                       f1.txt    length: " << f1.getNrChars() << "byte\n";
 	printSpaces(f1);
-	std::cout << "\n\n";
+	std::cout << "\n\n                       f2.txt    length: " << f2.getNrChars() << "byte\n";
 	printSpaces(f2);
 
 
