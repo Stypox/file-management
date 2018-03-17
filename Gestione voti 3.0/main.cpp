@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <Windows.h>
+#include <conio.h>
 
 #include "fileManagement.h"
 /*
@@ -97,8 +98,8 @@ int main() {
 	f1.open();
 	f2.open();
 	
-
-	f1.deleteWord(5);
+	
+	f1.deleteChars(2, 53);
 	
 
 	std::cout << "\n\n";
@@ -107,6 +108,6 @@ int main() {
 	printSpaces(f2);
 
 
-	askEnd();
+	while (!_kbhit()) {}
 	return 0;
 }

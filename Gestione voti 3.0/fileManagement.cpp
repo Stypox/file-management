@@ -387,8 +387,7 @@ Tspos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 	Tspos position = file.tellg();
 	if (Char != UINT32_MAX && Char != 0) {
 		position += (Tspos)Char;
-		file.seekg(0, std::ios_base::end);
-		if (position >= file.tellg()) {
+		if (position >= getNrChars()) {
 			position = -2;
 		}
 	}
@@ -417,8 +416,9 @@ uint32 File::getNrWords() {
 
 	uint32 words = 0;
 	Tstr tempStr;
-	while (file >> tempStr) words++;
+	while (file >> tempStr) ++words;
 
+	std::cout << words;
 	return words;
 }
 uint32 File::getNrWords(uint32 Line) {
@@ -1152,17 +1152,22 @@ bool File::replaceChar(uint32 Line, uint32 Word, uint32 Char, char Replacement) 
 bool File::deleteLine(uint32 Line) {
 	Tspos from, to;
 	from = getPositionMove(Line, -1, -1);
+	if (from == (Tspos)-1) return false;
 	if (from == (Tspos)-2) return true;
 	to = getPositionMove(Line + 1, -1, -1);
 
 	if (to == (Tspos)-2) {
 		return deleteSection(from - (Tspos)2, getNrChars() - 1);
 	}
-	return deleteSection(from, (uint32)to - 1);
+	return deleteSection(from, to - (Tspos)1);
 }
 bool File::deleteWord(uint32 Word) {
+	return deleteWord(-1, Word);
+}
+bool File::deleteWord(uint32 Line, uint32 Word) {
 	Tspos from, to;
-	from = getPositionMove(-1, Word, -1);
+	from = getPositionMove(Line, Word, -1);
+	if (from == (Tspos)-1) return false;
 	if (from == (Tspos)-2) return true;
 
 	char tempChar;
@@ -1170,78 +1175,42 @@ bool File::deleteWord(uint32 Word) {
 		tempChar = file.get();
 		if (file.eof()) return deleteSection(from, getNrChars() - 1);
 		if (isspace(tempChar)) {
-			if (tempChar == '\r') {
-				return deleteSection(from, file.tellg() - (Tspos)2);
-			}
+			if (tempChar == '\r') break;
 			while (1) {
 				tempChar = file.get();
 				if (file.eof()) return deleteSection(from, getNrChars() - 1);
-				if (!isspace(tempChar) || tempChar == '\r') {
-					return deleteSection(from, file.tellg() - (Tspos)2);
-				}
+				if (!isspace(tempChar) || tempChar == '\r') break;
 			}
+			break;
 		}
 	}
-
-	to = getPositionMove(-1, Word + 1, -1);
-	if (to == (Tspos)-2) {
-		return deleteSection(from, getNrChars() - 1);
-	}
-	return deleteSection(from, to - (Tspos)1);
-}
-bool File::deleteWord(uint32 Line, uint32 Word) {
-	return true;
+	return deleteSection(from, file.tellg() - (Tspos)2);
 }
 bool File::deleteChar(uint32 Char) {
-	return true;
+	return deleteChar(-1, -1, Char);
 }
 bool File::deleteChar(uint32 Line, uint32 Char) {
-	return true;
+	return deleteChar(Line, -1, Char);
 }
 bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
-	return true;
-}
-
-
-bool File::deleteLines(uint32 From, uint32 To) {
-	bool fileEndsWithNewline = 0;
-	if (!pointToBeg()) return false;
-	file.seekg(-1, std::ios_base::end);
-	if (file.get() == '\n') fileEndsWithNewline = 1;
+	Tspos position = getPositionMove(Line, Word, Char);
+	if (position == (Tspos)-1) return false;
+	else if (position == (Tspos)-2) return true;
 
 
 	Tfstm tempFile;
 	if (!openTempToModifyFile(tempFile)) return false;
 
 
-	if (From > To) {
-		std::swap(From, To);
-	}
-	
-
-	bool firstIteration = 1;
-	Tstr tempStr;
-	uint32 currentLine = 0;
-
-
+	uint32 currentPosition = 0;
+	char tempChar;
 	while (1) {
-		if (getline(file, tempStr)) {
-			truncEndCR(tempStr);
+		tempChar = file.get();
+		if (file.eof()) break;
+		if (currentPosition != position) {
+			tempFile << tempChar;
 		}
-		else break;
-		if (currentLine < From || currentLine > To) {
-			if (firstIteration) {
-				tempFile << tempStr;
-				firstIteration = 0;
-			}
-			else {
-				tempFile << "\r\n" << tempStr;
-			}
-		}
-		++currentLine;
-	}
-	if (fileEndsWithNewline && (currentLine < From || currentLine > To)) {
-		tempFile << "\r\n";
+		++currentPosition;
 	}
 
 
@@ -1258,20 +1227,64 @@ bool File::deleteLines(uint32 From, uint32 To) {
 	std::remove(tempPath.c_str());
 	return true;
 }
+
+
+bool File::deleteLines(uint32 From, uint32 To) {
+	if (From > To) std::swap(From, To);
+	Tspos from, to;
+	from = getPositionMove(From, -1, -1);
+	if (from == (Tspos)-1) return false;
+	if (from == (Tspos)-2) return true;
+	to = getPositionMove(To + 1, -1, -1);
+
+	if (to == (Tspos)-2) {
+		return deleteSection(from - (Tspos)2, getNrChars() - 1);
+	}
+	return deleteSection(from, to - (Tspos)1);
+}
 bool File::deleteWords(uint32 From, uint32 To) {
-	return true;
+	return deleteWords(-1, From, To);
 }
 bool File::deleteWords(uint32 Line, uint32 From, uint32 To) {
-	return true;
+	Tspos from, to;
+	from = getPositionMove(Line, From, -1);
+	if (from == (Tspos)-1) return false;
+	if (from == (Tspos)-2) return true;
+
+	pointTo(Line, To, -1);
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (file.eof()) return deleteSection(from, getNrChars() - 1);
+		if (isspace(tempChar)) {
+			if (tempChar == '\r') break;
+			while (1) {
+				tempChar = file.get();
+				if (file.eof()) return deleteSection(from, getNrChars() - 1);
+				if (!isspace(tempChar) || tempChar == '\r') break;
+			}
+			break;
+		}
+	}
+	return deleteSection(from, file.tellg() - (Tspos)2);
 }
 bool File::deleteChars(uint32 From, uint32 To) {
-	return true;
+	return deleteChars(-1, -1, From, To);
 }
 bool File::deleteChars(uint32 Line, uint32 From, uint32 To) {
-	return true;
+	return deleteChars(Line, -1, From, To);
 }
 bool File::deleteChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
-	return true;
+	Tspos from, to;
+	from = getPositionMove(Line, Word, From);
+	if (from == (Tspos)-1) return false;
+	if (from == (Tspos)-2) return true;
+	to = getPositionMove(Line, Word, To);
+
+	if (to == (Tspos)-2) {
+		return deleteSection(from - (Tspos)2, getNrChars() - 1);
+	}
+	return deleteSection(from, to);
 }
 
 
