@@ -99,7 +99,7 @@ int main() {
 	f2.open();
 
 	
-	f1.appendChar(0, 'a');
+	f1.swap(f2);
 	
 
 	std::cout << "\n\n                       f1.txt    length: " << f1.getNrChars() << "byte\n";

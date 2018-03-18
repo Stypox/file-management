@@ -1026,7 +1026,7 @@ bool File::deleteLastEmptyLines() {
 
 
 	file.close();
-	file.open( path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open( path, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
 	tempFile.seekg(0);
 
 
@@ -1035,7 +1035,7 @@ bool File::deleteLastEmptyLines() {
 	}
 
 
-	file.close();
+	file.flush();
 	tempFile.close();
 	std::remove(tempPath.c_str());
 	return true;
@@ -1049,7 +1049,7 @@ bool File::create() {
 }
 bool File::move(Tstr newPath) {
 	if (file.is_open()) file.close();
-	file.open(newPath, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	file.open(newPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
 	if (!file.is_open()) {
 		ExternalError = 1;
 		return false;
@@ -1063,7 +1063,7 @@ bool File::move(Tstr newPath) {
 	moveFileContent(oldFile, file);
 
 	oldFile.close();
-	file.close();
+	file.flush();
 	std::remove(path.c_str());
 	path = newPath;
 	return true;
@@ -1082,7 +1082,7 @@ bool File::move(File & toOverwrite) {
 		toOverwrite << tempChar;
 	}
 
-	toOverwrite.close();
+	toOverwrite.update();
 	return true;
 }
 bool File::swap(File & Other) {
@@ -1106,6 +1106,11 @@ bool File::swap(File & Other) {
 	tempFile.clear(tempFile.eofbit);
 	tempFile.seekg(0);
 	moveFileContent(tempFile, Other.file);
+
+	file.flush();
+	Other.update();
+	tempFile.close();
+	std::remove(tempPath.c_str());
 	return true;
 }
 bool File::rename(Tstr newName) {
@@ -1149,6 +1154,7 @@ bool File::exists() const {
 	return (stat(path.c_str(), &buffer) == 0);
 }
 struct stat File::info() {
+	file.flush();
 	struct stat buffer;
 	stat(path.c_str(), &buffer);
 	return buffer;
@@ -1249,6 +1255,7 @@ File& File::operator>>(File &Out) {
 	tempFile.seekg(0);
 	moveFileContent(tempFile, Out.file);
 
+	Out.update();
 	tempFile.close();
 	std::remove(tempPath.c_str());
 	return *this;
@@ -1320,6 +1327,8 @@ File& File::operator<<(File &In) {
 	}
 
 	moveFileContent(In.file, file);
+
+	file.flush();
 	return *this;
 }
 File& File::operator<<(Tstr In) {
@@ -1407,6 +1416,7 @@ bool File::operator=(Tstr NewText) {
 	
 	file << NewText;
 
+	file.flush();
 	return true;
 }
 Tstr File::operator+(File &ToAdd) {
@@ -1422,11 +1432,15 @@ File& File::operator+=(File &toAppend) {
 		return *this;
 	}
 	moveFileContent(toAppend.file, file);
+
+	file.flush();
 	return *this;
 }
 File& File::operator+=(Tstr toAppend) {
 	if (!pointToEnd()) return *this;
 	file << toAppend;
+
+	file.flush();
 	return *this;
 }
 
