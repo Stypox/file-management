@@ -54,6 +54,17 @@ public:
 	bool operator=(char newChar);
 };
 
+class FileIterator {
+	File * file;
+	uint32_t position;
+public:
+	FileIterator(File * file, uint32_t Position);
+
+	bool operator!= (const FileIterator& ToCompare);
+	FilePosition operator* () const;
+	void operator++();
+};
+
 class File {
 	using Tstr = std::string;
 	using Tfstm = std::fstream;
@@ -637,7 +648,7 @@ public:
 	Closes and reopens the file to force it to save all the changes
 	Returns false if the file isn't already open or couldn't be opened, otherwise true
 	*/
-	bool update();
+	void update();
 
 
 	/*
@@ -956,7 +967,7 @@ public:
 	Returns a FilePosition object to get/modify the char
 		using operator char and operator=
 	*/
-	FilePosition operator[] (uint32 Position);
+	const FilePosition operator[] (uint32 Position);
 	/*
 	Returns true if the content of the files
 		is identic, otherwise false
@@ -999,6 +1010,16 @@ public:
 	Returns false if there aren't errors, otherwise true
 	*/
 	bool operator!();
+
+
+	/*
+	
+	*/
+	FileIterator begin();
+	/*
+	
+	*/
+	FileIterator end();
 };
 
 std::string operator+ (std::string First, File &Second);

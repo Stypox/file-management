@@ -97,13 +97,11 @@ int main() {
 	backup.close();
 	f1.open();
 	f2.open();
+
 	
-	
-	std::cout << f1.addChar(2, 'x');
+	f1.appendChar(0, 'a');
 	
 
-	f1.update();
-	f2.update();
 	std::cout << "\n\n                       f1.txt    length: " << f1.getNrChars() << "byte\n";
 	printSpaces(f1);
 	std::cout << "\n\n                       f2.txt    length: " << f2.getNrChars() << "byte\n";
