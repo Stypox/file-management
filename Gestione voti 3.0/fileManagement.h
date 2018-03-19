@@ -5,6 +5,22 @@
 //FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara' impossibile da leggere o scrivere
 //FARE una lista di cose da scrivere in ogni descrizione, come hanno fatto su glfw con @
 
+//UTILI:
+/*
+max 75 chars x linea
+
+main file - temp file
+
+@parameters - An std::string object on which to perform the operation / An std::string object to read from
+@scope - Private scope / Public scope
+@return - Returns true if there were no problems opening the files
+* Returns false if the main file or the temp file couldn't be opened
+@specific_cases - If the main file is already open
+* it is closed and reopened in binary-input mode
+* If the temp file couldn't be opened the main file is closed
+* since it wasn't opened in binary-input-output mode
+*/
+
 #pragma once
 
 #include <iostream>
@@ -90,22 +106,49 @@ private:
 	template<typename T>
 	File& operator<< (T In);
 
-
+public:
 	Tfstm file;
 	Tstr path, tempPath;
 	bool TempError, ExternalError;
 	
 
 	/*
-	Counts the number of words in a Tstr,
-		based on the spaces between them.
+	@execution - Counts the number of words in a string based.
+	* on the spaces (' ',\f','\n','\r','\t','\v') between them.
+	@parameters - An std::string to read from.
+	@return - Returns the number of words.
+	@scope - Private scope.
 	*/
 	uint32 countWords(Tstr String);
 	/*
-	Deletes all '\r' (Carriage Return) at the end of the Tstr
+	@execution - Deletes all '\r' (Carriage Return) at the end of a string.
+	@parameters - An std::string object on which to perform the operation.
+	@return - Returns nothing.
+	@scope - Private scope.
 	*/
 	void truncEndCR(Tstr &String);
 	/*
+	@execution - Opens the main file in binary-input mode
+	* and the parameter in binary-input-output mode.
+	* This allows to edit the main file using the temp file.
+	@parameters - An std::fstream object used as temp file.
+	@return - Returns true if there were no problems opening the files.
+	* Returns false if the main file or the temp file couldn't be opened.
+	@specific_cases - If the main file is already open
+	* it is closed and reopened in binary-input mode.
+	* If the temp file couldn't be opened the main file is closed
+	* since it wasn't opened in binary-input-output mode.
+	* If the temp file doesn't exists it is created,
+	* otherwise it is truncated.
+	@side_effects - The temp file is truncated.
+	* The main file's pointer position is set to 0.
+	@path - The main path and the temp path are used to open the files.
+	@requirements - Requires the temp file to be closed.
+	@file_after - The
+	@pointer_after - 
+	@errors - 
+	@scope - Private scope
+
 	Opens file in read-mode and TempFile in read/write-mode
 		To be used when modifying file using a temporany file
 	If TempFile couldn't be opened file gets closed

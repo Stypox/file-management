@@ -101,14 +101,11 @@ void File::truncEndCR(Tstr & Text) {
 	}
 }
 bool File::openTempToModifyFile(Tfstm & TempFile) {
-	if (!file.is_open()) {
-		file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::app); //?? FARE
-		if (!file.is_open()) return false;
+	if (file.is_open()) {
+		file.close();
 	}
-	else {
-		file.clear(file.eofbit);
-		file.seekg(0);
-	}
+	file.open(path, std::ios_base::binary | std::ios_base::in);
+	if (!file.is_open()) return false;
 
 
 	struct stat buffer;

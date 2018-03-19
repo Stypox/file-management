@@ -86,11 +86,17 @@ void printSpaces(Tstr str) {
 
 
 int main() {
-	Tstr tempString;
+	Tstr tempString = " \r";
 
 
 	File f1("f1.txt");
 	File f2("f2.txt");
+
+	f1.truncEndCR(tempString);
+	std::cout << "|";
+	printSpaces(tempString);
+	std::cout << "|\n";
+
 	File backup("backup.txt");
 	backup.move(f1);
 	backup.move(f2);
