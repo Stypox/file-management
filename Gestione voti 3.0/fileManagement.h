@@ -1,10 +1,8 @@
-//FARE possibilita' di rimuovere (e se fattibile rimpiazzare) intervalli di caratteri/parole/linee, per diminuire il tempo necessario in caso che si debbano rimpiazzare piu' caratteri/parole/linee consecutivi.
 //FARE deleteCurrentChar() (il carattere a cui si sta puntando adesso)
 //FARE nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
 //FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (Tstr + '\n');" invece che "file << Tstr << '\n';"
-//FARE for (char letter : file)
 //FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit", "Moves/not the pointer"
-//FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara impossibile da leggere o scrivere
+//FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara' impossibile da leggere o scrivere
 //FARE una lista di cose da scrivere in ogni descrizione, come hanno fatto su glfw con @
 
 #pragma once
@@ -92,8 +90,7 @@ private:
 	template<typename T>
 	File& operator<< (T In);
 
-	//FARE togliere public
-public:
+
 	Tfstm file;
 	Tstr path, tempPath;
 	bool TempError, ExternalError;
@@ -295,6 +292,7 @@ public:
 		the end was reached, otherwise true
 	*/
 	bool get(char &Char);
+	bool deleteCurrent();
 
 
 	/*
@@ -392,7 +390,7 @@ public:
 
 	/*
 	Adds a line using a temp file
-	If the specified line is out of bounds some newlines get created
+	If the specified line is out of bounds some newlines get created FARE
 	Closes files before returning, since they were opened in a not-default way
 	Returns false if the files couldn't be opened, otherwise true
 	*/

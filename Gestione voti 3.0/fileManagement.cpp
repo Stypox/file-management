@@ -426,14 +426,7 @@ uint32 File::getNrLines() {
 	return lines;
 }
 uint32 File::getNrWords() {
-	if (!pointToBeg()) return 0;
-
-	uint32 words = 0;
-	Tstr tempStr;
-	while (file >> tempStr) ++words;
-
-	std::cout << words;
-	return words;
+	return countWords(str());
 }
 uint32 File::getNrWords(uint32 Line) {
 	if (!pointTo(Line, -1, -1)) return 0;
@@ -523,6 +516,36 @@ bool File::getWord(Tstr &Word) {
 bool File::get(char &Char) {
 	Char = file.get();
 	return !file.eof();
+}
+bool File::deleteCurrent() {
+	uint32 position = (uint32)file.tellg();
+	Tfstm tempFile;
+	if (!openTempToModifyFile(tempFile)) return false;
+
+
+	uint32 currentPosition = 0;
+	char tempChar;
+	while (1) {
+		tempChar = file.get();
+		if (file.eof()) break;
+		if (currentPosition != position) {
+			tempFile << tempChar;
+		}
+		++currentPosition;
+	}
+
+
+	file.close();
+	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
+	tempFile.seekg(0);
+	moveFileContent(tempFile, file);
+
+
+	file.flush();
+	file.seekg(position);
+	tempFile.close();
+	std::remove(tempPath.c_str());
+	return true;
 }
 
 
@@ -1134,7 +1157,13 @@ void File::remove() {
 
 
 bool File::open() {
-	file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+	if (file.is_open()) {
+		file.seekg(0);
+		return true;
+	}
+	else {
+		file.open(path, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+	}
 	return file.is_open();
 }
 void File::close() {

@@ -98,9 +98,7 @@ int main() {
 	f1.open();
 	f2.open();
 
-	
-	f1.swap(f2);
-	
+
 
 	std::cout << "\n\n                       f1.txt    length: " << f1.getNrChars() << "byte\n";
 	printSpaces(f1);
