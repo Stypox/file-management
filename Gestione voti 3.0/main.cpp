@@ -57,51 +57,59 @@ void askEnd() {
 	std::cin >> end;
 	return;
 }
-void printSpaces(Tstr str) {
-	for (char letter : str) {
-		switch (letter) {
-		case ' ':
-			std::cout << "_";
-			break;
-		case '\t':
-			std::cout << "\\t";
-			break;
-		case '\n':
-			std::cout << "\n\\n";
-			break;
-		case '\v':
-			std::cout << "\\v";
-			break;
-		case '\f':
-			std::cout << "\\f";
-			break;
-		case '\r':
-			std::cout << "\\r";
-			break;
-		default:
-			std::cout << letter;
-		}
+void printSpaces(char letter) {
+	switch (letter) {
+	case ' ':
+		std::cout << "_";
+		break;
+	case '\t':
+		std::cout << "\\t";
+		break;
+	case '\n':
+		std::cout << "\n\\n";
+		break;
+	case '\v':
+		std::cout << "\\v";
+		break;
+	case '\f':
+		std::cout << "\\f";
+		break;
+	case '\r':
+		std::cout << "\\r";
+		break;
+	default:
+		std::cout << letter;
 	}
+}
+void printSpaces(Tstr str) {
+	for (char letter : str) printSpaces(letter);
 }
 
 using ib = std::ios_base;
 
 int main() {
 	Tstr tempString = " \r";
-	File test("f1.txt", "f2*.txt");
-	test.file.open("423efavdkfsd", ib::binary | ib::in | ib::out);
-	test.file << 'K';
-	Tfstm temp;
-	test.openTempToModifyFile(temp);
-	temp << (char)75;
-	temp.seekg(0);
-	std::cout << (char)temp.get();
-	std::cout << "\n\nErrors:   Main    Temp\n";
-	std::cout << "Good       " << test.file.good() << "       " << temp.good() << "\n";
-	std::cout << "Bad        " << test.file.bad () << "       " << temp.bad () << "\n";
-	std::cout << "Fail       " << test.file.fail() << "       " << temp.fail() << "\n";
-	std::cout << "Eof        " << test.file.eof () << "       " << temp.eof () << "\n";
+	File test;
+	Tfstm file("f1.txt", ib::in), temp("f2.txt", ib::in);
+	test.moveFileContent(file, temp);
 
+
+
+	std::cout << "\n\nErrors:    Main    Temp\n";
+	std::cout << "Good       " << file.good() << "       " << temp.good() << "\n";
+	std::cout << "Bad        " << file.bad () << "       " << temp.bad () << "\n";
+	std::cout << "Fail       " << file.fail() << "       " << temp.fail() << "\n";
+	std::cout << "Eof        " << file.eof () << "       " << temp.eof () << "\n";
+	std::cout << "                   " << temp.tellp() << "\rPointers   " << file.tellg();
+	file.close(); temp.close();
+	File f1("f1.txt");
+	File f2("f2.txt");
+	f1.open();
+	f2.open();
+	std::cout << "\n\n                       f1.txt    length: " << f1.getNrChars() << "byte\n";
+	printSpaces(f1);
+	std::cout << "\n\n                       f2.txt    length: " << f2.getNrChars() << "byte\n";
+	printSpaces(f2);
 	/*
 	File f1("f1.txt");
 	File f2("f2.txt");

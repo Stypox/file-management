@@ -100,7 +100,7 @@ void File::truncEndCR(Tstr & Text) {
 		Text.pop_back();
 	}
 }
-bool File::openTempToModifyFile(Tfstm & TempFile) {
+bool File::openTempToEditFile(Tfstm & TempFile) {
 	if (file.is_open()) {
 		file.close();
 	}
@@ -186,7 +186,7 @@ bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
 	
 	if (oldSize > newSize) {
 		Tfstm tempFile;
-		if (!openTempToModifyFile(tempFile)) return false;
+		if (!openTempToEditFile(tempFile)) return false;
 
 		char tempChar;
 		uint32 currentChar = 0;
@@ -250,7 +250,7 @@ bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
 }
 bool File::deleteSection(Tspos From, Tspos To) {
 	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
+	if (!openTempToEditFile(tempFile)) return false;
 
 
 	uint32 currentPosition = 0;
@@ -517,7 +517,7 @@ bool File::get(char &Char) {
 bool File::deleteCurrent() {
 	uint32 position = (uint32)file.tellg();
 	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
+	if (!openTempToEditFile(tempFile)) return false;
 
 
 	uint32 currentPosition = 0;
@@ -845,7 +845,7 @@ bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 
 
 	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
+	if (!openTempToEditFile(tempFile)) return false;
 
 
 	uint32 currentPosition = 0;
@@ -1027,7 +1027,7 @@ bool File::appendChar(uint32 Line, uint32 Word, char ToAppend) {
 
 bool File::deleteLastEmptyLines() {
 	Tfstm tempFile;
-	if (!openTempToModifyFile(tempFile)) return false;
+	if (!openTempToEditFile(tempFile)) return false;
 
 	
 	char tempChar;

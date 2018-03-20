@@ -145,15 +145,16 @@ public:
 	@side_effects - The temp file is truncated.
 	* The main file's pointer position is set to 0.
 	@path - The main path and the temp path are used to open the files.
-	@file_after - Leaves the file open in binary-input mode.
-	@pointer_after - The pointer of the file is moved to the beginning.
+	@temp - Opens as temp file the parameter using the set temp path.
+	@file - Leaves the file open in binary-input mode.
+	@pointer - The pointer of the both files is moved to the beginning.
 	@errors - If the main file was successfully opened clears 
-	* fail, bad and eof errors; otherwise sets fail error.
-	* Sets the temp file's failbit if it was already open.
-	* Sets temp error and the temp file's  if the temp file couldn't be opened.
-	@scope - Private scope
+	* fail, bad and eof errors, otherwise sets fail error.
+	* Sets the temp file's failbit and temp error if the temp file
+	* was already open or if it couldn't be opened.
+	@scope - Private scope.
 	*/
-	bool openTempToModifyFile(Tfstm &TempFile);
+	bool openTempToEditFile(Tfstm &TempFile);
 	/*
 	@execution - Reads all the content of the first file
 	* and appends it to the second.
@@ -162,7 +163,12 @@ public:
 	@return - Returns nothing.
 	@requirements - The first file should be already open in input mode
 	* and the second file in output mode.
-	@errors - Sets eof error of both files. //TEST se e' vero
+	@pointer - The pointer of the first file becomes -1;
+	* the pointer of the second file is moved to the end.
+	@errors - Always sets failbit and eofbit of the first file.
+	* If the second file isn't open, or if it isn't open in output mode
+	* its badbit and its failbit are set.
+	@scope - Private scope.
 	*/
 	void moveFileContent(Tfstm &From, Tfstm &To);
 	/*
