@@ -84,33 +84,41 @@ void printSpaces(Tstr str) {
 	}
 }
 
+using ib = std::ios_base;
 
 int main() {
 	Tstr tempString = " \r";
+	File test("f1.txt", "f2*.txt");
+	test.file.open("423efavdkfsd", ib::binary | ib::in | ib::out);
+	test.file << 'K';
+	Tfstm temp;
+	test.openTempToModifyFile(temp);
+	temp << (char)75;
+	temp.seekg(0);
+	std::cout << (char)temp.get();
+	std::cout << "\n\nErrors:   Main    Temp\n";
+	std::cout << "Good       " << test.file.good() << "       " << temp.good() << "\n";
+	std::cout << "Bad        " << test.file.bad () << "       " << temp.bad () << "\n";
+	std::cout << "Fail       " << test.file.fail() << "       " << temp.fail() << "\n";
+	std::cout << "Eof        " << test.file.eof () << "       " << temp.eof () << "\n";
 
-
+	/*
 	File f1("f1.txt");
 	File f2("f2.txt");
-
-	f1.truncEndCR(tempString);
-	std::cout << "|";
-	printSpaces(tempString);
-	std::cout << "|\n";
-
 	File backup("backup.txt");
 	backup.move(f1);
 	backup.move(f2);
 	backup.close();
 	f1.open();
 	f2.open();
-
+	
 
 
 	std::cout << "\n\n                       f1.txt    length: " << f1.getNrChars() << "byte\n";
 	printSpaces(f1);
 	std::cout << "\n\n                       f2.txt    length: " << f2.getNrChars() << "byte\n";
 	printSpaces(f2);
-
+	*/
 
 	while (!_kbhit()) {}
 	return 0;

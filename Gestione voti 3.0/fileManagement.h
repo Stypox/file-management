@@ -19,6 +19,7 @@ main file - temp file
 * it is closed and reopened in binary-input mode
 * If the temp file couldn't be opened the main file is closed
 * since it wasn't opened in binary-input-output mode
+@file_after - Leaves the file open in binary-input mode
 */
 
 #pragma once
@@ -129,37 +130,39 @@ public:
 	void truncEndCR(Tstr &String);
 	/*
 	@execution - Opens the main file in binary-input mode
-	* and the parameter in binary-input-output mode.
+	* and the temp file in binary-input-output mode.
 	* This allows to edit the main file using the temp file.
-	@parameters - An std::fstream object used as temp file.
+	@parameters - A std::fstream object used as temp file.
 	@return - Returns true if there were no problems opening the files.
 	* Returns false if the main file or the temp file couldn't be opened.
+	@requirements - Requires the temp file to be closed.
 	@specific_cases - If the main file is already open
 	* it is closed and reopened in binary-input mode.
 	* If the temp file couldn't be opened the main file is closed
 	* since it wasn't opened in binary-input-output mode.
-	* If the temp file doesn't exists it is created,
-	* otherwise it is truncated.
+	* If the temp file already exists it is truncated,
+	* otherwise it is created.
 	@side_effects - The temp file is truncated.
 	* The main file's pointer position is set to 0.
 	@path - The main path and the temp path are used to open the files.
-	@requirements - Requires the temp file to be closed.
-	@file_after - The
-	@pointer_after - 
-	@errors - 
+	@file_after - Leaves the file open in binary-input mode.
+	@pointer_after - The pointer of the file is moved to the beginning.
+	@errors - If the main file was successfully opened clears 
+	* fail, bad and eof errors; otherwise sets fail error.
+	* Sets the temp file's failbit if it was already open.
+	* Sets temp error and the temp file's  if the temp file couldn't be opened.
 	@scope - Private scope
-
-	Opens file in read-mode and TempFile in read/write-mode
-		To be used when modifying file using a temporany file
-	If TempFile couldn't be opened file gets closed
-		since it was opened in a not-default way
-	TempFile should be closed
-	Returns false if one of the files couldn't be opened, otherwise true
 	*/
 	bool openTempToModifyFile(Tfstm &TempFile);
 	/*
-	Gets all the content from the 1st file and copies it to the 2nd
-	Files must be already open
+	@execution - Reads all the content of the first file
+	* and appends it to the second.
+	@parameters - The first parameter is a std::fstream object to read
+	* from; the second one is a std::fstream object to which append.
+	@return - Returns nothing.
+	@requirements - The first file should be already open in input mode
+	* and the second file in output mode.
+	@errors - Sets eof error of both files. //TEST se e' vero
 	*/
 	void moveFileContent(Tfstm &From, Tfstm &To);
 	/*
