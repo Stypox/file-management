@@ -1,6 +1,10 @@
 Debug/
 x64/
 .vs/
+*.sln
 Gestione voti 3.0/Debug/
 Gestione voti 3.0/x64/
 Gestione voti 3.0/*.txt
+Gestione voti 3.0/*.vcxproj
+Gestione voti 3.0/*.vcxproj.filters
+Gestione voti 3.0/*.vcxproj.user
