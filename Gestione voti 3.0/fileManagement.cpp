@@ -8,17 +8,7 @@
 
 #include "fileManagement.h"
 
-using Tstr = std::string;
-using Tfstm = std::fstream;
-using Tspos = std::streampos;
-using int8 = int8_t;
-using int16 = int16_t;
-using int32 = int32_t;
-using int64 = int64_t;
-using uint8 = uint8_t;
-using uint16 = uint16_t;
-using uint32 = uint32_t;
-using uint64 = uint64_t;
+using namespace sp;
 
 
 constexpr char defaultTempPath[] = "temp.tmp";
@@ -79,6 +69,18 @@ void FileIterator::operator++() {
 
 
 
+
+
+Tstr File::toString(const char * toConvert) {
+	return Tstr(toConvert);
+}
+Tstr File::toString(char toConvert) {
+	return Tstr(&toConvert);
+}
+Tstr File::toString(Tstr & toConvert) {
+	return toConvert;
+}
+
 uint32 File::countWords(Tstr Text) {
 	bool wasSpace = 1;
 	uint32 nrWords = 0;
@@ -100,7 +102,7 @@ void File::truncEndCR(Tstr & Text) {
 		Text.pop_back();
 	}
 }
-bool File::openTempToEditFile(Tfstm & TempFile) {
+bool File::openTempToEditMain(Tfstm & TempFile) {
 	if (file.is_open()) {
 		file.close();
 	}
@@ -186,7 +188,7 @@ bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
 	
 	if (oldSize > newSize) {
 		Tfstm tempFile;
-		if (!openTempToEditFile(tempFile)) return false;
+		if (!openTempToEditMain(tempFile)) return false;
 
 		char tempChar;
 		uint32 currentChar = 0;
@@ -250,7 +252,7 @@ bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
 }
 bool File::deleteSection(Tspos From, Tspos To) {
 	Tfstm tempFile;
-	if (!openTempToEditFile(tempFile)) return false;
+	if (!openTempToEditMain(tempFile)) return false;
 
 
 	uint32 currentPosition = 0;
@@ -517,7 +519,7 @@ bool File::get(char &Char) {
 bool File::deleteCurrent() {
 	uint32 position = (uint32)file.tellg();
 	Tfstm tempFile;
-	if (!openTempToEditFile(tempFile)) return false;
+	if (!openTempToEditMain(tempFile)) return false;
 
 
 	uint32 currentPosition = 0;
@@ -670,60 +672,6 @@ Tstr File::getChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 }
 
 
-bool File::add(Tspos Pos, Tstr ToAdd) {
-	uint32 fileLength = getNrChars();
-	if (!pointTo(Pos)) return false;
-	if (ToAdd.back() == '\0') ToAdd.pop_back();
-
-	for (Tspos pointerPosition = Pos; pointerPosition < fileLength; pointerPosition += 1) {
-		file.seekg(pointerPosition);
-		ToAdd.push_back(file.get());
-
-		file.seekg(pointerPosition);
-		file.put(ToAdd[0]);
-		ToAdd.erase(0, 1);
-	}
-
-	file << ToAdd;
-	file.flush();
-	return true;
-}
-bool File::add(Tspos Pos, const char * ToAdd) {
-	return add(Pos, Tstr(ToAdd));
-}
-bool File::add(Tspos Pos, char ToAdd) {
-	return add(Pos, Tstr(&ToAdd));
-}
-bool File::add(Tspos Pos, int8 ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
-bool File::add(Tspos Pos, int16 ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
-bool File::add(Tspos Pos, int32 ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
-bool File::add(Tspos Pos, int64 ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
-bool File::add(Tspos Pos, uint8 ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
-bool File::add(Tspos Pos, uint16 ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
-bool File::add(Tspos Pos, uint32 ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
-bool File::add(Tspos Pos, uint64 ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
-bool File::add(Tspos Pos, float ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
-bool File::add(Tspos Pos, double ToAdd) {
-	return add(Pos, std::to_string(ToAdd));
-}
 bool File::addLine(uint32 Line, Tstr ToAdd) {
 	Tspos position = getPositionMove(Line, -1, -1);
 	if (position < (Tspos)0) return false;
@@ -845,7 +793,7 @@ bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 
 
 	Tfstm tempFile;
-	if (!openTempToEditFile(tempFile)) return false;
+	if (!openTempToEditMain(tempFile)) return false;
 
 
 	uint32 currentPosition = 0;
@@ -942,41 +890,11 @@ bool File::append(Tstr ToAppend) {
 	file.flush();
 	return true;
 }
-bool File::append(char * ToAppend) {
+bool File::append(const char * ToAppend) {
 	return append(Tstr(ToAppend));
 }
 bool File::append(char ToAppend) {
 	return append(Tstr(&ToAppend));
-}
-bool File::append(int8 ToAppend) {
-	return append(std::to_string(ToAppend));
-}
-bool File::append(int16 ToAppend) {
-	return append(std::to_string(ToAppend));
-}
-bool File::append(int32 ToAppend) {
-	return append(std::to_string(ToAppend));
-}
-bool File::append(int64 ToAppend) {
-	return append(std::to_string(ToAppend));
-}
-bool File::append(uint8 ToAppend) {
-	return append(std::to_string(ToAppend));
-}
-bool File::append(uint16 ToAppend) {
-	return append(std::to_string(ToAppend));
-}
-bool File::append(uint32 ToAppend) {
-	return append(std::to_string(ToAppend));
-}
-bool File::append(uint64 ToAppend) {
-	return append(std::to_string(ToAppend));
-}
-bool File::append(float ToAppend) {
-	return append(std::to_string(ToAppend));
-}
-bool File::append(double ToAppend) {
-	return append(std::to_string(ToAppend));
 }
 bool File::appendLine(Tstr ToAppend) {
 	return append("\r\n" + ToAppend);
@@ -1027,7 +945,7 @@ bool File::appendChar(uint32 Line, uint32 Word, char ToAppend) {
 
 bool File::deleteLastEmptyLines() {
 	Tfstm tempFile;
-	if (!openTempToEditFile(tempFile)) return false;
+	if (!openTempToEditMain(tempFile)) return false;
 
 	
 	char tempChar;
