@@ -80,7 +80,6 @@ Tstr File::toString(char toConvert) {
 Tstr File::toString(Tstr & toConvert) {
 	return toConvert;
 }
-
 uint32 File::countWords(Tstr Text) {
 	bool wasSpace = 1;
 	uint32 nrWords = 0;
@@ -672,19 +671,6 @@ Tstr File::getChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 }
 
 
-bool File::addLine(uint32 Line, Tstr ToAdd) {
-	Tspos position = getPositionMove(Line, -1, -1);
-	if (position < (Tspos)0) return false;
-	return add(position, ToAdd + "\r\n");
-}
-bool File::addWord(uint32 Word, Tstr ToAdd) {
-	return addWord(-1, Word, ToAdd);
-}
-bool File::addWord(uint32 Line, uint32 Word, Tstr ToAdd) {
-	Tspos position = getPositionMove(Line, Word, -1);
-	if (position < (Tspos)0) return false;
-	return add(position, ToAdd + " ");
-}
 bool File::addChar(uint32 Char, char ToAdd) {
 	return addChar(-1, -1, Char, ToAdd);
 }
@@ -698,35 +684,6 @@ bool File::addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd) {
 }
 
 
-bool File::replaceLine(uint32 Line, Tstr Replacement) {
-	Tspos from, to;
-	from = getPositionMove(Line, -1, -1);
-	if (from == (Tspos)-1) return false;
-	if (from == (Tspos)-2) return true;
-	to = getPositionMove(Line + 1, -1, -1);
-
-	if (to == (Tspos)-2) {
-		return replaceSection(from, getNrChars() - 1, Replacement);
-	}
-	return replaceSection(from, to - (Tspos)3, Replacement);
-}
-bool File::replaceWord(uint32 Word, Tstr Replacement) {
-	return replaceWord(-1, Word, Replacement);
-}
-bool File::replaceWord(uint32 Line, uint32 Word, Tstr Replacement) {
-	Tspos from, to;
-	from = getPositionMove(Line, Word, -1);
-	if (from == (Tspos)-1) return false;
-	if (from == (Tspos)-2) return true;
-
-	char tempChar;
-	while (1) {
-		tempChar = file.get();
-		if (file.eof()) return replaceSection(from, getNrChars() - 1, Replacement);
-		if (isspace(tempChar)) break;
-	}
-	return replaceSection(from, file.tellg() - (Tspos)2, Replacement);
-}
 bool File::replaceChar(uint32 Char, char Replacement) {
 	return replaceChar(-1, -1, Char, Replacement);
 }
@@ -882,38 +839,6 @@ bool File::deleteChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 }
 
 
-bool File::append(Tstr ToAppend) {
-	if (!pointToEnd()) return false;
-
-	file << ToAppend;
-
-	file.flush();
-	return true;
-}
-bool File::append(const char * ToAppend) {
-	return append(Tstr(ToAppend));
-}
-bool File::append(char ToAppend) {
-	return append(Tstr(&ToAppend));
-}
-bool File::appendLine(Tstr ToAppend) {
-	return append("\r\n" + ToAppend);
-}
-bool File::appendWord(Tstr ToAppend) {
-	return append(" " + ToAppend);
-}
-bool File::appendWord(uint32 Line, Tstr ToAppend) {
-	if (!pointTo(Line, -1, -1)) return false;
-
-	char tempChar;
-	while (1) {
-		tempChar = file.get();
-		if (file.eof()) return append(" " + ToAppend);
-		if (tempChar == '\r') break;
-	}
-
-	return add(file.tellg() - (Tspos)1, " " + ToAppend);
-}
 bool File::appendChar(char ToAppend) {
 	return append(Tstr(&ToAppend));
 }
@@ -1204,60 +1129,16 @@ File& File::operator>>(File &Out) {
 	std::remove(tempPath.c_str());
 	return *this;
 }
-File& File::operator>>(Tstr &Out) {
-	file >> Out;
-	return *this;
-}
-File& File::operator>>(char * Out) {
-	file >> Out;
-	return *this;
-}
-File& File::operator>>(char &Out) {
-	file >> Out;
-	return *this;
-}
 File& File::operator>>(int8 &Out) {
-	uint16 output;	//FARE vedere se va bene per evitare che venga letto un char
+	uint16 output;
 	file >> output;
 	Out = (int8)output;
 	return *this;
 }
-File& File::operator>>(int16 &Out) {
-	file >> Out;
-	return *this;
-}
-File& File::operator>>(int32 &Out) {
-	file >> Out;
-	return *this;
-}
-File& File::operator>>(int64 &Out) {
-	file >> Out;
-	return *this;
-}
 File& File::operator>>(uint8 &Out) {
-	uint16 output;	//FARE vedere se va bene per evitare che venga letto un char
+	uint16 output;
 	file >> output;
 	Out = (uint8)output;
-	return *this;
-}
-File& File::operator>>(uint16 &Out) {
-	file >> Out;
-	return *this;
-}
-File& File::operator>>(uint32 &Out) {
-	file >> Out;
-	return *this;
-}
-File& File::operator>>(uint64 &Out) {
-	file >> Out;
-	return *this;
-}
-File& File::operator>>(float &Out) {
-	file >> Out;
-	return *this;
-}
-File& File::operator>>(double &Out) {
-	file >> Out;
 	return *this;
 }
 
@@ -1273,58 +1154,6 @@ File& File::operator<<(File &In) {
 	moveFileContent(In.file, file);
 
 	file.flush();
-	return *this;
-}
-File& File::operator<<(Tstr In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(const char * In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(char In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(int8 In) {
-	file << (int16)In;	//FARE vedere se va bene per evitare che venga letto un char
-	return *this;
-}
-File& File::operator<<(int16 In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(int32 In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(int64 In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(uint8 In) {
-	file << (uint16)In;	//FARE vedere se va bene per evitare che venga letto un char
-	return *this;
-}
-File& File::operator<<(uint16 In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(uint32 In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(uint64 In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(double In) {
-	file << In;
-	return *this;
-}
-File& File::operator<<(float In) {
-	file << In;
 	return *this;
 }
 
@@ -1355,19 +1184,8 @@ File& File::operator=(File &Source) {
 
 	return *this;
 }
-bool File::operator=(Tstr NewText) {
-	if (!truncate()) return false;
-	
-	file << NewText;
-
-	file.flush();
-	return true;
-}
 Tstr File::operator+(File &ToAdd) {
 	return str() + ToAdd.str();
-}
-Tstr File::operator+(Tstr ToAdd) {
-	return str() + ToAdd;
 }
 File& File::operator+=(File &toAppend) {
 	if (!pointToEnd()) return *this;
@@ -1376,13 +1194,6 @@ File& File::operator+=(File &toAppend) {
 		return *this;
 	}
 	moveFileContent(toAppend.file, file);
-
-	file.flush();
-	return *this;
-}
-File& File::operator+=(Tstr toAppend) {
-	if (!pointToEnd()) return *this;
-	file << toAppend;
 
 	file.flush();
 	return *this;

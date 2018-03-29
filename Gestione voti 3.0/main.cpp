@@ -6,16 +6,16 @@
 
 #include "fileManagement.h"
 
-using Tstr = std::string;
-using Tfstm = std::fstream;
-using int8 = int8_t;
-using int16 = int16_t;
-using int32 = int32_t;
-using int64 = int64_t;
-using uint8 = uint8_t;
-using uint16 = uint16_t;
-using uint32 = uint32_t;
-using uint64 = uint64_t;
+using Tstr = sp::Tstr;
+using Tfstm = sp::Tfstm;
+using si8 = sp::int8;
+using si16 = sp::int16;
+using si32 = sp::int32;
+using si64 = sp::int64;
+using ui8 = sp::uint8;
+using ui16 = sp::uint16;
+using ui32 = sp::uint32;
+using ui64 = sp::uint64;
 
 void askEnd() {
 	bool end;
@@ -55,8 +55,9 @@ using ib = std::ios_base;
 int main() {
 	Tstr tempString = " \r";
 	sp::File test("f1.txt");
+	test = sp::File("backup.txt").str();
 
-	test.add(0, (int8)12);
+	test.replaceWord(1, 'c');
 
 	printSpaces(test.str());
 

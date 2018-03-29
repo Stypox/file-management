@@ -394,21 +394,24 @@ namespace sp {
 		Closes files before returning, since they were opened in a not-default way
 		Returns false if the files couldn't be opened, otherwise true
 		*/
-		bool addLine(uint32 Line, Tstr ToAdd);
+		template<typename T>
+		bool addLine(uint32 Line, T ToAdd);
 		/*
 		Adds a word using a temp file
 		Closes files before returning, since they were opened in a not-default way
 		Returns false if the files couldn't be opened or if the
 			specified word is out of bounds, otherwise true
 		*/
-		bool addWord(uint32 Word, Tstr ToAdd);
+		template<typename T>
+		bool addWord(uint32 Word, T ToAdd);
 		/*
 		Adds a word in a line using a temp file
 		Closes files before returning, since they were opened in a not-default way
 		Returns false if the files couldn't be opened or if the
 			specified word is out of bounds, otherwise true
 		*/
-		bool addWord(uint32 Line, uint32 Word, Tstr ToAdd);
+		template<typename T>
+		bool addWord(uint32 Line, uint32 Word, T ToAdd);
 		/*
 		Adds a char
 		Returns false if the file couldn't be opened or if the
@@ -436,21 +439,24 @@ namespace sp {
 		Closes files before returning, since they were opened in a not-default way
 		Returns false if the files couldn't be opened, otherwise true
 		*/
-		bool replaceLine(uint32 Line, Tstr Replacement);
+		template<typename T>
+		bool replaceLine(uint32 Line, T Replacement);
 		/*
 		Replaces a word using a temp file
 		Closes files before returning, since they were opened in a not-default way
 		Returns false if the files couldn't be opened or if the
 			specified word is out of bounds, otherwise true
 		*/
-		bool replaceWord(uint32 Word, Tstr Replacement);
+		template<typename T>
+		bool replaceWord(uint32 Word, T Replacement);
 		/*
 		Replaces a word in a line using a temp file
 		Closes files before returning, since they were opened in a not-default way
 		Returns false if the files couldn't be opened or if the
 			specified word is out of bounds, otherwise true
 		*/
-		bool replaceWord(uint32 Line, uint32 Word, Tstr Replacement);
+		template<typename T>
+		bool replaceWord(uint32 Line, uint32 Word, T Replacement);
 		/*
 		Replaces a char
 		Leaves the file open after returning
@@ -528,34 +534,24 @@ namespace sp {
 
 		template<typename T>
 		bool append(T ToAppend);
-		bool append(Tstr ToAppend);
-		bool append(const char * ToAppend);
-		bool append(char ToAppend);
-		bool append(int8 ToAppend);
-		bool append(int16 ToAppend);
-		bool append(int32 ToAppend);
-		bool append(int64 ToAppend);
-		bool append(uint8 ToAppend);
-		bool append(uint16 ToAppend);
-		bool append(uint32 ToAppend);
-		bool append(uint64 ToAppend);
-		bool append(float ToAppend);
-		bool append(double ToAppend);
 		/*
 		Adds a line (with endline before it) at the end of the file
 		Returns false if the file couldn't be opened, otherwise true
 		*/
-		bool appendLine(Tstr ToAppend);
+		template<typename T>
+		bool appendLine(T ToAppend);
 		/*
 		Adds a word (with a space before it) at the end of the file
 		Returns false if the file couldn't be opened, otherwise true
 		*/
-		bool appendWord(Tstr ToAppend);
+		template<typename T>
+		bool appendWord(T ToAppend);
 		/*
 		Adds a word (with a space before it) after the specified word
 		Returns false if the file couldn't be opened, otherwise true
 		*/
-		bool appendWord(uint32 Line, Tstr ToAppend);
+		template<typename T>
+		bool appendWord(uint32 Line, T ToAppend);
 		/*
 		Adds a char at the end of the file
 		Returns false if the file couldn't be opened, otherwise true
@@ -736,6 +732,8 @@ namespace sp {
 		void setTempPath(Tstr TempPath);
 
 
+		template<typename T>
+		File& operator>> (T Out);
 		/*
 		Affixes the content of the file to the parameter using a temp file
 		Leaves both files open in binary input-output mode
@@ -745,88 +743,12 @@ namespace sp {
 		Returns *this
 		*/
 		File& operator>> (File &Out);
-		template<typename T>
-		File& operator>> (T Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (Tstr &Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (char * Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (char &Out);
-		/*
-		Like ofstream::operator>> but gets the parameter as a number
-		The file must be already open
-		Returns *this
-		*/
 		File& operator>> (int8 &Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (int16 &Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (int32 &Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (int64 &Out);
-		/*
-		Like ofstream::operator>> but gets the parameter as a number
-		The file must be already open
-		Returns *this
-		*/
 		File& operator>> (uint8 &Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (uint16 &Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (uint32 &Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (uint64 &Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (float &Out);
-		/*
-		Like ofstream::operator>>
-		The file must be already open
-		Returns *this
-		*/
-		File& operator>> (double &Out);
 
 
+		template<typename T>
+		File& operator<< (T In);
 		/*
 		Appends the content of the parameter to the file
 		Leaves both files open in binary input-output mode
@@ -835,89 +757,8 @@ namespace sp {
 		Returns *this
 		*/
 		File& operator<< (File &In);
-		template<typename T>
-		File& operator<< (T In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (Tstr In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (const char * In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (char In);
-		/*
-		Like ofstream::operator<< but inserts the parameter as a number
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (int8 In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (int16 In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (int32 In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (int64 In);
-		/*
-		Like ofstream::operator<< but inserts the parameter as a number
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (uint8 In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (uint16 In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (uint32 In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (uint64 In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (float In);
-		/*
-		Like ofstream::operator<<
-		The file must be already open
-		Returns *this
-		*/
-		File& operator<< (double In);
 
 
-		//FARE vedere se mettere funzioni per supportare fstream ma sembra inutile. Eventualmente togliere anche sopra ^^^
 		/*
 		Copies the settings from the parameter into this file:
 			path, tempPath, errors, but not the file content
@@ -931,7 +772,8 @@ namespace sp {
 		Leaves the file open in binary input-output mode
 		Returns false if the file couldn't be opened, otherwise true
 		*/
-		bool operator= (Tstr NewText);
+		template<typename T>
+		bool operator= (T NewText);
 		/*
 		Returns a string with at the start the content of this
 			file and then the content of the parameter
@@ -948,7 +790,8 @@ namespace sp {
 		Leaves the file open in binary input-output mode
 		If this file couldn't be opened toAdd will be returned
 		*/
-		Tstr operator+ (Tstr ToAdd);
+		template<typename T>
+		Tstr operator+ (T ToAdd);
 		/*
 		Appends the content of the parameter to this file
 		The file is opened, if it wasn't already
@@ -964,7 +807,8 @@ namespace sp {
 		If this file couldn't be opened nothing happens
 		Returns *this
 		*/
-		File& operator+= (Tstr toAppend);
+		template<typename T>
+		File& operator+= (T toAppend);
 
 
 		/*
@@ -1049,6 +893,119 @@ namespace sp {
 		file << toAdd;
 		file.flush();
 		return true;
+	}
+	template<typename T>
+	inline bool File::addLine(uint32 Line, T ToAdd) {
+		Tspos position = getPositionMove(Line, -1, -1);
+		if (position < (Tspos)0) return false;
+		return add(position, toString(ToAdd) + "\r\n");
+	}
+	template<typename T>
+	inline bool File::addWord(uint32 Word, T ToAdd) {
+		return addWord(-1, Word, ToAdd);
+	}
+	template<typename T>
+	inline bool File::addWord(uint32 Line, uint32 Word, T ToAdd) {
+		Tspos position = getPositionMove(Line, Word, -1);
+		if (position < (Tspos)0) return false;
+		return add(position, toString(ToAdd) + " ");
+	}
+
+	template<typename T>
+	inline bool File::replaceLine(uint32 Line, T Replacement) {
+		Tspos from, to;
+		from = getPositionMove(Line, -1, -1);
+		if (from == (Tspos)-1) return false;
+		if (from == (Tspos)-2) return true;
+		to = getPositionMove(Line + 1, -1, -1);
+
+		if (to == (Tspos)-2) {
+			return replaceSection(from, getNrChars() - 1, toString(Replacement));
+		}
+		return replaceSection(from, to - (Tspos)3, toString(Replacement));
+	}
+	template<typename T>
+	inline bool File::replaceWord(uint32 Word, T Replacement) {
+		return replaceWord(-1, Word, Replacement);
+	}
+	template<typename T>
+	inline bool File::replaceWord(uint32 Line, uint32 Word, T Replacement) {
+		Tspos from, to;
+		from = getPositionMove(Line, Word, -1);
+		if (from == (Tspos)-1) return false;
+		if (from == (Tspos)-2) return true;
+
+		char tempChar;
+		while (1) {
+			tempChar = file.get();
+			if (file.eof()) return replaceSection(from, getNrChars() - 1, toString(Replacement));
+			if (isspace(tempChar)) break;
+		}
+		return replaceSection(from, file.tellg() - (Tspos)2, toString(Replacement));
+	}
+
+	template<typename T>
+	inline bool File::append(T ToAppend) {
+		if (!pointToEnd()) return false;
+
+		file << toString(ToAppend);
+
+		file.flush();
+		return true;
+	}
+	template<typename T>
+	inline bool File::appendLine(T ToAppend) {
+		return append("\r\n" + toString(ToAppend));
+	}
+	template<typename T>
+	inline bool File::appendWord(T ToAppend) {
+		return append(" " + toString(ToAppend));
+	}
+	template<typename T>
+	inline bool File::appendWord(uint32 Line, T ToAppend) {
+		if (!pointTo(Line, -1, -1)) return false;
+
+		char tempChar;
+		while (1) {
+			tempChar = file.get();
+			if (file.eof()) return append(" " + toString(ToAppend));
+			if (tempChar == '\r') break;
+		}
+
+		return add(file.tellg() - (Tspos)1, " " + toString(ToAppend));
+	}
+
+	template<typename T>
+	inline File & File::operator>>(T Out) {
+		file >> Out;
+		return *this;
+	}
+	template<typename T>
+	inline File & File::operator<<(T In) {
+		file << toString(In);
+		return *this;
+	}
+	
+	template<typename T>
+	inline bool File::operator=(T NewText) {
+		if (!truncate()) return false;
+
+		file << toString(NewText);
+
+		file.flush();
+		return true;
+	}
+	template<typename T>
+	inline Tstr File::operator+(T ToAdd) {
+		return str() + toString(ToAdd);
+	}
+	template<typename T>
+	inline File & File::operator+=(T toAppend) {
+		if (!pointToEnd()) return *this;
+		file << toString(toAppend);
+
+		file.flush();
+		return *this;
 	}
 
 	std::string operator+ (std::string First, File &Second);
