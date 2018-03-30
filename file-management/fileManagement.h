@@ -2,7 +2,6 @@
 //FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (Tstr + '\n');" invece che "file << Tstr << '\n';"
 //FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit", "Moves/not the pointer"
 //FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara' impossibile da leggere o scrivere
-//FARE una lista di cose da scrivere in ogni descrizione, come hanno fatto su glfw con @
 
 //UTILI:
 /*
@@ -10,10 +9,10 @@ max 75 chars x linea
 
 main file - temp file
 
-@parameters - An std::string object on which to perform the operation / An std::string object to read from
-@scope - Private scope / Public scope
-@return - Returns true if there were no problems opening the files
-* Returns false if the main file or the temp file couldn't be opened
+The main file is opened in binary input-output mode, if it wasn't already.
+Returns false if the main file or the temp file couldn't be opened, otherwise returns true.
+Uses the temp file.
+@parameters - An std::string object on which to perform the operation / Anotherwise returns true. std::string object to read from
 @specific_cases - If the main file is already open
 * it is closed and reopened in binary-input mode
 * If the temp file couldn't be opened the main file is closed
@@ -94,14 +93,26 @@ namespace sp {
 
 	class File {
 	public:
-		Tfstm file;
-		Tstr path, tempPath;
+		Tfstm mainFile;
+		Tstr mainPath, tempPath;
 		bool TempError, ExternalError;
 
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
 		template <typename T>
 		Tstr toString(T toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
 		Tstr toString(const char * toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
 		Tstr toString(char toConvert);
+		/*
+		Returns the parameter itself.
+		*/
 		Tstr toString(Tstr &toConvert);
 
 		/*
@@ -116,38 +127,35 @@ namespace sp {
 		/*
 		Opens the main file in binary-input mode and the temp file in
 		binary-input-output mode. This allows to edit the main file using the temp
-		file. The temp file should be closed.
-		Returns true if there were no problems opening the files. Returns false if
-		the main file or the temp file couldn't be opened.
+		file. Both pointers are moved to the start. The temp file should be closed.
+		Returns false if the main file or the temp file couldn't be opened,
+		otherwise returns true.
 		*/
 		bool openTempToEditMain(Tfstm &TempFile);
 		/*
 		Reads all the content of the first file and appends it to the second. The
-		first file should be already open in input mode and the second file in
-		output mode. The pointer of the first file becomes -1, and the pointer of
-		the second file is moved to the end.
+		first file should be open in binary-input mode and the second one in
+		binary-output mode. The pointer of the first file becomes -1, and the
+		pointer of the second file is moved to the end.
 		*/
 		void moveFileContent(Tfstm &From, Tfstm &To);
-		/*
-		Retrieves the (start) position of the requested line/word/char and moves
-		the pointer there.
-		Returns -1 if the file couldn't be opened and -2 if the specified position
-		is out of bounds.
-		*/
-		Tspos getPositionMove(uint32 Line, uint32 Word, uint32 Char);
 
 
 		/*
-		Replaces all the characters between From and To with Replacement
-		Uses a temp file if the size of replacement is smaller than To-From
+		Replaces all the chars of an interval (both ends included) with a string.
+		Uses a temp file only if the replacement is smaller than the interval to
+		replace. The main file is opened in binary input-output mode, if it wasn't
+		already.
+		Returns false if the main file or the temp file (when used) couldn't be
+		opened, otherwise returns true.
 		*/
 		bool replaceSection(Tspos From, Tspos To, Tstr Replacement);
 		/*
-		Deletes all the chars between From and To, both included
-		Uses a temp file
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
-		Returns false if the files couldn't be opened, otherwise true
+		Deletes all the chars between From and To, both included. Uses the temp
+		file. The main file is opened in binary input-output mode, if it wasn't
+		already.
+		Returns false if the main file or the temp file couldn't be opened,
+		otherwise returns true.
 		*/
 		bool deleteSection(Tspos From, Tspos To);
 
@@ -156,100 +164,117 @@ namespace sp {
 
 	public:
 		/*
-		Default constructor
-		Initializes path to an empty Tstr
-			and tempPath to defaultTempPath
+		Default constructor. Initializes the main path to an empty string and the
+		temp path to "temp.tmp".
 		*/
 		File();
 		/*
-		Constructor with path
-		Initializes path to the corresponding parameter
-			and tempPath to path + defaultTempExtension
+		Constructor with a string. Initializes the main path to the parameter and
+		tempPath to (parameter + ".tmp").
 		*/
-		File(Tstr Path);
+		File(Tstr MainPath);
 		/*
-		Constructor with path and tempPath
-		Initializes path and tempPath to the corresponding parameters
+		Constructor with two strings. Initializes the main path to the first
+		parameter and the temp path to the second parameter.
 		*/
-		File(Tstr Path, Tstr TempPath);
+		File(Tstr MainPath, Tstr TempPath);
 		/*
-		Destructor
-		Closes the file
+		Destructor. Closes the file.
 		*/
 		~File();
 
 		/*
-		Moves the pointer to a new position
-		pointTo(1) means that the next character is the second
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
-		Returns false if the file couldn't be opened, otherwise true
+		Moves the pointer to the position specified by the parameter. The position
+		starts from zero, that is the first char of the file is atposition 0. The
+		main file is opened in binary input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool pointTo(Tspos Position);
 		/*
-		Moves the pointer to a char in a word in a line
-		The indices start from 0: pointTo(0, 0, 0) points to the 1st char of the
-			1st word of the 1st line (not necessarily to the beginning of the file)
-		While 0 means "move to the first", -1 means "don't move"
-			So only pointTo(-1, -1, -1) will surely point to the beginning
-		The file is opened, if it wasn't already
-		Returns false if the file couldn't be opened or	if the
-			specified position is out of bounds, otherwise true
+		Moves the pointer to a char (third parameter) in a word (second parameter)
+		in a line (third parameter). The indices start from 0, that is
+		pointTo(0, 0, 0) points to the first char of the first word of the first
+		line (not necessarily to the beginning of the file). While 0 means "move to
+		the first", -1 means "don't move". So only pointTo(-1, -1, -1) will surely
+		point to the beginning. The main file is opened in binary input-output mode,
+		if it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		bool pointTo(uint32 Line, uint32 Word, uint32 Char);
 		/*
-		The file is opened, if it wasn't already
-		The two pointers inside the file are moved to the beginning
-		The file's eofbit is cleared
-		Returns true if the file opened correctly, otherwise false
+		Moves the pointer to the beginning of the main file and clears its eofbit.
+		The main file is opened in binary input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool pointToBeg();
 		/*
-		The file is opened, if it wasn't already
-		The two pointers inside the file are moved to the end
-		The file's eofbit is cleared FARE se va bene
-		Returns true if the file opened correctly, otherwise false
+		Moves the pointer to the end of the main file and clears its eofbit.
+		The main file is opened in binary input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool pointToEnd();
 		/*
-		Retrieves the (start) position of the requested line/word/char
-		Maintains the original file's pointers' position
-		Returns -1 if the file couldn't be opened and
-		-2 if the specified position is out of bounds
+		Returns the position of a char (third parameter) in a word (second
+		parameter) in a line (third parameter) The indices start from 0, that
+		is getPosition(0, 0, 0) returns the position of the first char of the
+		first word of the first line (not necessarily 0). While 0 means	"look
+		for the first", -1 means "don't do anything". So only
+		getPosition(-1, -1, -1) will surely return 0. The main file is opened
+		in binary input-output mode, if it wasn't already.
+		Returns -1 if the main file couldn't be opened and -2 if the
+		specified position is out of bounds.
 		*/
 		Tspos getPosition(uint32 Line, uint32 Word, uint32 Char);
+		/*
+		Retrieves the position of a char (third parameter) in a word (second
+		parameter) in a line (third parameter), moves the pointer there and
+		returns it. The indices start from 0, that is getPositionMove(0, 0, 0)
+		returns the position of the first char of the first word of the first line
+		(not necessarily 0). While 0 means "look for the first", -1 means "don't do
+		anything". So only getPositionMove(-1, -1, -1) will surely return 0. The
+		main file is opened in binary input-output mode, if it wasn't already.
+		Returns -1 if the main file couldn't be opened and -2 if the specified
+		position is out of bounds.
+		VEDERE SE VA BENE CHE SIA PUBLIC TODO
+		*/
+		Tspos getPositionMove(uint32 Line, uint32 Word, uint32 Char);
 
 
 		/*
-		Returns the number of '\n'
-		Returns 0 if the file couldn't be opened
+		Returns the number of '\n'. The main file is opened in binary
+		input-output mode, if it wasn't already.
+		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrLines();
 		/*
-		Returns the number of words divided by spaces
-		Returns 0 if the file couldn't be opened
+		Returns the number of words divided by spaces. The main file is opened
+		in binary input-output mode, if it wasn't already.
+		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrWords();
 		/*
-		Returns the number of words of a line divided by spaces
-		Returns 0 if the file couldn't be opened
+		Returns the number of words in a line divided by spaces. The main file
+		is opened in binary input-output mode, if it wasn't already.
+		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrWords(uint32 Line);
 		/*
-		Returns the number of chars (bytes)
-		The file is neither opened nor closed
-		Returns 0 if the file couldn't be axcessed
+		Returns the number of chars (or bytes).
+		Returns 0 if the main file couldn't be accessed via "stat".
 		*/
 		uint32 getNrChars();
 		/*
-		Returns the number of chars of a line
-		Doesn't count '\r' at the end of the line
-		Returns 0 if the file couldn't be opened
+		Returns the number of chars in a line. Doesn't count '\r' at the end of
+		the line. The main file is opened in binary input-output mode, if it
+		wasn't already.
+		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrChars(uint32 Line);
 		/*
-		Returns the number of chars of a word in a line
-		Returns 0 if the file couldn't be opened
+		Returns the number of chars in a word in a line. The main file is opened
+		in binary input-output mode, if it wasn't already.
+		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrChars(uint32 Line, uint32 Word);
 
@@ -868,6 +893,7 @@ namespace sp {
 		*/
 		FileIterator end();
 	};
+	
 	template<typename T>
 	inline std::string File::toString(T toConvert) {
 		return std::to_string(toConvert);
@@ -881,16 +907,16 @@ namespace sp {
 		if (toAdd.back() == '\0') toAdd.pop_back();
 
 		for (Tspos pointerPosition = Pos; pointerPosition < fileLength; pointerPosition += 1) {
-			file.seekg(pointerPosition);
-			toAdd.push_back(file.get());
+			mainFile.seekg(pointerPosition);
+			toAdd.push_back(mainFile.get());
 
-			file.seekg(pointerPosition);
-			file.put(toAdd[0]);
+			mainFile.seekg(pointerPosition);
+			mainFile.put(toAdd[0]);
 			toAdd.erase(0, 1);
 		}
 
-		file << toAdd;
-		file.flush();
+		mainFile << toAdd;
+		mainFile.flush();
 		return true;
 	}
 	template<typename T>
@@ -936,20 +962,20 @@ namespace sp {
 
 		char tempChar;
 		while (1) {
-			tempChar = file.get();
-			if (file.eof()) return replaceSection(from, getNrChars() - 1, toString(Replacement));
+			tempChar = mainFile.get();
+			if (mainFile.eof()) return replaceSection(from, getNrChars() - 1, toString(Replacement));
 			if (isspace(tempChar)) break;
 		}
-		return replaceSection(from, file.tellg() - (Tspos)2, toString(Replacement));
+		return replaceSection(from, mainFile.tellg() - (Tspos)2, toString(Replacement));
 	}
 
 	template<typename T>
 	inline bool File::append(T ToAppend) {
 		if (!pointToEnd()) return false;
 
-		file << toString(ToAppend);
+		mainFile << toString(ToAppend);
 
-		file.flush();
+		mainFile.flush();
 		return true;
 	}
 	template<typename T>
@@ -966,22 +992,22 @@ namespace sp {
 
 		char tempChar;
 		while (1) {
-			tempChar = file.get();
-			if (file.eof()) return append(" " + toString(ToAppend));
+			tempChar = mainFile.get();
+			if (mainFile.eof()) return append(" " + toString(ToAppend));
 			if (tempChar == '\r') break;
 		}
 
-		return add(file.tellg() - (Tspos)1, " " + toString(ToAppend));
+		return add(mainFile.tellg() - (Tspos)1, " " + toString(ToAppend));
 	}
 
 	template<typename T>
 	inline File & File::operator>>(T Out) {
-		file >> Out;
+		mainFile >> Out;
 		return *this;
 	}
 	template<typename T>
 	inline File & File::operator<<(T In) {
-		file << toString(In);
+		mainFile << toString(In);
 		return *this;
 	}
 	
@@ -989,9 +1015,9 @@ namespace sp {
 	inline bool File::operator=(T NewText) {
 		if (!truncate()) return false;
 
-		file << toString(NewText);
+		mainFile << toString(NewText);
 
-		file.flush();
+		mainFile.flush();
 		return true;
 	}
 	template<typename T>
@@ -1001,9 +1027,9 @@ namespace sp {
 	template<typename T>
 	inline File & File::operator+=(T toAppend) {
 		if (!pointToEnd()) return *this;
-		file << toString(toAppend);
+		mainFile << toString(toAppend);
 
-		file.flush();
+		mainFile.flush();
 		return *this;
 	}
 
