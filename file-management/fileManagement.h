@@ -1,4 +1,3 @@
-//FARE deleteCurrentChar() (il carattere a cui si sta puntando adesso)
 //FARE nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
 //FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (Tstr + '\n');" invece che "file << Tstr << '\n';"
 //FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit", "Moves/not the pointer"
@@ -1008,5 +1007,5 @@ namespace sp {
 		return *this;
 	}
 
-	std::string operator+ (std::string First, File &Second);
+	Tstr operator+ (Tstr First, File &Second);
 }

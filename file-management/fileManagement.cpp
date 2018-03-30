@@ -1274,7 +1274,6 @@ FileIterator File::end() {
 	return FileIterator(this, getNrChars());
 }
 
-
-std::string operator+(std::string First, File &Second) {
+Tstr sp::operator+(Tstr First, File & Second) {
 	return First + Second.str();
 }
