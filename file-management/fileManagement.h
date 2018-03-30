@@ -10,14 +10,9 @@ max 75 chars x linea
 main file - temp file
 
 The main file is opened in binary input-output mode, if it wasn't already.
-Returns false if the main file or the temp file couldn't be opened, otherwise returns true.
+Returns false if the main file or the temp file couldn't be opened, otherwise returns true. // The main file must be open in binary-output mode.
 Uses the temp file.
-@parameters - An std::string object on which to perform the operation / Anotherwise returns true. std::string object to read from
-@specific_cases - If the main file is already open
-* it is closed and reopened in binary-input mode
-* If the temp file couldn't be opened the main file is closed
-* since it wasn't opened in binary-input-output mode
-@file_after - Leaves the file open in binary-input mode
+The pointer is not moved. // The pointer is moved to an untraceable position.
 */
 
 #pragma once
@@ -139,6 +134,19 @@ namespace sp {
 		pointer of the second file is moved to the end.
 		*/
 		void moveFileContent(Tfstm &From, Tfstm &To);
+		/*
+		Returns the position of a char (third parameter) in a word (second
+		parameter) in a line (first parameter). The indices start from 0, that is
+		getPositionMove(0, 0, 0) returns the position of the first char of the
+		first word of the first line(not necessarily 0). While 0 means "look for
+		the first", -1 means "don't do anything". So only 
+		getPositionMove(-1, -1, -1) will surely return 0. The pointer is moved to
+		an untraceable position. The main file is opened in binary input-output
+		mode, if it wasn't already.
+		Returns -1 if the main file couldn't be opened and -2 if the specified
+		position is out of bounds.
+		*/
+		Tspos getPositionMove(uint32 Line, uint32 Word, uint32 Char);
 
 
 		/*
@@ -192,7 +200,7 @@ namespace sp {
 		bool pointTo(Tspos Position);
 		/*
 		Moves the pointer to a char (third parameter) in a word (second parameter)
-		in a line (third parameter). The indices start from 0, that is
+		in a line (first parameter). The indices start from 0, that is
 		pointTo(0, 0, 0) points to the first char of the first word of the first
 		line (not necessarily to the beginning of the file). While 0 means "move to
 		the first", -1 means "don't move". So only pointTo(-1, -1, -1) will surely
@@ -216,29 +224,16 @@ namespace sp {
 		bool pointToEnd();
 		/*
 		Returns the position of a char (third parameter) in a word (second
-		parameter) in a line (third parameter) The indices start from 0, that
+		parameter) in a line (first parameter). The indices start from 0, that
 		is getPosition(0, 0, 0) returns the position of the first char of the
 		first word of the first line (not necessarily 0). While 0 means	"look
 		for the first", -1 means "don't do anything". So only
-		getPosition(-1, -1, -1) will surely return 0. The main file is opened
-		in binary input-output mode, if it wasn't already.
+		getPosition(-1, -1, -1) will surely return 0. The pointer is not moved.
+		The main file is opened	in binary input-output mode, if it wasn't already.
 		Returns -1 if the main file couldn't be opened and -2 if the
 		specified position is out of bounds.
 		*/
 		Tspos getPosition(uint32 Line, uint32 Word, uint32 Char);
-		/*
-		Retrieves the position of a char (third parameter) in a word (second
-		parameter) in a line (third parameter), moves the pointer there and
-		returns it. The indices start from 0, that is getPositionMove(0, 0, 0)
-		returns the position of the first char of the first word of the first line
-		(not necessarily 0). While 0 means "look for the first", -1 means "don't do
-		anything". So only getPositionMove(-1, -1, -1) will surely return 0. The
-		main file is opened in binary input-output mode, if it wasn't already.
-		Returns -1 if the main file couldn't be opened and -2 if the specified
-		position is out of bounds.
-		VEDERE SE VA BENE CHE SIA PUBLIC TODO
-		*/
-		Tspos getPositionMove(uint32 Line, uint32 Word, uint32 Char);
 
 
 		/*
@@ -280,54 +275,59 @@ namespace sp {
 
 
 		/*
-		Replaces the char at the pointer position
-		The file must be already open
-		Returns *this
+		Replaces the char at the pointer position with another char. The main file
+		must be open in binary-output mode.
+		Returns *this.
 		*/
 		File& put(char ToPut);
 		/*
-		Returns all the characters after the pointer
-			until '\r\n' or the end of file are reached
-		The file must be already open
-		Returns "" if the file is not open
+		Returns all the chars after the pointer until '\r' or the end of the main
+		file are reached. The main file must be open in binary-input mode.
+		Returns an empty string if the main file is not open or the end was already
+		reached.
 		*/
 		Tstr getLine();
 		/*
-		Returns all the characters after the pointer
-			until a space or the end of file are reached
-		The file must be already open
-		Returns "" if the file is not open
+		Returns all the chars after the pointer until a space or the end of the
+		main file are reached. The main file must be open in binary-input mode.
+		Returns an empty string if the main file is not open or the end was already
+		reached.
 		*/
 		Tstr getWord();
 		/*
-		Returns the char at the pointer position
-		The file must be already open
-		Returns -1 if the file is not open or the end was reached
+		Returns the char at the pointer position. The main file must be open in
+		binary-input mode.
+		Returns -1 if the file is not open or the end was already reached.
 		*/
 		char get();
 		/*
-		Saves on the parameter all the characters after the
-		pointer until '\r\n' or the end of file are reached
-		The file must be already open
-		Returns false if the file is not open or if the
-			end was already reached, otherwise true
+		Saves on the parameter all the chars after the pointer until '\r\n' or the
+		end of the main file are reached. The main file must be open in
+		binary-input mode.
+		Returns false if the main file is not open or the end was already reached,
+		otherwise returns true.
 		*/
 		bool getLine(Tstr &Line);
 		/*
-		Saves on the parameter all the characters after the
-		pointer until a	space or the end of file are reached
-		The file must be already open
-		Returns false if the file is not open or if the
-			end was already reached, otherwise true
+		Saves on the parameter all the characters after the pointer until a space
+		or the end of the main file are reached. The main file must be open in
+		binary-input mode.
+		Returns false if the main file is not open or the end was already reached,
+		otherwise returns true.
 		*/
 		bool getWord(Tstr &Word);
 		/*
-		Saves the char at the pointer position on the parameter
-		The file must be already open
-		Returns false if the file is not open or
-			the end was reached, otherwise true
+		Saves the char at the pointer position on the parameter. The main file must
+		be open in binary-input mode.
+		Returns false if the main file is not open or the end was already reached,
+		otherwise returns true.
 		*/
 		bool get(char &Char);
+		/*
+		Deletes the char at the pointer position. Uses the temp file.
+		Returns false if the main file is not open or the end was already reached,
+		otherwise returns true. TODO test
+		*/
 		bool deleteCurrent();
 
 

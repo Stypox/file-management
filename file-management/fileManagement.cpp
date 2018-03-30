@@ -131,6 +131,52 @@ void File::moveFileContent(Tfstm & From, Tfstm & To) {
 		To << tempChar;
 	}
 }
+Tspos File::getPositionMove(uint32 Line, uint32 Word, uint32 Char) {
+	if (!pointToBeg()) return -1;
+
+
+	if (Line != UINT32_MAX) {
+		for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+			while (mainFile.get() != '\n') {
+				if (mainFile.eof()) return -2;
+			}
+		}
+	}
+
+
+	if (Word != UINT32_MAX) {
+		bool wasSpace = true;
+		uint32 nrWords = 0;
+		++Word;
+
+		while (1) {
+			if (mainFile.eof()) return -2;
+			if (nrWords >= Word) {
+				mainFile.seekg(-1, std::ios_base::cur);
+				break;
+			}
+			if (isspace(mainFile.get())) wasSpace = true;
+			else {
+				if (wasSpace) {
+					wasSpace = false;
+					++nrWords;
+				}
+			}
+		}
+	}
+
+
+	Tspos position = mainFile.tellg();
+	if (Char != UINT32_MAX && Char != 0) {
+		position += (Tspos)Char;
+		if (position >= getNrChars()) {
+			position = -2;
+		}
+	}
+
+
+	return position;
+}
 
 
 bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
@@ -361,52 +407,6 @@ Tspos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 
 	return position;
 }
-Tspos File::getPositionMove(uint32 Line, uint32 Word, uint32 Char) {
-	if (!pointToBeg()) return -1;
-
-
-	if (Line != UINT32_MAX) {
-		for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
-			while (mainFile.get() != '\n') {
-				if (mainFile.eof()) return -2;
-			}
-		}
-	}
-
-
-	if (Word != UINT32_MAX) {
-		bool wasSpace = true;
-		uint32 nrWords = 0;
-		++Word;
-
-		while (1) {
-			if (mainFile.eof()) return -2;
-			if (nrWords >= Word) {
-				mainFile.seekg(-1, std::ios_base::cur);
-				break;
-			}
-			if (isspace(mainFile.get())) wasSpace = true;
-			else {
-				if (wasSpace) {
-					wasSpace = false;
-					++nrWords;
-				}
-			}
-		}
-	}
-
-
-	Tspos position = mainFile.tellg();
-	if (Char != UINT32_MAX && Char != 0) {
-		position += (Tspos)Char;
-		if (position >= getNrChars()) {
-			position = -2;
-		}
-	}
-
-
-	return position;
-}
 
 
 uint32 File::getNrLines() {
@@ -466,7 +466,7 @@ uint32 File::getNrChars() {
 }
 uint32 File::getNrChars(uint32 Line) {
 	if (!pointTo(Line, -1, -1)) return 0;
-	uint32 nrChars;
+	uint32 nrChars = 0;
 
 	char tempChar;
 	while (1) {
@@ -479,7 +479,7 @@ uint32 File::getNrChars(uint32 Line) {
 }
 uint32 File::getNrChars(uint32 Line, uint32 Word) {
 	if (!pointTo(Line, Word, -1)) return 0;
-	uint32 nrChars;
+	uint32 nrChars = 0;
 
 	char tempChar;
 	while (1) {
@@ -580,7 +580,7 @@ bool File::deleteCurrent() {
 }
 
 
-Tstr File::getLine(uint32 Line) {
+Tstr File::getLine(uint32 Line) { //TODO usare metodi migliori di getline e file>>word.
 	if (!pointTo(Line, -1, -1)) return "";
 
 	Tstr line;
@@ -1307,6 +1307,6 @@ FileIterator File::end() {
 	return FileIterator(this, getNrChars());
 }
 
-Tstr sp::operator+(Tstr First, File & Second) {
+Tstr sp::operator+(Tstr First, File &Second) {
 	return First + Second.str();
 }
