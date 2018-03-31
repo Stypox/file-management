@@ -256,9 +256,9 @@ namespace sp {
 		*/
 		uint32 getNrWords();
 		/*
-		Returns the number of words in a line divided by spaces. The pointer is not
-		moved. The main file is opened in binary input-output mode, if it wasn't
-		already.
+		Returns the number of words in the line specified by the parameter divided
+		by spaces. The pointer is not moved. The main file is opened in binary 
+		input-output mode, if it wasn't already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrWords(uint32 Line);
@@ -268,16 +268,16 @@ namespace sp {
 		*/
 		uint32 getNrChars();
 		/*
-		Returns the number of chars in a line. Doesn't count '\r' at the end of
-		the line. The pointer is not moved. The main file is opened in binary
-		input-output mode, if it wasn't already.
+		Returns the number of chars in the line specified by the parameter. Doesn't
+		count '\r' at the end of the line. The pointer is not moved. The main file
+		is opened in binary input-output mode, if it wasn't already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrChars(uint32 Line);
 		/*
-		Returns the number of chars in a word in a line. The pointer is not
-		moved. The main file is opened in binary input-output mode, if it wasn't
-		already.
+		Returns the number of chars in a word (second parameter) in a line (first
+		parameter). The pointer is not moved. The main file is opened in binary
+		input-output mode, if it wasn't already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrChars(uint32 Line, uint32 Word);
@@ -289,6 +289,8 @@ namespace sp {
 		Returns *this.
 		*/
 		File& put(char ToPut);
+
+
 		/*
 		Returns all the chars after the pointer until '\r' or the end of the main
 		file are reached. The main file must be open in binary-input mode.
@@ -296,19 +298,6 @@ namespace sp {
 		reached.
 		*/
 		Tstr getLine();
-		/*
-		Returns all the chars after the pointer until a space or the end of the
-		main file are reached. The main file must be open in binary-input mode.
-		Returns an empty string if the main file is not open or the end was already
-		reached.
-		*/
-		Tstr getWord();
-		/*
-		Returns the char at the pointer position. The main file must be open in
-		binary-input mode.
-		Returns -1 if the file is not open or the end was already reached.
-		*/
-		char get();
 		/*
 		Saves on the parameter all the chars after the pointer until '\r\n' or the
 		end of the main file are reached. The main file must be open in
@@ -318,6 +307,20 @@ namespace sp {
 		*/
 		bool getLine(Tstr &Line);
 		/*
+		Returns the line specified by the parameter. The main file is opened in
+		binary input-output mode, if it wasn't already.
+		Returns an empty string if the main file couldn't be opened or if the
+		specified line is out of bounds.
+		*/
+		Tstr getLine(uint32 Line);
+		/*
+		Returns all the chars after the pointer until a space or the end of the
+		main file are reached. The main file must be open in binary-input mode.
+		Returns an empty string if the main file is not open or the end was already
+		reached.
+		*/
+		Tstr getWord();
+		/*
 		Saves on the parameter all the characters after the pointer until a space
 		or the end of the main file are reached. The main file must be open in
 		binary-input mode.
@@ -326,48 +329,52 @@ namespace sp {
 		*/
 		bool getWord(Tstr &Word);
 		/*
+		Returns the word specified by the parameter. The main file is opened in
+		binary input-output mode, if it wasn't already.
+		Returns an empty string if the main file couldn't be opened or if the
+		specified word is out of bounds.
+		*/
+		Tstr getWord(uint32 Word);
+		/*
+		Returns a word (second parameter) in a line (first parameter). The main
+		file is opened in binary input-output mode, if it wasn't already.
+		Returns an empty string if the main file couldn't be opened or if the
+		specified word is out of bounds.
+		*/
+		Tstr getWord(uint32 Line, uint32 Word);
+		/*
+		Returns the char at the pointer position. The main file must be open in
+		binary-input mode.
+		Returns -1 if the file is not open or the end was already reached.
+		*/
+		char getChar();
+		/*
 		Saves the char at the pointer position on the parameter. The main file must
 		be open in binary-input mode.
 		Returns false if the main file is not open or the end was already reached,
 		otherwise returns true.
 		*/
-		bool get(char &Char);
+		bool getChar(char &Char);
 		/*
-		Deletes the char at the pointer position. Uses the temp file.
-		Returns false if the main file is not open or the end was already reached,
-		otherwise returns true. TODO test
-		*/
-		bool deleteCurrent();
-
-
-		/*
-		Returns a line removing all '\r' at the end of it
-		If the line is out of bounds "" is returned
-		*/
-		Tstr getLine(uint32 Line);
-		/*
-		Returns a word
-		If the word is out of bounds "" is returned
-		*/
-		Tstr getWord(uint32 Word);
-		/*
-		Returns a word in a line
-		If the word is out of bounds "" is returned
-		*/
-		Tstr getWord(uint32 Line, uint32 Word);
-		/*
-		Returns a char
-		If the char is out of bounds 0 is returned TODO -1
+		Returns the char specified by the parameter. The main file is opened in
+		binary input-output mode, if it wasn't already.
+		Returns -1 if the main file couldn't be opened or if the specified line is
+		out of bounds.
 		*/
 		char getChar(uint32 Char);
 		/*
-		Returns a char in a line
-		If the char is out of bounds 0 is returned
+		Returns a char (second parameter) in a line (first parameter). The main
+		file is opened in binary input-output mode, if it wasn't already.
+		Returns -1 if the main file couldn't be opened or if the specified char is
+		out of bounds.
 		*/
 		char getChar(uint32 Line, uint32 Char);
 		/*
-		Returns a char in  a word in a line
-		If the char is out of bounds 0 is returned
+		Returns a char (third parameter) in a word (second parameter) in a line
+		(first parameter). The main file is opened in binary input-output mode, if
+		it wasn't already.
+		Returns -1 if the main file couldn't be opened or if the specified char is
+		out of bounds.
 		*/
 		char getChar(uint32 Line, uint32 Word, uint32 Char);
 
@@ -535,6 +542,14 @@ namespace sp {
 		*/
 		bool deleteWord(uint32 Line, uint32 Word);
 		/*
+		Deletes the char at the pointer position. Uses the temp file. The main file
+		must be open.
+		Returns false if the main file or the temp file couldn't be opened or if
+		the main file is not open, otherwise returns true.
+		TODO test
+		*/
+		bool deleteChar();
+		/*
 		Deletes a char using a temp file
 		If the specified char is out of bounds nothing happens, returning true
 		Closes files before returning, since they were opened in a not-default way
@@ -630,7 +645,7 @@ namespace sp {
 		Returns false if either the parameter or the file
 			couldn't be opened, otherwise true
 		*/
-		bool move(File &toOverwrite);
+		bool move(File &toOverwrite); //TODO rinominare moveContent
 		/*
 		Swaps the content of this file with toSwap using a temp file
 		Leaves all files open in binary input-output mode
