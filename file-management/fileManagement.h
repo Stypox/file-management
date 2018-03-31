@@ -192,6 +192,13 @@ namespace sp {
 		~File();
 
 		/*
+		Moves the pointer relative to the current position. The main file must be
+		open in binary-input-output mode.
+		Returns false if the main file is not open or the end was already reached,
+		otherwise returns true.
+		*/
+		bool pointMove(Tspos Offset);
+		/*
 		Moves the pointer to the position specified by the parameter. The position
 		starts from zero, that is the first char of the file is atposition 0. The
 		main file is opened in binary input-output mode, if it wasn't already.
@@ -237,38 +244,40 @@ namespace sp {
 
 
 		/*
-		Returns the number of '\n'. The main file is opened in binary
-		input-output mode, if it wasn't already.
+		Returns the number of '\n'. The pointer is not moved. The main file is
+		opened in binary input-output mode, if it wasn't already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrLines();
 		/*
-		Returns the number of words divided by spaces. The main file is opened
-		in binary input-output mode, if it wasn't already.
+		Returns the number of words divided by spaces. The pointer is not moved.
+		The main file is opened in binary input-output mode, if it wasn't already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrWords();
 		/*
-		Returns the number of words in a line divided by spaces. The main file
-		is opened in binary input-output mode, if it wasn't already.
+		Returns the number of words in a line divided by spaces. The pointer is not
+		moved. The main file is opened in binary input-output mode, if it wasn't
+		already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrWords(uint32 Line);
 		/*
-		Returns the number of chars (or bytes).
+		Returns the number of chars (or bytes). The pointer is not moved.
 		Returns 0 if the main file couldn't be accessed via "stat".
 		*/
 		uint32 getNrChars();
 		/*
 		Returns the number of chars in a line. Doesn't count '\r' at the end of
-		the line. The main file is opened in binary input-output mode, if it
-		wasn't already.
+		the line. The pointer is not moved. The main file is opened in binary
+		input-output mode, if it wasn't already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrChars(uint32 Line);
 		/*
-		Returns the number of chars in a word in a line. The main file is opened
-		in binary input-output mode, if it wasn't already.
+		Returns the number of chars in a word in a line. The pointer is not
+		moved. The main file is opened in binary input-output mode, if it wasn't
+		already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrChars(uint32 Line, uint32 Word);
@@ -348,7 +357,7 @@ namespace sp {
 		Tstr getWord(uint32 Line, uint32 Word);
 		/*
 		Returns a char
-		If the char is out of bounds 0 is returned
+		If the char is out of bounds 0 is returned TODO -1
 		*/
 		char getChar(uint32 Char);
 		/*

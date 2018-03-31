@@ -288,6 +288,11 @@ File::~File() {
 }
 
 
+bool sp::File::pointMove(Tspos Offset) {
+	if (!mainFile.is_open() || mainFile.eof()) return false;
+	mainFile.seekg(Offset, std::ios_base::cur);
+	return true;
+}
 bool File::pointTo(Tspos Position) {
 	if (!mainFile.is_open() && !open()) return false;
 	mainFile.clear(mainFile.eofbit);
@@ -353,10 +358,9 @@ bool File::pointToEnd() {
 	return true;
 }
 Tspos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
-	Tspos GpointerBeginning = 0, PpointerBeginning = 0;
+	Tspos pointerBeginning = 0;
 	if (mainFile.is_open()) {
-		GpointerBeginning = mainFile.tellg();
-		PpointerBeginning = mainFile.tellp();
+		pointerBeginning = mainFile.tellg();
 	}
 	if (!pointToBeg()) return -1;
 
@@ -401,8 +405,8 @@ Tspos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 	}
 
 
-	mainFile.clear(mainFile.eof());
-	mainFile.seekg(GpointerBeginning);
+	mainFile.clear(mainFile.eofbit);
+	mainFile.seekg(pointerBeginning);
 
 
 	return position;
@@ -410,6 +414,10 @@ Tspos File::getPosition(uint32 Line, uint32 Word, uint32 Char) {
 
 
 uint32 File::getNrLines() {
+	Tspos pointerBeginning = 0;
+	if (mainFile.is_open()) {
+		pointerBeginning = mainFile.tellg();
+	}
 	if (!pointToBeg()) return 0;
 
 	char tempChar;
@@ -420,13 +428,19 @@ uint32 File::getNrLines() {
 		if (tempChar == '\n') ++lines;
 	}
 
+	mainFile.clear(mainFile.eofbit);
+	mainFile.seekg(pointerBeginning);
 	return lines;
 }
 uint32 File::getNrWords() {
+	Tspos pointerBeginning = 0;
+	if (mainFile.is_open()) {
+		pointerBeginning = mainFile.tellg();
+	}
 	if (!pointToBeg()) return 0;
-	bool wasSpace = true;
 	uint32 nrWords = 0;
 
+	bool wasSpace = true;
 	char tempChar;
 	while (1) {
 		tempChar = mainFile.get();
@@ -438,13 +452,19 @@ uint32 File::getNrWords() {
 		}
 	}
 
+	mainFile.clear(mainFile.eofbit);
+	mainFile.seekg(pointerBeginning);
 	return nrWords;
 }
 uint32 File::getNrWords(uint32 Line) {
+	Tspos pointerBeginning = 0;
+	if (mainFile.is_open()) {
+		pointerBeginning = mainFile.tellg();
+	}
 	if (!pointTo(Line, -1, -1)) return 0;
-	bool wasSpace = true;
 	uint32 nrWords = 0;
 
+	bool wasSpace = true;
 	char tempChar;
 	while (1) {
 		tempChar = mainFile.get();
@@ -456,6 +476,8 @@ uint32 File::getNrWords(uint32 Line) {
 		}
 	}
 
+	mainFile.clear(mainFile.eofbit);
+	mainFile.seekg(pointerBeginning);
 	return nrWords;
 }
 uint32 File::getNrChars() {
@@ -465,6 +487,10 @@ uint32 File::getNrChars() {
 	return (uint32)buffer.st_size;
 }
 uint32 File::getNrChars(uint32 Line) {
+	Tspos pointerBeginning = 0;
+	if (mainFile.is_open()) {
+		pointerBeginning = mainFile.tellg();
+	}
 	if (!pointTo(Line, -1, -1)) return 0;
 	uint32 nrChars = 0;
 
@@ -475,9 +501,15 @@ uint32 File::getNrChars(uint32 Line) {
 		++nrChars;
 	}
 
+	mainFile.clear(mainFile.eofbit);
+	mainFile.seekg(pointerBeginning);
 	return nrChars;
 }
 uint32 File::getNrChars(uint32 Line, uint32 Word) {
+	Tspos pointerBeginning = 0;
+	if (mainFile.is_open()) {
+		pointerBeginning = mainFile.tellg();
+	}
 	if (!pointTo(Line, Word, -1)) return 0;
 	uint32 nrChars = 0;
 
@@ -488,6 +520,8 @@ uint32 File::getNrChars(uint32 Line, uint32 Word) {
 		++nrChars;
 	}
 
+	mainFile.clear(mainFile.eofbit);
+	mainFile.seekg(pointerBeginning);
 	return nrChars;
 }
 
@@ -497,13 +531,40 @@ File& File::put(char ToPut) {
 	return *this;
 }
 Tstr File::getLine() {
-	Tstr line;
-	getLine(line);
+	Tstr line = "";
+
+	char tempChar;
+	while (1) {
+		tempChar = mainFile.get();
+		if (tempChar != '\n' && tempChar != '\r') break;
+	}
+	if (mainFile.eof()) return "";
+	mainFile.seekg(-1, std::ios_base::cur);
+
+	while (1) {
+		tempChar = mainFile.get();
+		if (tempChar == '\r' || mainFile.eof()) break;
+		line.push_back(tempChar);
+	}
+
 	return line;
 }
 Tstr File::getWord() {
-	Tstr word;
-	getWord(word);
+	Tstr word = "";
+
+	while (1) {
+		if (!isspace(mainFile.get())) break;
+	}
+	if (mainFile.eof()) return "";
+	mainFile.seekg(-1, std::ios_base::cur);
+
+	char tempChar;
+	while (1) {
+		tempChar = mainFile.get();
+		if (isspace(tempChar) || mainFile.eof()) break;
+		word.push_back(tempChar);
+	}
+
 	return word;
 }
 char File::get() {
@@ -516,10 +577,16 @@ bool File::getLine(Tstr &Line) {
 	char tempChar;
 	while (1) {
 		tempChar = mainFile.get();
-		if (tempChar == '\r' || mainFile.eof()) break;
-		Line += tempChar;
+		if (tempChar != '\n' && tempChar != '\r') break;
 	}
-	mainFile.ignore();
+	if (mainFile.eof()) return "";
+	mainFile.seekg(-1, std::ios_base::cur);
+
+	while (1) {
+		tempChar = mainFile.get();
+		if (tempChar == '\r' || mainFile.eof()) break;
+		Line.push_back(tempChar);
+	}
 
 	return true;
 }
@@ -527,19 +594,17 @@ bool File::getWord(Tstr &Word) {
 	Word = "";
 	if (!mainFile.is_open() || mainFile.eof()) return false;
 
+	while (1) {
+		if (!isspace(mainFile.get())) break;
+	}
+	if (mainFile.eof()) return false;
+	mainFile.seekg(-1, std::ios_base::cur);
+
 	char tempChar;
 	while (1) {
 		tempChar = mainFile.get();
-		if (!isspace(tempChar)) {
-			mainFile.seekg(-1, std::ios_base::cur);
-			break;
-		}
-	}
-
-	while (1) {
-		tempChar = mainFile.get();
 		if (isspace(tempChar) || mainFile.eof()) break;
-		Word += tempChar;
+		Word.push_back(tempChar);
 	}
 
 	return true;
@@ -1031,6 +1096,7 @@ void File::remove() {
 
 bool File::open() {
 	if (mainFile.is_open()) {
+		mainFile.clear(mainFile.eofbit);
 		mainFile.seekg(0);
 		return true;
 	}
