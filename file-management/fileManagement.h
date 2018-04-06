@@ -283,17 +283,11 @@ namespace sp {
 		uint32 getNrChars(uint32 Line, uint32 Word);
 
 
-		/*
-		Replaces the char at the pointer position with another char. The main file
-		must be open in binary-output mode.
-		Returns *this.
-		*/
-		File& put(char ToPut);
-
 
 		/*
 		Returns all the chars after the pointer until '\r' or the end of the main
-		file are reached. The main file must be open in binary-input mode.
+		file are reached. The main file must be open in binary-input or
+		binary-input-output mode.
 		Returns an empty string if the main file is not open or the end was already
 		reached.
 		*/
@@ -301,21 +295,22 @@ namespace sp {
 		/*
 		Saves on the parameter all the chars after the pointer until '\r\n' or the
 		end of the main file are reached. The main file must be open in
-		binary-input mode.
+		binary-input or binary-input-output mode.
 		Returns false if the main file is not open or the end was already reached,
 		otherwise returns true.
 		*/
 		bool getLine(Tstr &Line);
 		/*
 		Returns the line specified by the parameter. The main file is opened in
-		binary input-output mode, if it wasn't already.
+		binary-input-output mode, if it wasn't already.
 		Returns an empty string if the main file couldn't be opened or if the
 		specified line is out of bounds.
 		*/
 		Tstr getLine(uint32 Line);
 		/*
 		Returns all the chars after the pointer until a space or the end of the
-		main file are reached. The main file must be open in binary-input mode.
+		main file are reached. The main file must be open in binary-input mode or
+		binary-input-output mode.
 		Returns an empty string if the main file is not open or the end was already
 		reached.
 		*/
@@ -323,55 +318,55 @@ namespace sp {
 		/*
 		Saves on the parameter all the characters after the pointer until a space
 		or the end of the main file are reached. The main file must be open in
-		binary-input mode.
+		binary-input or binary-input-output mode.
 		Returns false if the main file is not open or the end was already reached,
 		otherwise returns true.
 		*/
 		bool getWord(Tstr &Word);
 		/*
 		Returns the word specified by the parameter. The main file is opened in
-		binary input-output mode, if it wasn't already.
+		binary-input-output mode, if it wasn't already.
 		Returns an empty string if the main file couldn't be opened or if the
 		specified word is out of bounds.
 		*/
 		Tstr getWord(uint32 Word);
 		/*
 		Returns a word (second parameter) in a line (first parameter). The main
-		file is opened in binary input-output mode, if it wasn't already.
+		file is opened in binary-input-output mode, if it wasn't already.
 		Returns an empty string if the main file couldn't be opened or if the
 		specified word is out of bounds.
 		*/
 		Tstr getWord(uint32 Line, uint32 Word);
 		/*
 		Returns the char at the pointer position. The main file must be open in
-		binary-input mode.
+		binary-input or binary-input-output mode.
 		Returns -1 if the file is not open or the end was already reached.
 		*/
 		char getChar();
 		/*
 		Saves the char at the pointer position on the parameter. The main file must
-		be open in binary-input mode.
+		be open in binary-input or binary-input-output mode.
 		Returns false if the main file is not open or the end was already reached,
 		otherwise returns true.
 		*/
 		bool getChar(char &Char);
 		/*
 		Returns the char specified by the parameter. The main file is opened in
-		binary input-output mode, if it wasn't already.
+		binary-input-output mode, if it wasn't already.
 		Returns -1 if the main file couldn't be opened or if the specified line is
 		out of bounds.
 		*/
 		char getChar(uint32 Char);
 		/*
 		Returns a char (second parameter) in a line (first parameter). The main
-		file is opened in binary input-output mode, if it wasn't already.
+		file is opened in binary-input-output mode, if it wasn't already.
 		Returns -1 if the main file couldn't be opened or if the specified char is
 		out of bounds.
 		*/
 		char getChar(uint32 Line, uint32 Char);
 		/*
 		Returns a char (third parameter) in a word (second parameter) in a line
-		(first parameter). The main file is opened in binary input-output mode, if
+		(first parameter). The main file is opened in binary-input-output mode, if
 		it wasn't already.
 		Returns -1 if the main file couldn't be opened or if the specified char is
 		out of bounds.
@@ -380,27 +375,27 @@ namespace sp {
 
 
 		/*
-		Returns the interval of lines between From and To, both included
-		If some (or all) lines are out of bounds they just get ignored
-		If To > From the lines are returned in top-to-bottom order,
-			otherwise the order is inverted (bottom-to-top)
-		Removes all '\r' at the end of lines and adds '\r\n' between them
+		Returns the interval of lines between the first and the second parameter,
+		both included. If the first parameter is bigger than the second the lines
+		are returned in reverse order. If some (or all) lines are out of bounds
+		they get ignored. The lines are separeted by "\r\n". The main file is
+		opened in binary-input-output mode, if it wasn't already.
 		*/
 		Tstr getLines(uint32 From, uint32 To);
 		/*
-		Returns the interval of words between From and To, both included
-		If some (or all) words are out of bounds they just get ignored
-		If To > From the words are returned in top-to-bottom order,
-			otherwise the order is inverted (bottom-to-top)
-		Separates words with ' ', replacing any other type of space
+		Returns the interval of words between the first and the second parameter,
+		both included. If the first parameter is bigger than the second the words
+		are returned in reverse order. If some (or all) lines are out of bounds
+		they get ignored. The words are separeted by spaces ' '. The main file is
+		opened in binary-input-output mode, if it wasn't already.
 		*/
 		Tstr getWords(uint32 From, uint32 To);
 		/*
-		Returns the interval of words in a line between From and To, both included
-		If some (or all) words are out of bounds they just get ignored
-		If To > From the words are returned in top-to-bottom order,
-			otherwise the order is inverted (bottom-to-top)
-		Separates words with ' ', replacing any other type of space
+		Returns the interval of words in a line between the first and the second
+		parameter, both included. If the first parameter is bigger than the second
+		the words are returned in reverse order. If some (or all) lines are out of
+		bounds they get ignored. The words are separeted by spaces ' '. The main
+		file is opened in binary-input-output mode, if it wasn't already.
 		*/
 		Tstr getWords(uint32 Line, uint32 From, uint32 To);
 		/*
@@ -472,6 +467,13 @@ namespace sp {
 		bool addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd);
 
 
+
+		/*
+		Replaces the char at the pointer position with another char. The main file
+		must be open in binary-output mode.
+		Returns *this.
+		*/
+		File& replace(char ToPut);
 		/*
 		Replaces a line using a temp file
 		Deletes all '\r' at the end of the line FARE

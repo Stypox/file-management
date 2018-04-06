@@ -522,13 +522,7 @@ namespace sp {
 		mainFile.seekg(pointerBeginning);
 		return nrChars;
 	}
-
-
-	File& File::put(char ToPut) {
-		mainFile.put(ToPut);
-		return *this;
-	}
-
+	
 
 	Tstr File::getLine() {
 		Tstr line = "";
@@ -576,9 +570,7 @@ namespace sp {
 	Tstr File::getWord() {
 		Tstr word = "";
 
-		while (1) {
-			if (!isspace(mainFile.get())) break;
-		}
+		while (isspace(mainFile.get())) {}
 		if (mainFile.eof()) return "";
 		mainFile.seekg(-1, std::ios_base::cur);
 
@@ -595,9 +587,7 @@ namespace sp {
 		Word = "";
 		if (!mainFile.is_open() || mainFile.eof()) return false;
 
-		while (1) {
-			if (!isspace(mainFile.get())) break;
-		}
+		while (isspace(mainFile.get())) {}
 		if (mainFile.eof()) return false;
 		mainFile.seekg(-1, std::ios_base::cur);
 
@@ -637,64 +627,92 @@ namespace sp {
 
 
 	Tstr File::getLines(uint32 From, uint32 To) {
-		if (To < From) {
-			if (!pointTo(To, -1, -1)) return "";
+		Tstr lines = "";
 
-			Tstr lines;
-			getline(mainFile, lines);
-			truncEndCR(lines);
-
-			Tstr tempStr;
-			for (uint32 currentLine = To; currentLine < From; ++currentLine) {
-				if (!getline(mainFile, tempStr)) break;
-				truncEndCR(tempStr);
-				lines = tempStr + "\r\n" + lines;
-			}
-
-			return lines;
-		}
-		else {
+		if (From < To) {
 			if (!pointTo(From, -1, -1)) return "";
 
 			Tstr lines;
-			getline(mainFile, lines);
-			truncEndCR(lines);
+			char tempChar;
+			Tstr tempStr = "";
+			for (uint32 currentLine = From; currentLine <= To; ++currentLine) {
+				while (1) {
+					tempChar = mainFile.get();
+					if (tempChar == '\r' || mainFile.eof()) break;
+					tempStr.push_back(tempChar);
+				}
 
-			Tstr tempStr;
-			for (uint32 currentLine = From; currentLine < To; ++currentLine) {
-				if (!getline(mainFile, tempStr)) break;
-				truncEndCR(tempStr);
 				lines += "\r\n" + tempStr;
+				if (mainFile.eof()) break;
+				mainFile.ignore();
+				tempStr = "";
 			}
-
-			return lines;
 		}
+		else {
+			if (!pointTo(To, -1, -1)) return "";
+
+			char tempChar;
+			Tstr tempStr = "";
+			for (uint32 currentLine = To; currentLine <= From; ++currentLine) {
+				while (1) {
+					tempChar = mainFile.get();
+					if (tempChar == '\r' || mainFile.eof()) break;
+					tempStr.push_back(tempChar);
+				}
+
+				lines = tempStr + "\r\n" + lines;
+				if (mainFile.eof()) break;
+				mainFile.ignore();
+				tempStr = "";
+			}
+		}
+
+		lines.pop_back();
+		lines.pop_back();
+		return lines;
 	}
 	Tstr File::getWords(uint32 From, uint32 To) {
 		return getWords(-1, From, To);
 	}
 	Tstr File::getWords(uint32 Line, uint32 From, uint32 To) {
-		Tstr words;
-		if (To < From) {
-			if (!pointTo(Line, To, -1)) return "";
-			mainFile >> words;
+		Tstr words = "";
 
+		if (From < To) {
+			if (!pointTo(Line, From, -1)) return "";
+
+			char tempChar;
 			Tstr tempStr;
-			for (uint32 currentWord = To; currentWord < From; ++currentWord) {
-				mainFile >> tempStr;
-				words = tempStr + " " + words;
+			for (uint32 currentWord = From; currentWord <= To; ++currentWord) {
+				while (1) {
+					tempChar = mainFile.get();
+					if (isspace(tempChar) || mainFile.eof()) break;
+					tempStr.push_back(tempChar);
+				}
+
+				words += " " + tempStr;
+				while (isspace(mainFile.get())) {}
+				mainFile.seekg(-1, std::ios_base::cur);
 			}
 		}
 		else {
 			if (!pointTo(Line, From, -1)) return "";
-			mainFile >> words;
 
+			char tempChar;
 			Tstr tempStr;
-			for (uint32 currentWord = From; currentWord < To; ++currentWord) {
-				mainFile >> tempStr;
+			for (uint32 currentWord = From; currentWord <= From; ++currentWord) {
+				while (1) {
+					tempChar = mainFile.get();
+					if (isspace(tempChar) || mainFile.eof()) break;
+					tempStr.push_back(tempChar);
+				}
+
 				words += " " + tempStr;
+				while (isspace(mainFile.get())) {}
+				mainFile.seekg(-1, std::ios_base::cur);
 			}
 		}
+
+		words.pop_back();
 		return words;
 	}
 	Tstr File::getChars(uint32 From, uint32 To) {
@@ -705,24 +723,24 @@ namespace sp {
 	}
 	Tstr File::getChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 		Tstr chars = "";
-		if (To < From) {
-			if (!pointTo(Line, Word, To)) return "";
-			chars += mainFile.get();
 
-			for (uint32 currentChar = To; currentChar < From; ++currentChar) {
+		if (From < To) {
+			if (!pointTo(Line, Word, From)) return "";
+
+			for (uint32 currentChar = From; currentChar < To; ++currentChar) {
+				chars += mainFile.get();
 				if (mainFile.eof()) break;
-				chars = (char)mainFile.get() + chars;
 			}
 		}
 		else {
-			if (!pointTo(Line, Word, From)) return "";
-			chars += mainFile.get();
+			if (!pointTo(Line, Word, To)) return "";
 
-			for (uint32 currentChar = From; currentChar < To; ++currentChar) {
+			for (uint32 currentChar = To; currentChar < From; ++currentChar) {
+				chars = (char)mainFile.get() + chars;
 				if (mainFile.eof()) break;
-				chars += mainFile.get();
 			}
 		}
+
 		return chars;
 	}
 
@@ -739,7 +757,11 @@ namespace sp {
 		return add(position, Tstr(&ToAdd));
 	}
 
-
+	
+	File& File::replace(char ToPut) {
+		mainFile.put(ToPut);
+		return *this;
+	}
 	bool File::replaceChar(uint32 Char, char Replacement) {
 		return replaceChar(-1, -1, Char, Replacement);
 	}
