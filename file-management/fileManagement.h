@@ -100,13 +100,57 @@ namespace sp {
 		/*
 		Converts the parameter to an std::string object and returns it
 		*/
-		Tstr toString(const char * toConvert);
+		Tstr toString(bool toConvert);
 		/*
 		Converts the parameter to an std::string object and returns it
 		*/
 		Tstr toString(char toConvert);
 		/*
-		Returns the parameter itself.
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(int8 toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(int16 toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(int32 toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(int64 toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(uint8 toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(uint16 toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(uint32 toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(uint64 toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(float toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(double toConvert);
+		/*
+		Converts the parameter to an std::string object and returns it
+		*/
+		Tstr toString(long double toConvert);
+		/*
+		Returns the parameter itself
 		*/
 		Tstr toString(Tstr &toConvert);
 
@@ -879,6 +923,7 @@ namespace sp {
 		bool operator!= (File &toCompare);
 
 
+		operator const char * ();
 		/*
 		Returns a pointer to an array of chars containing all the file
 		The file is opened, if it wasn't already
@@ -920,9 +965,10 @@ namespace sp {
 		FileIterator end();
 	};
 	
+	
 	template<typename T>
-	inline std::string File::toString(T toConvert) {
-		return std::to_string(toConvert);
+	inline Tstr File::toString(T toConvert) {
+		return Tstr(toConvert);
 	}
 
 	template<typename T>

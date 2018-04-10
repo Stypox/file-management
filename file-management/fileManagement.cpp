@@ -42,7 +42,7 @@ namespace sp {
 
 
 
-	FilePosition::FilePosition(File * file, uint32_t Position) : file(file), position(Position) {}
+	FilePosition::FilePosition(File * file, uint32 Position) : file(file), position(Position) {}
 	FilePosition::operator char() {
 		return file->getChar(position);
 	}
@@ -53,7 +53,7 @@ namespace sp {
 
 
 
-	FileIterator::FileIterator(File * file, uint32_t Position) : file(file), position(Position) {}
+	FileIterator::FileIterator(File * file, uint32 Position) : file(file), position(Position) {}
 	bool FileIterator::operator!=(const FileIterator & ToCompare) {
 		return position != ToCompare.position;
 	}
@@ -68,16 +68,49 @@ namespace sp {
 
 
 
-
-	Tstr File::toString(const char * toConvert) {
-		return Tstr(toConvert);
+	Tstr File::toString(bool toConvert) {
+		return (toConvert) ? "1" : "0";
 	}
 	Tstr File::toString(char toConvert) {
 		return Tstr(&toConvert);
 	}
-	Tstr File::toString(Tstr & toConvert) {
+	Tstr File::toString(int8 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(int16 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(int32 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(int64 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(uint8 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(uint16 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(uint32 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(uint64 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(float toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(double toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(long double toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr File::toString(Tstr &toConvert) {
 		return toConvert;
 	}
+
 
 	uint32 File::countWords(Tstr Text) {
 		bool wasSpace = true;
@@ -1335,21 +1368,20 @@ namespace sp {
 		return !operator==(toCompare);
 	}
 
-
+	File::operator const char* () {
+		return cStr();
+	}
 	const char * File::cStr() {
-		if (!pointToBeg()) return nullptr;
+		if (!pointToBeg()) return "";
+		uint32 fileLength = getNrChars();
 
-		char tempChar;
-		Tstr fileStr = "";
-		while (1) {
-			tempChar = mainFile.get();
-			if (!mainFile.eof()) {
-				fileStr += tempChar;
-			}
-			else break;
+		char * string = new char[fileLength + 1];
+		string[fileLength] = NULL;
+		for (uint32 currentChar = 0; currentChar < fileLength; ++currentChar) {
+			string[currentChar] = mainFile.get();
 		}
 
-		return fileStr.c_str();
+		return string;
 	}
 	File::operator Tstr() {
 		return str();
