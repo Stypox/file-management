@@ -1,7 +1,8 @@
-//FARE nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
-//FARE forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (Tstr + '\n');" invece che "file << Tstr << '\n';"
-//FARE specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit", "Moves/not the pointer"
-//FARE non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara' impossibile da leggere o scrivere
+//TODO nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
+//TODO forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (Tstr + '\n');" invece che "file << Tstr << '\n';"
+//TODO specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit", "Moves/not the pointer"
+//TODO non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara' impossibile da leggere o scrivere
+//TODO remove C-style conversions
 
 //UTILI:
 /*
@@ -33,6 +34,11 @@ namespace sp {
 	using uint16 = uint16_t;
 	using uint32 = uint32_t;
 	using uint64 = uint64_t;
+
+
+	constexpr char defaultTempFilePath[] = "temp.tmp";
+	constexpr char defaultTempFileExtension[] = ".tmp";
+
 
 	class File;
 
@@ -230,6 +236,10 @@ namespace sp {
 		parameter and the temp path to the second parameter.
 		*/
 		File(Tstr MainPath, Tstr TempPath);
+		/*
+		Copy constructor
+		*/
+		File(File & Source);
 		/*
 		Destructor. Closes the file.
 		*/
@@ -923,14 +933,6 @@ namespace sp {
 		bool operator!= (File &toCompare);
 
 
-		operator const char * ();
-		/*
-		Returns a pointer to an array of chars containing all the file
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
-		Returns nullptr if the file couldn't be opened
-		*/
-		const char * cStr();
 		/*
 		Returns a string containing all the file
 		The file is opened, if it wasn't already
@@ -968,7 +970,7 @@ namespace sp {
 	
 	template<typename T>
 	inline Tstr File::toString(T toConvert) {
-		return Tstr(toConvert);
+		return static_cast<Tstr>(toConvert);
 	}
 
 	template<typename T>
@@ -994,7 +996,15 @@ namespace sp {
 	template<typename T>
 	inline bool File::addLine(uint32 Line, T ToAdd) {
 		Tspos position = getPositionMove(Line, -1, -1);
-		if (position < (Tspos)0) return false;
+		if (-1 == position) return false;
+		if (-2 == position) {
+			uint32 nrLines = getNrLines();
+			Tstr strToAppend = "";
+			for (uint32 currentLine = 0; currentLine < Line - nrLines; ++currentLine) {
+				strToAppend += "\r\n";
+			}
+			return append(strToAppend + ToAdd);
+		}
 		return add(position, toString(ToAdd) + "\r\n");
 	}
 	template<typename T>
@@ -1004,7 +1014,7 @@ namespace sp {
 	template<typename T>
 	inline bool File::addWord(uint32 Line, uint32 Word, T ToAdd) {
 		Tspos position = getPositionMove(Line, Word, -1);
-		if (position < (Tspos)0) return false;
+		if (position < 0) return false;
 		return add(position, toString(ToAdd) + " ");
 	}
 
@@ -1012,11 +1022,18 @@ namespace sp {
 	inline bool File::replaceLine(uint32 Line, T Replacement) {
 		Tspos from, to;
 		from = getPositionMove(Line, -1, -1);
-		if (from == (Tspos)-1) return false;
-		if (from == (Tspos)-2) return true;
+		if (-1 == from) return false;
+		if (-2 == from) {
+			uint32 nrLines = getNrLines();
+			Tstr strToAppend = "";
+			for (uint32 currentLine = 0; currentLine < Line - nrLines; ++currentLine) {
+				strToAppend += "\r\n";
+			}
+			return append(strToAppend + Replacement);
+		}
 		to = getPositionMove(Line + 1, -1, -1);
 
-		if (to == (Tspos)-2) {
+		if (-2 == to) {
 			return replaceSection(from, getNrChars() - 1, toString(Replacement));
 		}
 		return replaceSection(from, to - (Tspos)3, toString(Replacement));
@@ -1029,8 +1046,7 @@ namespace sp {
 	inline bool File::replaceWord(uint32 Line, uint32 Word, T Replacement) {
 		Tspos from, to;
 		from = getPositionMove(Line, Word, -1);
-		if (from == (Tspos)-1) return false;
-		if (from == (Tspos)-2) return true;
+		if (from < 0) return false;
 
 		char tempChar;
 		while (1) {
@@ -1080,6 +1096,7 @@ namespace sp {
 	template<typename T>
 	inline File & File::operator<<(T In) {
 		mainFile << toString(In);
+		mainFile.flush();
 		return *this;
 	}
 	

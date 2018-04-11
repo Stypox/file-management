@@ -7,14 +7,6 @@
 #include "fileManagement.h"
 
 namespace sp {
-
-
-	constexpr char defaultTempPath[] = "temp.tmp";
-	constexpr char defaultTempExtension[] = ".tmp";
-
-
-
-
 	FileState::FileState(bool Open, bool Eof, bool Fail, bool Bad, bool TempErr, bool ExtErr) : open(Open), eof(Eof), fail(Fail), bad(Bad), tempErr(TempErr), extErr(ExtErr) {}
 	FileState::operator bool() {
 		return !open || eof || fail || bad || tempErr || extErr;
@@ -311,9 +303,32 @@ namespace sp {
 	}
 
 
-	File::File() : mainPath(""), tempPath(defaultTempPath), TempError(0), ExternalError(0) {}
-	File::File(Tstr MainPath) : mainPath(MainPath), tempPath(MainPath + defaultTempExtension), TempError(0), ExternalError(0) {}
+	File::File() : mainPath(""), tempPath(defaultTempFilePath), TempError(0), ExternalError(0) {}
+	File::File(Tstr MainPath) : mainPath(MainPath), tempPath(MainPath + defaultTempFileExtension), TempError(0), ExternalError(0) {}
 	File::File(Tstr MainPath, Tstr TempPath) : mainPath(MainPath), tempPath(TempPath), TempError(0), ExternalError(0) {}
+	File::File(File & Source) {
+		mainPath = Source.mainPath;
+		tempPath = Source.tempPath;
+
+		if (Source.isOpen()) {
+			open();
+
+			eofErr(Source.eofErr());
+			failErr(Source.failErr());
+			badErr(Source.badErr());
+			tempErr(Source.tempErr());
+			extErr(Source.extErr());
+
+			mainFile.seekg(Source.mainFile.tellg());
+		}
+		else {
+			eofErr(Source.eofErr());
+			failErr(Source.failErr());
+			badErr(Source.badErr());
+			tempErr(Source.tempErr());
+			extErr(Source.extErr());
+		}
+	}
 	File::~File() {
 		close();
 	}
@@ -722,26 +737,28 @@ namespace sp {
 					tempStr.push_back(tempChar);
 				}
 
-				words += " " + tempStr;
+				words += tempStr + " ";
 				while (isspace(mainFile.get())) {}
 				mainFile.seekg(-1, std::ios_base::cur);
+				tempStr = "";
 			}
 		}
 		else {
-			if (!pointTo(Line, From, -1)) return "";
+			if (!pointTo(Line, To, -1)) return "";
 
 			char tempChar;
 			Tstr tempStr;
-			for (uint32 currentWord = From; currentWord <= From; ++currentWord) {
+			for (uint32 currentWord = To; currentWord <= From; ++currentWord) {
 				while (1) {
 					tempChar = mainFile.get();
 					if (isspace(tempChar) || mainFile.eof()) break;
 					tempStr.push_back(tempChar);
 				}
 
-				words += " " + tempStr;
+				words = tempStr + " " + words;
 				while (isspace(mainFile.get())) {}
 				mainFile.seekg(-1, std::ios_base::cur);
+				tempStr = "";
 			}
 		}
 
@@ -786,8 +803,8 @@ namespace sp {
 	}
 	bool File::addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd) {
 		Tspos position = getPositionMove(Line, Word, Char);
-		if (position < (Tspos)0) return false;
-		return add(position, Tstr(&ToAdd));
+		if (position < 0) return false;
+		return add(position, toString(ToAdd));
 	}
 
 	
@@ -803,7 +820,6 @@ namespace sp {
 	}
 	bool File::replaceChar(uint32 Line, uint32 Word, uint32 Char, char Replacement) {
 		if (!pointTo(Line, Word, Char)) return false;
-
 		mainFile << Replacement;
 
 		mainFile.flush();
@@ -1368,21 +1384,7 @@ namespace sp {
 		return !operator==(toCompare);
 	}
 
-	File::operator const char* () {
-		return cStr();
-	}
-	const char * File::cStr() {
-		if (!pointToBeg()) return "";
-		uint32 fileLength = getNrChars();
 
-		char * string = new char[fileLength + 1];
-		string[fileLength] = NULL;
-		for (uint32 currentChar = 0; currentChar < fileLength; ++currentChar) {
-			string[currentChar] = mainFile.get();
-		}
-
-		return string;
-	}
 	File::operator Tstr() {
 		return str();
 	}
@@ -1415,6 +1417,7 @@ namespace sp {
 	FileIterator File::end() {
 		return FileIterator(this, getNrChars());
 	}
+
 
 	Tstr operator+(Tstr First, File &Second) {
 		return First + Second.str();
