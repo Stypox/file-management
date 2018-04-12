@@ -36,6 +36,16 @@ namespace sp {
 	using uint64 = uint64_t;
 
 
+	enum class NLMode {
+		win = 0,
+		unix = 1
+	};
+#ifdef _WIN32
+	constexpr NLMode defaultNewlineMode = NLMode::win;
+#else
+	constexpr NLMode defaultNewlineMode = NLMode::unix;
+#endif
+
 	constexpr char defaultTempFilePath[] = "temp.tmp";
 	constexpr char defaultTempFileExtension[] = ".tmp";
 
@@ -97,6 +107,9 @@ namespace sp {
 		Tfstm mainFile;
 		Tstr mainPath, tempPath;
 		bool TempError, ExternalError;
+
+		NLMode newlineMode;
+
 
 		/*
 		Converts the parameter to an std::string object and returns it
@@ -225,17 +238,17 @@ namespace sp {
 		Default constructor. Initializes the main path to an empty string and the
 		temp path to "temp.tmp".
 		*/
-		File();
+		File(NLMode Mode = defaultNewlineMode);
 		/*
 		Constructor with a string. Initializes the main path to the parameter and
 		tempPath to (parameter + ".tmp").
 		*/
-		File(Tstr MainPath);
+		File(Tstr MainPath, NLMode Mode = defaultNewlineMode);
 		/*
 		Constructor with two strings. Initializes the main path to the first
 		parameter and the temp path to the second parameter.
 		*/
-		File(Tstr MainPath, Tstr TempPath);
+		File(Tstr MainPath, Tstr TempPath, NLMode Mode = defaultNewlineMode);
 		/*
 		Copy constructor
 		*/
@@ -339,9 +352,9 @@ namespace sp {
 
 
 		/*
-		Returns all the chars after the pointer until '\r' or the end of the main
+		Returns all the chars after the pointer until '\n' or the end of the main
 		file are reached. The main file must be open in binary-input or
-		binary-input-output mode.
+		binary-input-output mode. On windows the '\r' before '\n' is removed.
 		Returns an empty string if the main file is not open or the end was already
 		reached.
 		*/
@@ -701,7 +714,7 @@ namespace sp {
 		Returns false if either the parameter or the file
 			couldn't be opened, otherwise true
 		*/
-		bool move(File &toOverwrite); //TODO rinominare moveContent
+		bool moveContent(File &toOverwrite);
 		/*
 		Swaps the content of this file with toSwap using a temp file
 		Leaves all files open in binary input-output mode

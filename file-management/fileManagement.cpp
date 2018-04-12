@@ -303,9 +303,9 @@ namespace sp {
 	}
 
 
-	File::File() : mainPath(""), tempPath(defaultTempFilePath), TempError(0), ExternalError(0) {}
-	File::File(Tstr MainPath) : mainPath(MainPath), tempPath(MainPath + defaultTempFileExtension), TempError(0), ExternalError(0) {}
-	File::File(Tstr MainPath, Tstr TempPath) : mainPath(MainPath), tempPath(TempPath), TempError(0), ExternalError(0) {}
+	File::File(NLMode Mode) : mainPath(""), tempPath(defaultTempFilePath), TempError(0), ExternalError(0), newlineMode(Mode) {}
+	File::File(Tstr MainPath, NLMode Mode) : mainPath(MainPath), tempPath(MainPath + defaultTempFileExtension), TempError(0), ExternalError(0), newlineMode(Mode) {}
+	File::File(Tstr MainPath, Tstr TempPath, NLMode Mode) : mainPath(MainPath), tempPath(TempPath), TempError(0), ExternalError(0), newlineMode(Mode) {}
 	File::File(File & Source) {
 		mainPath = Source.mainPath;
 		tempPath = Source.tempPath;
@@ -571,22 +571,27 @@ namespace sp {
 		return nrChars;
 	}
 	
-
 	Tstr File::getLine() {
 		Tstr line = "";
 
 		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (tempChar != '\n' && tempChar != '\r') break;
+		if (newlineMode == NLMode::win) {
+			while (1) {
+				tempChar = mainFile.get();
+				if (tempChar == '\r' || mainFile.eof()) {
+					tempChar = mainFile.get();
+					if (tempChar == '\n') break;
+					line.push_back(tempChar);
+				}
+				line.push_back(tempChar);
+			}
 		}
-		if (mainFile.eof()) return "";
-		mainFile.seekg(-1, std::ios_base::cur);
-
-		while (1) {
-			tempChar = mainFile.get();
-			if (tempChar == '\r' || mainFile.eof()) break;
-			line.push_back(tempChar);
+		else {
+			while (1) {
+				tempChar = mainFile.get();
+				if (tempChar == '\n' || mainFile.eof()) break;
+				line.push_back(tempChar);
+			}
 		}
 
 		return line;
@@ -786,7 +791,7 @@ namespace sp {
 			if (!pointTo(Line, Word, To)) return "";
 
 			for (uint32 currentChar = To; currentChar < From; ++currentChar) {
-				chars = (char)mainFile.get() + chars;
+				chars = static_cast<char>(mainFile.get()) + chars;
 				if (mainFile.eof()) break;
 			}
 		}
@@ -1089,7 +1094,7 @@ namespace sp {
 		mainPath = newPath;
 		return true;
 	}
-	bool File::move(File & toOverwrite) {
+	bool File::moveContent(File & toOverwrite) {
 		if (!toOverwrite.truncate()) {
 			ExternalError = 1;
 			return false;
