@@ -37,14 +37,19 @@ namespace sp {
 
 
 	enum class NLMode {
-		win = 0,
-		unix = 1
+		win,
+		unix
 	};
 #ifdef _WIN32
 	constexpr NLMode defaultNewlineMode = NLMode::win;
 #else
 	constexpr NLMode defaultNewlineMode = NLMode::unix;
 #endif
+
+	constexpr uint32 dontMove = UINT32_MAX;
+	 
+	constexpr std::streamoff fileNotOpen = -1;
+	constexpr std::streamoff outOfBounds = -2;
 
 	constexpr char defaultTempFilePath[] = "temp.tmp";
 	constexpr char defaultTempFileExtension[] = ".tmp";

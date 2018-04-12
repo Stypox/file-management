@@ -306,28 +306,15 @@ namespace sp {
 	File::File(NLMode Mode) : mainPath(""), tempPath(defaultTempFilePath), TempError(0), ExternalError(0), newlineMode(Mode) {}
 	File::File(Tstr MainPath, NLMode Mode) : mainPath(MainPath), tempPath(MainPath + defaultTempFileExtension), TempError(0), ExternalError(0), newlineMode(Mode) {}
 	File::File(Tstr MainPath, Tstr TempPath, NLMode Mode) : mainPath(MainPath), tempPath(TempPath), TempError(0), ExternalError(0), newlineMode(Mode) {}
-	File::File(File & Source) {
-		mainPath = Source.mainPath;
-		tempPath = Source.tempPath;
-
+	File::File(File & Source) : mainPath(Source.mainPath), tempPath(Source.tempPath), TempError(Source.TempError), ExternalError(Source.TempError), newlineMode(Source.newlineMode) {
 		if (Source.isOpen()) {
 			open();
-
-			eofErr(Source.eofErr());
-			failErr(Source.failErr());
-			badErr(Source.badErr());
-			tempErr(Source.tempErr());
-			extErr(Source.extErr());
-
 			mainFile.seekg(Source.mainFile.tellg());
 		}
-		else {
-			eofErr(Source.eofErr());
-			failErr(Source.failErr());
-			badErr(Source.badErr());
-			tempErr(Source.tempErr());
-			extErr(Source.extErr());
-		}
+
+		eofErr(Source.eofErr());
+		failErr(Source.failErr());
+		badErr(Source.badErr());
 	}
 	File::~File() {
 		close();
@@ -578,7 +565,8 @@ namespace sp {
 		if (newlineMode == NLMode::win) {
 			while (1) {
 				tempChar = mainFile.get();
-				if (tempChar == '\r' || mainFile.eof()) {
+				if (mainFile.eof()) break;
+				if (tempChar == '\r') {
 					tempChar = mainFile.get();
 					if (tempChar == '\n') break;
 					line.push_back(tempChar);
@@ -597,23 +585,8 @@ namespace sp {
 		return line;
 	}
 	bool File::getLine(Tstr &Line) {
-		Line = "";
 		if (!mainFile.is_open() || mainFile.eof()) return false;
-
-		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (tempChar != '\n' && tempChar != '\r') break;
-		}
-		if (mainFile.eof()) return "";
-		mainFile.seekg(-1, std::ios_base::cur);
-
-		while (1) {
-			tempChar = mainFile.get();
-			if (tempChar == '\r' || mainFile.eof()) break;
-			Line.push_back(tempChar);
-		}
-
+		Line = getLine();
 		return true;
 	}
 	Tstr File::getLine(uint32 Line) {
@@ -685,42 +658,20 @@ namespace sp {
 		if (From < To) {
 			if (!pointTo(From, -1, -1)) return "";
 
-			Tstr lines;
-			char tempChar;
-			Tstr tempStr = "";
 			for (uint32 currentLine = From; currentLine <= To; ++currentLine) {
-				while (1) {
-					tempChar = mainFile.get();
-					if (tempChar == '\r' || mainFile.eof()) break;
-					tempStr.push_back(tempChar);
-				}
-
-				lines += "\r\n" + tempStr;
+				lines += "\n" + getLine();
 				if (mainFile.eof()) break;
-				mainFile.ignore();
-				tempStr = "";
 			}
 		}
 		else {
 			if (!pointTo(To, -1, -1)) return "";
 
-			char tempChar;
-			Tstr tempStr = "";
 			for (uint32 currentLine = To; currentLine <= From; ++currentLine) {
-				while (1) {
-					tempChar = mainFile.get();
-					if (tempChar == '\r' || mainFile.eof()) break;
-					tempStr.push_back(tempChar);
-				}
-
-				lines = tempStr + "\r\n" + lines;
+				lines = getLine() + "\r\n" + lines;
 				if (mainFile.eof()) break;
-				mainFile.ignore();
-				tempStr = "";
 			}
 		}
 
-		lines.pop_back();
 		lines.pop_back();
 		return lines;
 	}
@@ -733,37 +684,17 @@ namespace sp {
 		if (From < To) {
 			if (!pointTo(Line, From, -1)) return "";
 
-			char tempChar;
-			Tstr tempStr;
 			for (uint32 currentWord = From; currentWord <= To; ++currentWord) {
-				while (1) {
-					tempChar = mainFile.get();
-					if (isspace(tempChar) || mainFile.eof()) break;
-					tempStr.push_back(tempChar);
-				}
-
-				words += tempStr + " ";
-				while (isspace(mainFile.get())) {}
-				mainFile.seekg(-1, std::ios_base::cur);
-				tempStr = "";
+				words += getWord() + " ";
+				if (mainFile.eof()) break;
 			}
 		}
 		else {
 			if (!pointTo(Line, To, -1)) return "";
 
-			char tempChar;
-			Tstr tempStr;
 			for (uint32 currentWord = To; currentWord <= From; ++currentWord) {
-				while (1) {
-					tempChar = mainFile.get();
-					if (isspace(tempChar) || mainFile.eof()) break;
-					tempStr.push_back(tempChar);
-				}
-
-				words = tempStr + " " + words;
-				while (isspace(mainFile.get())) {}
-				mainFile.seekg(-1, std::ios_base::cur);
-				tempStr = "";
+				words = getWord() + " " + words;
+				if (mainFile.eof()) break;
 			}
 		}
 
@@ -834,15 +765,20 @@ namespace sp {
 
 	bool File::deleteLine(uint32 Line) {
 		Tspos from, to;
-		from = getPositionMove(Line, -1, -1);
-		if (from == (Tspos)-1) return false;
-		if (from == (Tspos)-2) return true;
-		to = getPositionMove(Line + 1, -1, -1);
+		from = getPositionMove(Line, dontMove, dontMove);
+		if (from == fileNotOpen) return false;
+		if (from == outOfBounds) return true;
+		to = getPositionMove(Line + 1, dontMove, dontMove);
 
-		if (to == (Tspos)-2) {
-			return deleteSection(from - (Tspos)2, getNrChars() - 1);
+		if (to == outOfBounds) {
+			if (newlineMode == NLMode::win) {
+				return deleteSection(from - static_cast<Tspos>(2), getNrChars() - 1);
+			}
+			else {
+				return deleteSection(from - static_cast<Tspos>(1), getNrChars() - 1);
+			}
 		}
-		return deleteSection(from, to - (Tspos)1);
+		return deleteSection(from, to - static_cast<Tspos>(1));
 	}
 	bool File::deleteWord(uint32 Word) {
 		return deleteWord(-1, Word);
@@ -850,8 +786,8 @@ namespace sp {
 	bool File::deleteWord(uint32 Line, uint32 Word) {
 		Tspos from, to;
 		from = getPositionMove(Line, Word, -1);
-		if (from == (Tspos)-1) return false;
-		if (from == (Tspos)-2) return true;
+		if (-1 == from) return false;
+		if (-2 == from) return true;
 
 		char tempChar;
 		while (1) {
@@ -867,7 +803,7 @@ namespace sp {
 				break;
 			}
 		}
-		return deleteSection(from, mainFile.tellg() - (Tspos)2);
+		return deleteSection(from, mainFile.tellg() - static_cast<Tspos>(2));
 	}
 	bool File::deleteChar() {
 		if (!mainFile.is_open()) return false;
@@ -946,15 +882,20 @@ namespace sp {
 	bool File::deleteLines(uint32 From, uint32 To) {
 		if (From > To) std::swap(From, To);
 		Tspos from, to;
-		from = getPositionMove(From, -1, -1);
-		if (from == (Tspos)-1) return false;
-		if (from == (Tspos)-2) return true;
-		to = getPositionMove(To + 1, -1, -1);
+		from = getPositionMove(From, dontMove, dontMove);
+		if (from == fileNotOpen) return false;
+		if (from == outOfBounds) return true;
+		to = getPositionMove(To + 1, dontMove, dontMove);
 
-		if (to == (Tspos)-2) {
-			return deleteSection(from - (Tspos)2, getNrChars() - 1);
+		if (-2 == to) {
+			if (newlineMode == NLMode::win) {
+				return deleteSection(from - static_cast<Tspos>(2), getNrChars() - 1);
+			}
+			else {
+				return deleteSection(from - static_cast<Tspos>(1), getNrChars() - 1);
+			}
 		}
-		return deleteSection(from, to - (Tspos)1);
+		return deleteSection(from, to - static_cast<Tspos>(1));
 	}
 	bool File::deleteWords(uint32 From, uint32 To) {
 		return deleteWords(-1, From, To);
@@ -962,8 +903,8 @@ namespace sp {
 	bool File::deleteWords(uint32 Line, uint32 From, uint32 To) {
 		Tspos from, to;
 		from = getPositionMove(Line, From, -1);
-		if (from == (Tspos)-1) return false;
-		if (from == (Tspos)-2) return true;
+		if (-1 == from) return false;
+		if (-2 == from) return true;
 
 		pointTo(Line, To, -1);
 		char tempChar;
@@ -980,7 +921,7 @@ namespace sp {
 				break;
 			}
 		}
-		return deleteSection(from, mainFile.tellg() - (Tspos)2);
+		return deleteSection(from, mainFile.tellg() - static_cast<Tspos>(2));
 	}
 	bool File::deleteChars(uint32 From, uint32 To) {
 		return deleteChars(-1, -1, From, To);
@@ -991,12 +932,12 @@ namespace sp {
 	bool File::deleteChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 		Tspos from, to;
 		from = getPositionMove(Line, Word, From);
-		if (from == (Tspos)-1) return false;
-		if (from == (Tspos)-2) return true;
+		if (-1 == from) return false;
+		if (-2 == from) return true;
 		to = getPositionMove(Line, Word, To);
 
-		if (to == (Tspos)-2) {
-			return deleteSection(from - (Tspos)2, getNrChars() - 1);
+		if (-2 == to) {
+			return deleteSection(from, getNrChars() - 1);
 		}
 		return deleteSection(from, to);
 	}
@@ -1324,27 +1265,19 @@ namespace sp {
 
 	File& File::operator=(File &Source) {
 		close();
+		newlineMode = Source.newlineMode;
 		mainPath = Source.mainPath;
 		tempPath = Source.tempPath;
+		TempError = Source.TempError;
+		ExternalError = Source.ExternalError;
 
 		if (Source.isOpen()) {
 			open();
-
-			eofErr(Source.eofErr());
-			failErr(Source.failErr());
-			badErr(Source.badErr());
-			tempErr(Source.tempErr());
-			extErr(Source.extErr());
-
 			mainFile.seekg(Source.mainFile.tellg());
 		}
-		else {
-			eofErr(Source.eofErr());
-			failErr(Source.failErr());
-			badErr(Source.badErr());
-			tempErr(Source.tempErr());
-			extErr(Source.extErr());
-		}
+		eofErr(Source.eofErr());
+		failErr(Source.failErr());
+		badErr(Source.badErr());
 
 		return *this;
 	}
