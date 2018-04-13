@@ -1011,7 +1011,7 @@ namespace sp {
 	inline bool File::addLine(uint32 Line, T ToAdd) {
 		Tspos position = getPositionMove(Line, dontMove, dontMove);
 		if (position == fileNotOpen) return false;
-		Tstr newLine = (newlineMode == sp::NLMode::win ? "\r\n" : "\n");
+		Tstr newLine = (newlineMode == NLMode::win ? "\r\n" : "\n");
 		if (position == outOfBounds) {
 			uint32 nrLines = getNrLines();
 			Tstr strToAppend = "";
@@ -1039,7 +1039,7 @@ namespace sp {
 		from = getPositionMove(Line, dontMove, dontMove);
 		if (position == fileNotOpen) return false;
 		if (position == outOfBounds) {
-			Tstr newLine = (newlineMode == sp::NLMode::win ? "\r\n" : "\n");
+			Tstr newLine = (newlineMode == NLMode::win ? "\r\n" : "\n");
 			uint32 nrLines = getNrLines();
 			Tstr strToAppend = "";
 
@@ -1085,7 +1085,7 @@ namespace sp {
 	}
 	template<typename T>
 	inline bool File::appendLine(T ToAppend) {
-		return append((newlineMode == sp::NLMode::win ? "\r\n" : "\n") + toString(ToAppend));
+		return append((newlineMode == NLMode::win ? "\r\n" : "\n") + toString(ToAppend));
 	}
 	template<typename T>
 	inline bool File::appendWord(T ToAppend) {

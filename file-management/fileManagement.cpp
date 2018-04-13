@@ -494,13 +494,35 @@ namespace sp {
 
 		bool wasSpace = true;
 		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof() || tempChar == '\r') break;
-			if (isspace(tempChar)) wasSpace = true;
-			else if (wasSpace) {
-				wasSpace = false;
-				++nrWords;
+		if (newlineMode == NLMode::win) {
+			while (1) {
+				tempChar = mainFile.get();
+				if (mainFile.eof()) break;
+				if (tempChar == '\r') {
+					wasSpace = true;
+					tempChar = mainFile.get();
+					if (mainFile.eof() || tempChar == '\n') break;
+					if (!isspace(tempChar)) {
+						wasSpace = false;
+						++nrWords;
+					}
+				}
+				else if (isspace(tempChar)) wasSpace = true;
+				else if (wasSpace) {
+					wasSpace = false;
+					++nrWords;
+				}
+			}
+		}
+		else {
+			while (1) {
+				tempChar = mainFile.get();
+				if (mainFile.eof() || tempChar == '\n') break;
+				if (isspace(tempChar)) wasSpace = true;
+				else if (wasSpace) {
+					wasSpace = false;
+					++nrWords;
+				}
 			}
 		}
 
@@ -515,23 +537,12 @@ namespace sp {
 		return (uint32)buffer.st_size;
 	}
 	uint32 File::getNrChars(uint32 Line) {
-		Tspos pointerBeginning = 0;
-		if (mainFile.is_open()) {
-			pointerBeginning = mainFile.tellg();
-		}
-		if (!pointTo(Line, dontMove, dontMove)) return 0;
-		uint32 nrChars = 0;
+		Tspos from = getPosition(Line, dontMove, dontMove);
+		if (from < 0) return 0;
+		Tspos to = getPosition(Line + 1, dontMove, dontMove);
+		if (to == outOfBounds) return getNrChars() - from;
 
-		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof() || tempChar == '\r') break;
-			++nrChars;
-		}
-
-		mainFile.clear(mainFile.eofbit);
-		mainFile.seekg(pointerBeginning);
-		return nrChars;
+		return to - from - (newlineMode == NLMode::win ? 2 : 1);
 	}
 	uint32 File::getNrChars(uint32 Line, uint32 Word) {
 		Tspos pointerBeginning = 0;
@@ -662,7 +673,7 @@ namespace sp {
 			if (!pointTo(To, dontMove, dontMove)) return "";
 
 			for (uint32 currentLine = To; currentLine <= From; ++currentLine) {
-				lines = getLine() + "\r\n" + lines;
+				lines = getLine() + "\n" + lines;
 				if (mainFile.eof()) break;
 			}
 		}
@@ -790,7 +801,7 @@ namespace sp {
 			if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
 			if (isspace(tempChar)) {
 				if (tempChar == '\r') break;
-				while (1) {
+				while (1) { //TODO
 					tempChar = mainFile.get();
 					if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
 					if (!isspace(tempChar) || tempChar == '\r') break;
