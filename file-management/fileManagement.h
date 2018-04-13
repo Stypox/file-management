@@ -184,10 +184,6 @@ namespace sp {
 		*/
 		uint32 countWords(Tstr String);
 		/*
-		Deletes all '\r' (Carriage Return) at the end of a string.
-		*/
-		void truncEndCR(Tstr &String);
-		/*
 		Opens the main file in binary-input mode and the temp file in
 		binary-input-output mode. This allows to edit the main file using the temp
 		file. Both pointers are moved to the start. The temp file should be closed.
@@ -1013,25 +1009,26 @@ namespace sp {
 	}
 	template<typename T>
 	inline bool File::addLine(uint32 Line, T ToAdd) {
-		Tspos position = getPositionMove(Line, -1, -1);
-		if (-1 == position) return false;
-		if (-2 == position) {
+		Tspos position = getPositionMove(Line, dontMove, dontMove);
+		if (position == fileNotOpen) return false;
+		Tstr newLine = (newlineMode == sp::NLMode::win ? "\r\n" : "\n");
+		if (position == outOfBounds) {
 			uint32 nrLines = getNrLines();
 			Tstr strToAppend = "";
 			for (uint32 currentLine = 0; currentLine < Line - nrLines; ++currentLine) {
-				strToAppend += "\r\n";
+				strToAppend += newLine;
 			}
 			return append(strToAppend + ToAdd);
 		}
-		return add(position, toString(ToAdd) + "\r\n");
+		return add(position, toString(ToAdd) + newLine);
 	}
 	template<typename T>
 	inline bool File::addWord(uint32 Word, T ToAdd) {
-		return addWord(-1, Word, ToAdd);
+		return addWord(dontMove, Word, ToAdd);
 	}
 	template<typename T>
 	inline bool File::addWord(uint32 Line, uint32 Word, T ToAdd) {
-		Tspos position = getPositionMove(Line, Word, -1);
+		Tspos position = getPositionMove(Line, Word, dontMove);
 		if (position < 0) return false;
 		return add(position, toString(ToAdd) + " ");
 	}
@@ -1039,31 +1036,33 @@ namespace sp {
 	template<typename T>
 	inline bool File::replaceLine(uint32 Line, T Replacement) {
 		Tspos from, to;
-		from = getPositionMove(Line, -1, -1);
-		if (-1 == from) return false;
-		if (-2 == from) {
+		from = getPositionMove(Line, dontMove, dontMove);
+		if (position == fileNotOpen) return false;
+		if (position == outOfBounds) {
+			Tstr newLine = (newlineMode == sp::NLMode::win ? "\r\n" : "\n");
 			uint32 nrLines = getNrLines();
 			Tstr strToAppend = "";
+
 			for (uint32 currentLine = 0; currentLine < Line - nrLines; ++currentLine) {
-				strToAppend += "\r\n";
+				strToAppend += newLine;
 			}
 			return append(strToAppend + Replacement);
 		}
-		to = getPositionMove(Line + 1, -1, -1);
+		to = getPositionMove(Line + 1, dontMove, dontMove);
 
-		if (-2 == to) {
+		if (to == outOfBounds) {
 			return replaceSection(from, getNrChars() - 1, toString(Replacement));
 		}
 		return replaceSection(from, to - (Tspos)3, toString(Replacement));
 	}
 	template<typename T>
 	inline bool File::replaceWord(uint32 Word, T Replacement) {
-		return replaceWord(-1, Word, Replacement);
+		return replaceWord(dontMove, Word, Replacement);
 	}
 	template<typename T>
 	inline bool File::replaceWord(uint32 Line, uint32 Word, T Replacement) {
 		Tspos from, to;
-		from = getPositionMove(Line, Word, -1);
+		from = getPositionMove(Line, Word, dontMove);
 		if (from < 0) return false;
 
 		char tempChar;
@@ -1086,7 +1085,7 @@ namespace sp {
 	}
 	template<typename T>
 	inline bool File::appendLine(T ToAppend) {
-		return append("\r\n" + toString(ToAppend));
+		return append((newlineMode == sp::NLMode::win ? "\r\n" : "\n") + toString(ToAppend));
 	}
 	template<typename T>
 	inline bool File::appendWord(T ToAppend) {
@@ -1094,7 +1093,7 @@ namespace sp {
 	}
 	template<typename T>
 	inline bool File::appendWord(uint32 Line, T ToAppend) {
-		if (!pointTo(Line, -1, -1)) return false;
+		if (!pointTo(Line, dontMove, dontMove)) return false;
 
 		char tempChar;
 		while (1) {

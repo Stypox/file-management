@@ -156,7 +156,7 @@ namespace sp {
 		if (Line != dontMove) {
 			for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 				while (mainFile.get() != '\n') {
-					if (mainFile.eof()) return -2;
+					if (mainFile.eof()) return outOfBounds;
 				}
 			}
 		}
@@ -168,7 +168,7 @@ namespace sp {
 			++Word;
 
 			while (1) {
-				if (mainFile.eof()) return -2;
+				if (mainFile.eof()) return outOfBounds;
 				if (nrWords >= Word) {
 					mainFile.seekg(-1, std::ios_base::cur);
 					break;
@@ -188,7 +188,7 @@ namespace sp {
 		if (Char != dontMove && Char != 0) {
 			position += (Tspos)Char;
 			if (position >= getNrChars()) {
-				position = -2;
+				position = outOfBounds;
 			}
 		}
 
@@ -396,7 +396,7 @@ namespace sp {
 		if (Line != dontMove) {
 			for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 				while (mainFile.get() != '\n') {
-					if (mainFile.eof()) return -2;
+					if (mainFile.eof()) return outOfBounds;
 				}
 			}
 		}
@@ -408,7 +408,7 @@ namespace sp {
 			++Word;
 
 			while (1) {
-				if (mainFile.eof()) return -2;
+				if (mainFile.eof()) return outOfBounds;
 				if (nrWords >= Word) {
 					mainFile.seekg(-1, std::ios_base::cur);
 					break;
@@ -428,7 +428,7 @@ namespace sp {
 		if (Char != dontMove && Char != 0) {
 			position += (Tspos)Char;
 			if (position >= getNrChars()) {
-				position = -2;
+				position = outOfBounds;
 			}
 		}
 
@@ -882,7 +882,7 @@ namespace sp {
 		if (from == outOfBounds) return true;
 		to = getPositionMove(To + 1, dontMove, dontMove);
 
-		if (-2 == to) {
+		if (to == outOfBounds) {
 			if (newlineMode == NLMode::win) {
 				return deleteSection(from - static_cast<Tspos>(2), getNrChars() - 1);
 			}
@@ -931,7 +931,7 @@ namespace sp {
 		if (from == outOfBounds) return true;
 		to = getPositionMove(Line, Word, To);
 
-		if (-2 == to) {
+		if (to == outOfBounds) {
 			return deleteSection(from, getNrChars() - 1);
 		}
 		return deleteSection(from, to);
