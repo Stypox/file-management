@@ -118,11 +118,6 @@ namespace sp {
 
 		return nrWords;
 	}
-	void File::truncEndCR(Tstr & Text) {
-		while (!Text.empty() && Text.back() == '\r') {
-			Text.pop_back();
-		}
-	}
 	bool File::openTempToEditMain(Tfstm & TempFile) {
 		if (mainFile.is_open()) {
 			mainFile.close();
@@ -155,10 +150,10 @@ namespace sp {
 		}
 	}
 	Tspos File::getPositionMove(uint32 Line, uint32 Word, uint32 Char) {
-		if (!pointToBeg()) return -1;
+		if (!pointToBeg()) return fileNotOpen;
 
 
-		if (Line != UINT32_MAX) {
+		if (Line != dontMove) {
 			for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 				while (mainFile.get() != '\n') {
 					if (mainFile.eof()) return -2;
@@ -167,7 +162,7 @@ namespace sp {
 		}
 
 
-		if (Word != UINT32_MAX) {
+		if (Word != dontMove) {
 			bool wasSpace = true;
 			uint32 nrWords = 0;
 			++Word;
@@ -190,7 +185,7 @@ namespace sp {
 
 
 		Tspos position = mainFile.tellg();
-		if (Char != UINT32_MAX && Char != 0) {
+		if (Char != dontMove && Char != 0) {
 			position += (Tspos)Char;
 			if (position >= getNrChars()) {
 				position = -2;
@@ -336,7 +331,7 @@ namespace sp {
 		if (!pointToBeg()) return false;
 
 
-		if (Line != UINT32_MAX) {
+		if (Line != dontMove) {
 			for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 				while (mainFile.get() != '\n') {
 					if (mainFile.eof()) return false;
@@ -345,7 +340,7 @@ namespace sp {
 		}
 
 
-		if (Word != UINT32_MAX) {
+		if (Word != dontMove) {
 			bool wasSpace = true;
 			uint32 nrWords = 0;
 			++Word;
@@ -367,7 +362,7 @@ namespace sp {
 		}
 
 
-		if (Char != UINT32_MAX && Char != 0) {
+		if (Char != dontMove && Char != 0) {
 			Tspos position = mainFile.tellg() + (Tspos)Char;
 			mainFile.seekg(0, std::ios_base::end);
 			if (position >= mainFile.tellg()) return false;
@@ -395,10 +390,10 @@ namespace sp {
 		if (mainFile.is_open()) {
 			pointerBeginning = mainFile.tellg();
 		}
-		if (!pointToBeg()) return -1;
+		if (!pointToBeg()) return fileNotOpen;
 
 
-		if (Line != UINT32_MAX) {
+		if (Line != dontMove) {
 			for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 				while (mainFile.get() != '\n') {
 					if (mainFile.eof()) return -2;
@@ -407,7 +402,7 @@ namespace sp {
 		}
 
 
-		if (Word != UINT32_MAX) {
+		if (Word != dontMove) {
 			bool wasSpace = true;
 			uint32 nrWords = 0;
 			++Word;
@@ -430,7 +425,7 @@ namespace sp {
 
 
 		Tspos position = mainFile.tellg();
-		if (Char != UINT32_MAX && Char != 0) {
+		if (Char != dontMove && Char != 0) {
 			position += (Tspos)Char;
 			if (position >= getNrChars()) {
 				position = -2;
@@ -494,7 +489,7 @@ namespace sp {
 		if (mainFile.is_open()) {
 			pointerBeginning = mainFile.tellg();
 		}
-		if (!pointTo(Line, -1, -1)) return 0;
+		if (!pointTo(Line, dontMove, dontMove)) return 0;
 		uint32 nrWords = 0;
 
 		bool wasSpace = true;
@@ -524,7 +519,7 @@ namespace sp {
 		if (mainFile.is_open()) {
 			pointerBeginning = mainFile.tellg();
 		}
-		if (!pointTo(Line, -1, -1)) return 0;
+		if (!pointTo(Line, dontMove, dontMove)) return 0;
 		uint32 nrChars = 0;
 
 		char tempChar;
@@ -543,7 +538,7 @@ namespace sp {
 		if (mainFile.is_open()) {
 			pointerBeginning = mainFile.tellg();
 		}
-		if (!pointTo(Line, Word, -1)) return 0;
+		if (!pointTo(Line, Word, dontMove)) return 0;
 		uint32 nrChars = 0;
 
 		char tempChar;
@@ -590,7 +585,7 @@ namespace sp {
 		return true;
 	}
 	Tstr File::getLine(uint32 Line) {
-		if (!pointTo(Line, -1, -1)) return "";
+		if (!pointTo(Line, dontMove, dontMove)) return "";
 		return getLine();
 	}
 	Tstr File::getWord() {
@@ -627,10 +622,10 @@ namespace sp {
 		return true;
 	}
 	Tstr File::getWord(uint32 Word) {
-		return getWord(-1, Word);
+		return getWord(dontMove, Word);
 	}
 	Tstr File::getWord(uint32 Line, uint32 Word) {
-		if (!pointTo(Line, Word, -1)) return "";
+		if (!pointTo(Line, Word, dontMove)) return "";
 		return getWord();
 	}
 	char File::getChar() {
@@ -641,13 +636,13 @@ namespace sp {
 		return !mainFile.eof();
 	}
 	char File::getChar(uint32 Char) {
-		return getChar(-1, -1, Char);
+		return getChar(dontMove, dontMove, Char);
 	}
 	char File::getChar(uint32 Line, uint32 Char) {
-		return getChar(Line, -1, Char);
+		return getChar(Line, dontMove, Char);
 	}
 	char File::getChar(uint32 Line, uint32 Word, uint32 Char) {
-		if (!pointTo(Line, Word, Char)) return -1;
+		if (!pointTo(Line, Word, Char)) return fileNotOpen;
 		return mainFile.get();
 	}
 
@@ -656,7 +651,7 @@ namespace sp {
 		Tstr lines = "";
 
 		if (From < To) {
-			if (!pointTo(From, -1, -1)) return "";
+			if (!pointTo(From, dontMove, dontMove)) return "";
 
 			for (uint32 currentLine = From; currentLine <= To; ++currentLine) {
 				lines += "\n" + getLine();
@@ -664,7 +659,7 @@ namespace sp {
 			}
 		}
 		else {
-			if (!pointTo(To, -1, -1)) return "";
+			if (!pointTo(To, dontMove, dontMove)) return "";
 
 			for (uint32 currentLine = To; currentLine <= From; ++currentLine) {
 				lines = getLine() + "\r\n" + lines;
@@ -676,13 +671,13 @@ namespace sp {
 		return lines;
 	}
 	Tstr File::getWords(uint32 From, uint32 To) {
-		return getWords(-1, From, To);
+		return getWords(dontMove, From, To);
 	}
 	Tstr File::getWords(uint32 Line, uint32 From, uint32 To) {
 		Tstr words = "";
 
 		if (From < To) {
-			if (!pointTo(Line, From, -1)) return "";
+			if (!pointTo(Line, From, dontMove)) return "";
 
 			for (uint32 currentWord = From; currentWord <= To; ++currentWord) {
 				words += getWord() + " ";
@@ -690,7 +685,7 @@ namespace sp {
 			}
 		}
 		else {
-			if (!pointTo(Line, To, -1)) return "";
+			if (!pointTo(Line, To, dontMove)) return "";
 
 			for (uint32 currentWord = To; currentWord <= From; ++currentWord) {
 				words = getWord() + " " + words;
@@ -702,10 +697,10 @@ namespace sp {
 		return words;
 	}
 	Tstr File::getChars(uint32 From, uint32 To) {
-		return getChars(-1, -1, From, To);
+		return getChars(dontMove, dontMove, From, To);
 	}
 	Tstr File::getChars(uint32 Line, uint32 From, uint32 To) {
-		return getChars(Line, -1, From, To);
+		return getChars(Line, dontMove, From, To);
 	}
 	Tstr File::getChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 		Tstr chars = "";
@@ -732,10 +727,10 @@ namespace sp {
 
 
 	bool File::addChar(uint32 Char, char ToAdd) {
-		return addChar(-1, -1, Char, ToAdd);
+		return addChar(dontMove, dontMove, Char, ToAdd);
 	}
 	bool File::addChar(uint32 Line, uint32 Char, char ToAdd) {
-		return addChar(Line, -1, Char, ToAdd);
+		return addChar(Line, dontMove, Char, ToAdd);
 	}
 	bool File::addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd) {
 		Tspos position = getPositionMove(Line, Word, Char);
@@ -749,10 +744,10 @@ namespace sp {
 		return *this;
 	}
 	bool File::replaceChar(uint32 Char, char Replacement) {
-		return replaceChar(-1, -1, Char, Replacement);
+		return replaceChar(dontMove, dontMove, Char, Replacement);
 	}
 	bool File::replaceChar(uint32 Line, uint32 Char, char Replacement) {
-		return replaceChar(Line, -1, Char, Replacement);
+		return replaceChar(Line, dontMove, Char, Replacement);
 	}
 	bool File::replaceChar(uint32 Line, uint32 Word, uint32 Char, char Replacement) {
 		if (!pointTo(Line, Word, Char)) return false;
@@ -781,13 +776,13 @@ namespace sp {
 		return deleteSection(from, to - static_cast<Tspos>(1));
 	}
 	bool File::deleteWord(uint32 Word) {
-		return deleteWord(-1, Word);
+		return deleteWord(dontMove, Word);
 	}
 	bool File::deleteWord(uint32 Line, uint32 Word) {
 		Tspos from, to;
-		from = getPositionMove(Line, Word, -1);
-		if (-1 == from) return false;
-		if (-2 == from) return true;
+		from = getPositionMove(Line, Word, dontMove);
+		if (from == fileNotOpen) return false;
+		if (from == outOfBounds) return true;
 
 		char tempChar;
 		while (1) {
@@ -837,15 +832,15 @@ namespace sp {
 		return true;
 	}
 	bool File::deleteChar(uint32 Char) {
-		return deleteChar(-1, -1, Char);
+		return deleteChar(dontMove, dontMove, Char);
 	}
 	bool File::deleteChar(uint32 Line, uint32 Char) {
-		return deleteChar(Line, -1, Char);
+		return deleteChar(Line, dontMove, Char);
 	}
 	bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 		Tspos position = getPositionMove(Line, Word, Char);
-		if (position == (Tspos)-1) return false;
-		else if (position == (Tspos)-2) return true;
+		if (position == fileNotOpen) return false;
+		if (position == outOfBounds) return true;
 
 
 		Tfstm tempFile;
@@ -898,15 +893,15 @@ namespace sp {
 		return deleteSection(from, to - static_cast<Tspos>(1));
 	}
 	bool File::deleteWords(uint32 From, uint32 To) {
-		return deleteWords(-1, From, To);
+		return deleteWords(dontMove, From, To);
 	}
 	bool File::deleteWords(uint32 Line, uint32 From, uint32 To) {
 		Tspos from, to;
-		from = getPositionMove(Line, From, -1);
-		if (-1 == from) return false;
-		if (-2 == from) return true;
+		from = getPositionMove(Line, From, dontMove);
+		if (from == fileNotOpen) return false;
+		if (from == outOfBounds) return true;
 
-		pointTo(Line, To, -1);
+		pointTo(Line, To, dontMove);
 		char tempChar;
 		while (1) {
 			tempChar = mainFile.get();
@@ -924,16 +919,16 @@ namespace sp {
 		return deleteSection(from, mainFile.tellg() - static_cast<Tspos>(2));
 	}
 	bool File::deleteChars(uint32 From, uint32 To) {
-		return deleteChars(-1, -1, From, To);
+		return deleteChars(dontMove, dontMove, From, To);
 	}
 	bool File::deleteChars(uint32 Line, uint32 From, uint32 To) {
-		return deleteChars(Line, -1, From, To);
+		return deleteChars(Line, dontMove, From, To);
 	}
 	bool File::deleteChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
 		Tspos from, to;
 		from = getPositionMove(Line, Word, From);
-		if (-1 == from) return false;
-		if (-2 == from) return true;
+		if (from == fileNotOpen) return false;
+		if (from == outOfBounds) return true;
 		to = getPositionMove(Line, Word, To);
 
 		if (-2 == to) {
@@ -947,7 +942,7 @@ namespace sp {
 		return append(Tstr(&ToAppend));
 	}
 	bool File::appendChar(uint32 Line, char ToAppend) {
-		if (!pointTo(Line, -1, -1)) return false;
+		if (!pointTo(Line, dontMove, dontMove)) return false;
 	
 		char tempChar;
 		while (1) {
@@ -959,7 +954,7 @@ namespace sp {
 		return add(mainFile.tellg() - (Tspos)1, Tstr(&ToAppend));
 	}
 	bool File::appendChar(uint32 Line, uint32 Word, char ToAppend) {
-		if (!pointTo(Line, Word, -1)) return false;
+		if (!pointTo(Line, Word, dontMove)) return false;
 
 		char tempChar;
 		while (1) {
