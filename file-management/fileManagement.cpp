@@ -154,9 +154,26 @@ namespace sp {
 
 
 		if (Line != dontMove) {
-			for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
-				while (mainFile.get() != '\n') {
-					if (mainFile.eof()) return outOfBounds;
+			if (newlineMode == NLMode::win) {
+				for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+					char tempChar;
+					while (1) {
+						tempChar = mainFile.get();
+					falseNewline:
+						if (tempChar == '\r') {
+							tempChar = mainFile.get();
+							if (tempChar == '\n') break;
+							goto falseNewline;
+						}
+						if (mainFile.eof()) return outOfBounds;
+					}
+				}
+			}
+			else {
+				for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+					while (mainFile.get() != '\n') {
+						if (mainFile.eof()) return outOfBounds;
+					}
 				}
 			}
 		}
@@ -331,10 +348,27 @@ namespace sp {
 		if (!pointToBeg()) return false;
 
 
-		if (Line != dontMove) {
-			for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
-				while (mainFile.get() != '\n') {
-					if (mainFile.eof()) return false;
+		if (Line != dontMove && Line != 0) {
+			if (newlineMode == NLMode::win) {
+				for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+					char tempChar;
+					while (1) {
+						tempChar = mainFile.get();
+						falseNewline:
+						if (tempChar == '\r') {
+							tempChar = mainFile.get();
+							if (tempChar == '\n') break;
+							goto falseNewline;
+						}
+						if (mainFile.eof()) return false;
+					}
+				}
+			}
+			else {
+				for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+					while (mainFile.get() != '\n') {
+						if (mainFile.eof()) return false;
+					}
 				}
 			}
 		}
@@ -394,9 +428,26 @@ namespace sp {
 
 
 		if (Line != dontMove) {
-			for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
-				while (mainFile.get() != '\n') {
-					if (mainFile.eof()) return outOfBounds;
+			if (newlineMode == NLMode::win) {
+				for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+					char tempChar;
+					while (1) {
+						tempChar = mainFile.get();
+					falseNewline:
+						if (tempChar == '\r') {
+							tempChar = mainFile.get();
+							if (tempChar == '\n') break;
+							goto falseNewline;
+						}
+						if (mainFile.eof()) return outOfBounds;
+					}
+				}
+			}
+			else {
+				for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
+					while (mainFile.get() != '\n') {
+						if (mainFile.eof()) return outOfBounds;
+					}
 				}
 			}
 		}
@@ -450,10 +501,24 @@ namespace sp {
 
 		char tempChar;
 		uint32 lines = 0;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof()) break;
-			if (tempChar == '\n') ++lines;
+		if (newlineMode == NLMode::win) {
+			while (1) {
+				tempChar = mainFile.get();
+				falseNewline:
+				if (mainFile.eof()) break;
+				if (tempChar == '\r') {
+					tempChar = mainFile.get();
+					if (tempChar == '\n') ++lines;
+					else goto falseNewline;
+				}
+			}
+		}
+		else {
+			while (1) {
+				tempChar = mainFile.get();
+				if (mainFile.eof()) break;
+				if (tempChar == '\n') ++lines;
+			}
 		}
 
 		mainFile.clear(mainFile.eofbit);
@@ -497,17 +562,16 @@ namespace sp {
 		if (newlineMode == NLMode::win) {
 			while (1) {
 				tempChar = mainFile.get();
+				falseNewline:
 				if (mainFile.eof()) break;
-				if (tempChar == '\r') {
+				if (isspace(tempChar)) {
 					wasSpace = true;
-					tempChar = mainFile.get();
-					if (mainFile.eof() || tempChar == '\n') break;
-					if (!isspace(tempChar)) {
-						wasSpace = false;
-						++nrWords;
+					if (tempChar == '\r') {
+						tempChar = mainFile.get();
+						if (tempChar == '\n') break;
+						else goto falseNewline;
 					}
 				}
-				else if (isspace(tempChar)) wasSpace = true;
 				else if (wasSpace) {
 					wasSpace = false;
 					++nrWords;
@@ -517,7 +581,7 @@ namespace sp {
 		else {
 			while (1) {
 				tempChar = mainFile.get();
-				if (mainFile.eof() || tempChar == '\n') break;
+				if (tempChar == '\n' || mainFile.eof()) break;
 				if (isspace(tempChar)) wasSpace = true;
 				else if (wasSpace) {
 					wasSpace = false;
@@ -540,9 +604,9 @@ namespace sp {
 		Tspos from = getPosition(Line, dontMove, dontMove);
 		if (from < 0) return 0;
 		Tspos to = getPosition(Line + 1, dontMove, dontMove);
-		if (to == outOfBounds) return getNrChars() - from;
+		if (to == outOfBounds) return getNrChars() - static_cast<uint32>(from);
 
-		return to - from - (newlineMode == NLMode::win ? 2 : 1);
+		return static_cast<uint32>(to) - static_cast<uint32>(from) - (newlineMode == NLMode::win ? 2 : 1);
 	}
 	uint32 File::getNrChars(uint32 Line, uint32 Word) {
 		Tspos pointerBeginning = 0;
@@ -571,11 +635,12 @@ namespace sp {
 		if (newlineMode == NLMode::win) {
 			while (1) {
 				tempChar = mainFile.get();
+				falseNewline:
 				if (mainFile.eof()) break;
 				if (tempChar == '\r') {
 					tempChar = mainFile.get();
 					if (tempChar == '\n') break;
-					line.push_back(tempChar);
+					goto falseNewline;
 				}
 				line.push_back(tempChar);
 			}
@@ -800,13 +865,25 @@ namespace sp {
 			tempChar = mainFile.get();
 			if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
 			if (isspace(tempChar)) {
-				if (tempChar == '\r') break;
-				while (1) { //TODO
-					tempChar = mainFile.get();
-					if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
-					if (!isspace(tempChar) || tempChar == '\r') break;
+				if (newlineMode == NLMode::win) {
+					while (1) {
+						if (!isspace(tempChar)) break;
+						if (tempChar == '\r') {
+							tempChar = mainFile.get();
+							if (tempChar == '\n' || !isspace(tempChar)) break;
+						}
+						tempChar = mainFile.get();
+						if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
+					}
+					break;
 				}
-				break;
+				else {
+					while (1) {
+						if (!isspace(tempChar) || tempChar == '\n') break;
+						tempChar = mainFile.get();
+						if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
+					}
+				}
 			}
 		}
 		return deleteSection(from, mainFile.tellg() - static_cast<Tspos>(2));
@@ -918,13 +995,27 @@ namespace sp {
 			tempChar = mainFile.get();
 			if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
 			if (isspace(tempChar)) {
-				if (tempChar == '\r') break;
-				while (1) {
-					tempChar = mainFile.get();
-					if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
-					if (!isspace(tempChar) || tempChar == '\r') break;
+				if (newlineMode == NLMode::win) {
+					while (1) {
+						falseNewline:
+						if (!isspace(tempChar)) break;
+						if (tempChar == '\r') {
+							tempChar = mainFile.get();
+							if (tempChar == '\n') break;
+							goto falseNewline;
+						}
+						tempChar = mainFile.get();
+						if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
+					}
+					break;
 				}
-				break;
+				else {
+					while (1) {
+						if (!isspace(tempChar) || tempChar == '\n') break;
+						tempChar = mainFile.get();
+						if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
+					}
+				}
 			}
 		}
 		return deleteSection(from, mainFile.tellg() - static_cast<Tspos>(2));
