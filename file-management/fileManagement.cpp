@@ -730,7 +730,7 @@ namespace sp {
 			if (!pointTo(From, dontMove, dontMove)) return "";
 
 			for (uint32 currentLine = From; currentLine <= To; ++currentLine) {
-				lines += "\n" + getLine();
+				lines += getLine() + "\n";
 				if (mainFile.eof()) break;
 			}
 		}
@@ -1070,33 +1070,47 @@ namespace sp {
 
 
 	bool File::deleteLastEmptyLines() {
+		if (!pointToBeg()) return false;
+		char tempChar;
+		uint32 endPosition = 0;
+		if (newlineMode == NLMode::win) {
+			while (1) {
+				tempChar = mainFile.get();
+				if (mainFile.eof()) break;
+				falseNewline:
+				if (tempChar == '\r') {
+					tempChar = mainFile.get();
+					if (mainFile.eof()) {
+						endPosition = getNrChars();
+						break;
+					}
+					if (tempChar != '\n') {
+						endPosition = static_cast<uint32>(mainFile.tellg());
+						goto falseNewline;
+					}
+				}
+			}
+		}
+		else {
+			while (1) {
+				tempChar = mainFile.get();
+				if (mainFile.eof()) break;
+				if (tempChar != '\n') endPosition = static_cast<uint32>(mainFile.tellg());
+			}
+		}
+
+
 		Tfstm tempFile;
 		if (!openTempToEditMain(tempFile)) return false;
-
-	
-		char tempChar;
-		uint32 endPosition = 0, pointer = 0;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof()) break;
-			if (tempChar != '\n' && tempChar != '\r') {
-				endPosition = ++pointer;
-			}
-			else {
-				++pointer;
-			}
-			tempFile << tempChar;
+		for (uint32 currentPosition = 0; currentPosition < endPosition; ++currentPosition) {
+			tempFile << mainFile.get();
 		}
 
 
 		mainFile.close();
-		mainFile.open( mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
+		mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
 		tempFile.seekg(0);
-
-
-		for (uint32 pointer = 0; pointer < endPosition; ++pointer) {
-			mainFile << (char)tempFile.get();
-		}
+		moveFileContent(tempFile, mainFile);
 
 
 		mainFile.flush();

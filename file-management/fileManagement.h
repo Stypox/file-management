@@ -204,11 +204,13 @@ namespace sp {
 		getPositionMove(0, 0, 0) returns the position of the first char of the
 		first word of the first line(not necessarily 0). While 0 means "look for
 		the first", -1 means "don't do anything". So only 
-		getPositionMove(-1, -1, -1) will surely return 0. The pointer is moved to
-		an untraceable position. The main file is opened in binary input-output
+		getPositionMove(-1, -1, -1) will surely return 0. The constexpr
+		sp::dontMove can be used as -1. The pointer is moved to an untraceable
+		position. The main file is opened in binary input-output
 		mode, if it wasn't already.
 		Returns -1 if the main file couldn't be opened and -2 if the specified
-		position is out of bounds.
+		position is out of bounds. The constexpr sp::fileNotOpen (= -1) and
+		sp::outOfBounds (= -2) can be used to check.
 		*/
 		Tspos getPositionMove(uint32 Line, uint32 Word, uint32 Char);
 
@@ -237,17 +239,23 @@ namespace sp {
 	public:
 		/*
 		Default constructor. Initializes the main path to an empty string and the
-		temp path to "temp.tmp".
+		temp path to "temp.tmp". The newline mode is initialized to the first
+		parameter, if provided, otherwise it is initialized based on the operating
+		system.
 		*/
 		File(NLMode Mode = defaultNewlineMode);
 		/*
-		Constructor with a string. Initializes the main path to the parameter and
-		tempPath to (parameter + ".tmp").
+		Constructor with a string. Initializes the main path to the first parameter
+		and tempPath to (parameter + ".tmp"). The newline mode is initialized to
+		the second parameter, if provided, otherwise it is initialized based on the
+		operating system.
 		*/
 		File(Tstr MainPath, NLMode Mode = defaultNewlineMode);
 		/*
 		Constructor with two strings. Initializes the main path to the first
-		parameter and the temp path to the second parameter.
+		parameter and the temp path to the second parameter. The newline mode is
+		initialized to the third parameter, if provided, otherwise it is
+		initialized based on the operating system.
 		*/
 		File(Tstr MainPath, Tstr TempPath, NLMode Mode = defaultNewlineMode);
 		/*
@@ -268,7 +276,7 @@ namespace sp {
 		bool pointMove(Tspos Offset);
 		/*
 		Moves the pointer to the position specified by the parameter. The position
-		starts from zero, that is the first char of the file is atposition 0. The
+		starts from zero, that is the first char of the file is at position 0. The
 		main file is opened in binary input-output mode, if it wasn't already.
 		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
@@ -279,8 +287,8 @@ namespace sp {
 		pointTo(0, 0, 0) points to the first char of the first word of the first
 		line (not necessarily to the beginning of the file). While 0 means "move to
 		the first", -1 means "don't move". So only pointTo(-1, -1, -1) will surely
-		point to the beginning. The main file is opened in binary input-output mode,
-		if it wasn't already.
+		point to the beginning. The constexpr sp::dontMove can be used as -1. The 
+		main file is opened in binary input-output mode, if it wasn't already.
 		Returns false if the main file couldn't be opened or if the specified
 		position is out of bounds, otherwise returns true.
 		*/
@@ -299,20 +307,22 @@ namespace sp {
 		bool pointToEnd();
 		/*
 		Returns the position of a char (third parameter) in a word (second
-		parameter) in a line (first parameter). The indices start from 0, that
-		is getPosition(0, 0, 0) returns the position of the first char of the
-		first word of the first line (not necessarily 0). While 0 means	"look
-		for the first", -1 means "don't do anything". So only
-		getPosition(-1, -1, -1) will surely return 0. The pointer is not moved.
-		The main file is opened	in binary input-output mode, if it wasn't already.
-		Returns -1 if the main file couldn't be opened and -2 if the
-		specified position is out of bounds.
+		parameter) in a line (first parameter). The indices start from 0, that is
+		getPosition(0, 0, 0) returns the position of the first char of the first
+		word of the first line (not necessarily 0). While 0 means "look for the
+		first", -1 means "don't do anything". So only getPosition(-1, -1, -1) will
+		surely return 0. The pointer is not moved. The constexpr sp::dontMove can
+		be used as -1.The main file is opened inbinary input-output mode, if it
+		wasn't already.
+		Returns -1 if the main file couldn't be opened and -2 if the specified
+		position is out of bounds. The constexpr sp::fileNotOpen (= -1) and
+		sp::outOfBounds (= -2) can be used to check.
 		*/
 		Tspos getPosition(uint32 Line, uint32 Word, uint32 Char);
 
 
 		/*
-		Returns the number of '\n'. The pointer is not moved. The main file is
+		Returns the number of lines. The pointer is not moved. The main file is
 		opened in binary input-output mode, if it wasn't already.
 		Returns 0 if the main file couldn't be opened.
 		*/
@@ -336,9 +346,9 @@ namespace sp {
 		*/
 		uint32 getNrChars();
 		/*
-		Returns the number of chars in the line specified by the parameter. Doesn't
-		count '\r' at the end of the line. The pointer is not moved. The main file
-		is opened in binary input-output mode, if it wasn't already.
+		Returns the number of chars in the line specified by the parameter. The
+		pointer is not moved. The main file is opened in binary input-output mode,
+		if it wasn't already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrChars(uint32 Line);
@@ -353,16 +363,16 @@ namespace sp {
 
 
 		/*
-		Returns all the chars after the pointer until '\n' or the end of the main
-		file are reached. The main file must be open in binary-input or
-		binary-input-output mode. On windows the '\r' before '\n' is removed.
+		Returns all the chars after the pointer until the end of the line or the
+		end of the main file are reached. The main file must be open in
+		binary-input or binary-input-output mode.
 		Returns an empty string if the main file is not open or the end was already
 		reached.
 		*/
 		Tstr getLine();
 		/*
-		Saves on the parameter all the chars after the pointer until '\r\n' or the
-		end of the main file are reached. The main file must be open in
+		Saves on the parameter all the chars after the pointer until the end of the
+		line or the end of the main file are reached. The main file must be open in
 		binary-input or binary-input-output mode.
 		Returns false if the main file is not open or the end was already reached,
 		otherwise returns true.
