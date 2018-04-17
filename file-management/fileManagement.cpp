@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <experimental\filesystem>
 
 #include "fileManagement.h"
 
@@ -213,50 +214,38 @@ namespace sp {
 		return position;
 	}
 
-
+	
 	bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
 		uint32 oldSize = (uint32)To - (uint32)From + 1,
 			newSize = Replacement.size();
 
-	
+
 		if (oldSize > newSize) {
-			Tfstm tempFile;
-			if (!openTempToEditMain(tempFile)) return false;
+			if (!pointTo(From) || To >= getNrChars()) return false;
+			mainFile << Replacement;
 
 			char tempChar;
-			uint32 currentChar = 0;
+			Tspos getPosition = To + static_cast<Tspos>(1), putPosition = From + static_cast<Tspos>(newSize);
 			while (1) {
+				mainFile.seekg(getPosition);
 				tempChar = mainFile.get();
 				if (mainFile.eof()) break;
-				if (currentChar >= From && currentChar <= To) {
-					tempFile << Replacement;
-					mainFile.seekg(1 + (uint32)To);
-					currentChar += 1 + (uint32)To;
-				}
-				else {
-					tempFile << tempChar;
-					++currentChar;
-				}
+				mainFile.seekg(putPosition);
+				mainFile.put(tempChar);
+
+				getPosition += static_cast<Tspos>(1);
+				putPosition += static_cast<Tspos>(1);
 			}
 
-
-			mainFile.close();
-			mainFile.open(mainPath, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-			tempFile.seekg(0);
-
-
-			moveFileContent(tempFile, mainFile);
-
-
-			mainFile.close();
-			tempFile.close();
-			std::remove(tempPath.c_str());
+			std::error_code error;
+			std::experimental::filesystem::resize_file(mainPath, putPosition, error);
+			if (error) return false;
 		}
 
-	
+
 		else if (oldSize < newSize) {
 			uint32 fileLength = getNrChars();
-			if (!pointTo(From)) return false;
+			if (!pointTo(From) || To >= getNrChars()) return false;
 
 			mainFile << Replacement.substr(0, oldSize);
 			Tstr buffer = Replacement.substr(oldSize, newSize - oldSize);
@@ -272,7 +261,7 @@ namespace sp {
 
 			mainFile << buffer;
 		}
-	
+
 
 		else {
 			if (!pointTo(From)) return false;
@@ -284,33 +273,26 @@ namespace sp {
 		return true;
 	}
 	bool File::deleteSection(Tspos From, Tspos To) {
-		Tfstm tempFile;
-		if (!openTempToEditMain(tempFile)) return false;
+		if (!mainFile.is_open() && !open()) return false;
+		if (From > getNrChars()) return true;
 
-
-		uint32 currentPosition = 0;
 		char tempChar;
+		Tspos getPosition = To + static_cast<Tspos>(1), putPosition = From;
 		while (1) {
+			mainFile.seekg(getPosition);
 			tempChar = mainFile.get();
 			if (mainFile.eof()) break;
-			if (currentPosition < From || currentPosition > To) {
-				tempFile << tempChar;
-			}
-			++currentPosition;
+			mainFile.seekg(putPosition);
+			mainFile.put(tempChar);
+
+			getPosition += static_cast<Tspos>(1);
+			putPosition += static_cast<Tspos>(1);
 		}
 
-
-		mainFile.close();
-		mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-		tempFile.seekg(0);
-
-
-		moveFileContent(tempFile, mainFile);
-
-
+		std::error_code error;
+		std::experimental::filesystem::resize_file(mainPath, putPosition, error);
+		if (error) return false;
 		mainFile.flush();
-		tempFile.close();
-		std::remove(tempPath.c_str());
 		return true;
 	}
 
@@ -339,7 +321,7 @@ namespace sp {
 		return true;
 	}
 	bool File::pointTo(Tspos Position) {
-		if (!mainFile.is_open() && !open()) return false;
+		if ((!mainFile.is_open() && !open()) || Position > getNrChars()) return false;
 		mainFile.clear(mainFile.eofbit);
 		mainFile.seekg(Position);
 		return true;
@@ -1217,6 +1199,18 @@ namespace sp {
 	void File::remove() {
 		if (mainFile.is_open()) mainFile.close();
 		std::remove(mainPath.c_str());
+	}
+
+
+	uint32 File::size() {
+		return getNrChars();
+	}
+	bool File::resize(uint32 newSize) {
+		std::error_code error;
+		std::experimental::filesystem::resize_file(mainPath, newSize, error);
+		if (error) return false;
+		if (mainFile.is_open()) mainFile.flush();
+		return true;
 	}
 
 

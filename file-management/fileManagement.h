@@ -21,6 +21,7 @@ The pointer is not moved. // The pointer is moved to an untraceable position.
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <experimental\filesystem>
 
 namespace sp {
 	using Tstr = std::string;
@@ -758,6 +759,10 @@ namespace sp {
 		*/
 		void remove();
 
+		
+		uint32 size();
+		bool resize(uint32 newSize);
+
 
 		/*
 		Opens the file in binary input-output mode
@@ -1004,10 +1009,9 @@ namespace sp {
 
 	template<typename T>
 	inline bool File::add(Tspos Pos, T ToAdd) {
+		if (!pointTo(Pos)) return false;
 		std::string toAdd = toString(ToAdd);
 		uint32_t fileLength = getNrChars();
-		if (!pointTo(Pos)) return false;
-		if (toAdd.back() == '\0') toAdd.pop_back();
 
 		for (Tspos pointerPosition = Pos; pointerPosition < fileLength; pointerPosition += 1) {
 			mainFile.seekg(pointerPosition);
