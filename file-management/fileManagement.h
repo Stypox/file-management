@@ -322,8 +322,10 @@ namespace sp {
 
 
 		/*
-		Returns the number of lines. The pointer is not moved. The main file is
-		opened in binary input-output mode, if it wasn't already.
+		Returns the number of lines (visible in a text editor: if the file is empty
+		1 is returned, if there is one newline 2 is returned...). The pointer is
+		not moved. The main file is opened in binary input-output mode, if it
+		wasn't already.
 		Returns 0 if the main file couldn't be opened.
 		*/
 		uint32 getNrLines();

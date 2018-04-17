@@ -64,7 +64,7 @@ namespace sp {
 		return (toConvert) ? "1" : "0";
 	}
 	Tstr File::toString(char toConvert) {
-		return Tstr(&toConvert);
+		return Tstr(1, toConvert);
 	}
 	Tstr File::toString(int8 toConvert) {
 		return std::to_string(toConvert);
@@ -523,7 +523,7 @@ namespace sp {
 
 		mainFile.clear(mainFile.eofbit);
 		mainFile.seekg(pointerBeginning);
-		return lines;
+		return lines + 1;
 	}
 	uint32 File::getNrWords() {
 		Tspos pointerBeginning = 0;
@@ -640,6 +640,7 @@ namespace sp {
 				if (tempChar == '\r') {
 					tempChar = mainFile.get();
 					if (tempChar == '\n') break;
+					line.push_back('\r');
 					goto falseNewline;
 				}
 				line.push_back(tempChar);
