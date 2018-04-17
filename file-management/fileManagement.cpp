@@ -771,6 +771,8 @@ namespace sp {
 		}
 
 		words.pop_back();
+		if (words.back() == ' ') words.pop_back();
+		else if (words[0] == ' ') words.erase(0, 1);
 		return words;
 	}
 	Tstr File::getChars(uint32 From, uint32 To) {
@@ -785,17 +787,23 @@ namespace sp {
 		if (From < To) {
 			if (!pointTo(Line, Word, From)) return "";
 
-			for (uint32 currentChar = From; currentChar < To; ++currentChar) {
+			for (uint32 currentChar = From; currentChar <= To; ++currentChar) {
 				chars += mainFile.get();
-				if (mainFile.eof()) break;
+				if (mainFile.eof()) {
+					chars.pop_back();
+					break;
+				}
 			}
 		}
 		else {
 			if (!pointTo(Line, Word, To)) return "";
 
-			for (uint32 currentChar = To; currentChar < From; ++currentChar) {
+			for (uint32 currentChar = To; currentChar <= From; ++currentChar) {
 				chars = static_cast<char>(mainFile.get()) + chars;
-				if (mainFile.eof()) break;
+				if (mainFile.eof()) {
+					chars.erase(0, 1);
+					break;
+				}
 			}
 		}
 

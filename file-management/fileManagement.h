@@ -458,45 +458,48 @@ namespace sp {
 		Returns the interval of lines between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the lines
 		are returned in reverse order. If some (or all) lines are out of bounds
-		they get ignored. The lines are separeted by "\r\n". The main file is
+		they get ignored. The lines are always separeted by '\n'. The main file is
 		opened in binary-input-output mode, if it wasn't already.
 		*/
 		Tstr getLines(uint32 From, uint32 To);
 		/*
 		Returns the interval of words between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the words
-		are returned in reverse order. If some (or all) lines are out of bounds
+		are returned in reverse order. If some (or all) words are out of bounds
 		they get ignored. The words are separeted by spaces ' '. The main file is
 		opened in binary-input-output mode, if it wasn't already.
 		*/
 		Tstr getWords(uint32 From, uint32 To);
 		/*
-		Returns the interval of words in a line between the first and the second
-		parameter, both included. If the first parameter is bigger than the second
-		the words are returned in reverse order. If some (or all) lines are out of
+		Returns the interval of words in a line (first parameter) between the second and the third
+		parameter, both included. If the second parameter is bigger than the third
+		the words are returned in reverse order. If some (or all) words are out of
 		bounds they get ignored. The words are separeted by spaces ' '. The main
 		file is opened in binary-input-output mode, if it wasn't already.
 		*/
 		Tstr getWords(uint32 Line, uint32 From, uint32 To);
 		/*
-		Returns the interval of chars between From and To, both included
-		If some (or all) chars are out of bounds they just get ignored
-		If To > From the chars are returned in top-to-bottom order,
-			otherwise the order is inverted (bottom-to-top)
+		Returns the interval of chars between the first and the second parameter,
+		both included. If the first parameter is bigger than the second the chars
+		are returned in reverse order. If some (or all) chars are out of bounds
+		they get ignored. The main file is opened in binary-input-output mode, if
+		it wasn't already.
 		*/
 		Tstr getChars(uint32 From, uint32 To);
 		/*
-		Returns the interval of chars in a line between From and To, both included
-		If some (or all) chars are out of bounds they just get ignored
-		If To > From the chars are returned in top-to-bottom order,
-			otherwise the order is inverted (bottom-to-top)
+		Returns the interval of chars in a line (first parameter) between the
+		second and the third parameter, both included. If the second parameter is
+		bigger than the third the chars are returned in reverse order. If some (or
+		all) chars are out of bounds they get ignored. The main file is opened in
+		binary-input-output mode, if it wasn't already.
 		*/
 		Tstr getChars(uint32 Line, uint32 From, uint32 To);
 		/*
-		Returns the interval of chars in a word in a line between From and To, both included
-		If some (or all) chars are out of bounds they just get ignored
-		If To > From the chars are returned in top-to-bottom order,
-			otherwise the order is inverted (bottom-to-top)
+		Returns the interval of chars in a word (second parameter) in a line (first
+		parameter) between the third and the fourth parameter, both included. If the
+		third parameter is bigger than the fourth the chars are returned in reverse
+		order. If some (or all) chars are out of bounds they get ignored. The main
+		file is opened in binary-input-output mode, if it wasn't already.
 		*/
 		Tstr getChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
 
