@@ -881,34 +881,8 @@ namespace sp {
 	}
 	bool File::deleteChar() {
 		if (!mainFile.is_open()) return false;
-		uint32 position = (uint32)mainFile.tellg();
-		Tfstm tempFile;
-		if (!openTempToEditMain(tempFile)) return false;
-
-
-		uint32 currentPosition = 0;
-		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof()) break;
-			if (currentPosition != position) {
-				tempFile << tempChar;
-			}
-			++currentPosition;
-		}
-
-
-		mainFile.close();
-		mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-		tempFile.seekg(0);
-		moveFileContent(tempFile, mainFile);
-
-
-		mainFile.flush();
-		mainFile.seekg(position);
-		tempFile.close();
-		std::remove(tempPath.c_str());
-		return true;
+		Tspos position = mainFile.tellg();
+		return deleteSection(position, position);
 	}
 	bool File::deleteChar(uint32 Char) {
 		return deleteChar(dontMove, dontMove, Char);
@@ -919,37 +893,8 @@ namespace sp {
 	bool File::deleteChar(uint32 Line, uint32 Word, uint32 Char) {
 		Tspos position = getPositionMove(Line, Word, Char);
 		if (position == fileNotOpen) return false;
-		if (position == outOfBounds) return true;
-
-
-		Tfstm tempFile;
-		if (!openTempToEditMain(tempFile)) return false;
-
-
-		uint32 currentPosition = 0;
-		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof()) break;
-			if (currentPosition != position) {
-				tempFile << tempChar;
-			}
-			++currentPosition;
-		}
-
-
-		mainFile.close();
-		mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-		tempFile.seekg(0);
-
-
-		moveFileContent(tempFile, mainFile);
-
-
-		mainFile.flush();
-		tempFile.close();
-		std::remove(tempPath.c_str());
-		return true;
+		else if (position == outOfBounds) return true;
+		return deleteSection(position, position);
 	}
 
 
@@ -1063,23 +1008,22 @@ namespace sp {
 	bool File::deleteLastEmptyLines() {
 		if (!pointToBeg()) return false;
 		char tempChar;
-		uint32 endPosition = 0;
+		Tspos endPosition = 0;
 		if (newlineMode == NLMode::win) {
 			while (1) {
 				tempChar = mainFile.get();
 				if (mainFile.eof()) break;
+
 				falseNewline:
 				if (tempChar == '\r') {
 					tempChar = mainFile.get();
-					if (mainFile.eof()) {
-						endPosition = getNrChars();
-						break;
-					}
+					if (mainFile.eof()) return true;
 					if (tempChar != '\n') {
-						endPosition = static_cast<uint32>(mainFile.tellg());
+						endPosition = mainFile.tellg();
 						goto falseNewline;
 					}
 				}
+				else endPosition = mainFile.tellg();
 			}
 		}
 		else {
@@ -1089,24 +1033,12 @@ namespace sp {
 				if (tempChar != '\n') endPosition = static_cast<uint32>(mainFile.tellg());
 			}
 		}
+		
 
-
-		Tfstm tempFile;
-		if (!openTempToEditMain(tempFile)) return false;
-		for (uint32 currentPosition = 0; currentPosition < endPosition; ++currentPosition) {
-			tempFile << mainFile.get();
-		}
-
-
-		mainFile.close();
-		mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-		tempFile.seekg(0);
-		moveFileContent(tempFile, mainFile);
-
-
+		std::error_code error;
+		std::experimental::filesystem::resize_file(mainPath, endPosition, error);
+		if (error) return false;
 		mainFile.flush();
-		tempFile.close();
-		std::remove(tempPath.c_str());
 		return true;
 	}
 
@@ -1160,27 +1092,35 @@ namespace sp {
 			ExternalError = 1;
 			return false;
 		}
-		Tfstm tempFile(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-		if (!tempFile.is_open()) {
-			TempError = 1;
-			return false;
+
+		char tempCharThis, tempCharOther;
+		uint32 sizeThis = getNrChars(), sizeOther = Other.getNrChars();
+		if (sizeThis > sizeOther) {
+			for (uint32 currentPosition = 0; currentPosition < sizeOther; ++currentPosition) {
+				mainFile.seekg(currentPosition);
+				Other.mainFile.seekg(currentPosition);
+				tempCharThis = mainFile.get();
+				tempCharOther = Other.mainFile.get();
+
+				mainFile.seekg(currentPosition);
+				Other.mainFile.seekg(currentPosition);
+				mainFile.put(tempCharOther);
+				Other.mainFile.put(tempCharThis);
+			}
 		}
+		else {
+			for (uint32 currentPosition = 0; currentPosition < sizeThis; ++currentPosition) {
+				mainFile.seekg(currentPosition);
+				Other.mainFile.seekg(currentPosition);
+				tempCharThis = mainFile.get();
+				tempCharOther = Other.mainFile.get();
 
-		moveFileContent(mainFile, tempFile);
-
-		truncate();
-		moveFileContent(Other.mainFile, mainFile);
-
-		Other.truncate();
-		tempFile.clear(tempFile.eofbit);
-		tempFile.seekg(0);
-		moveFileContent(tempFile, Other.mainFile);
-
-		mainFile.flush();
-		Other.update();
-		tempFile.close();
-		std::remove(tempPath.c_str());
-		return true;
+				mainFile.seekg(currentPosition);
+				Other.mainFile.seekg(currentPosition);
+				mainFile.put(tempCharOther);
+				Other.mainFile.put(tempCharThis);
+			}
+		}
 	}
 	bool File::rename(Tstr newName) {
 		Tstr newPath = mainPath;
