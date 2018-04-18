@@ -218,8 +218,7 @@ namespace sp {
 	bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
 		uint32 oldSize = (uint32)To - (uint32)From + 1,
 			newSize = Replacement.size();
-
-
+		
 		if (oldSize > newSize) {
 			if (!pointTo(From) || To >= getNrChars()) return false;
 			mainFile << Replacement;
@@ -237,12 +236,9 @@ namespace sp {
 				putPosition += static_cast<Tspos>(1);
 			}
 
-			std::error_code error;
-			std::experimental::filesystem::resize_file(mainPath, putPosition, error);
-			if (error) return false;
+			return resize(static_cast<uint32>(putPosition));
 		}
-
-
+		
 		else if (oldSize < newSize) {
 			uint32 fileLength = getNrChars();
 			if (!pointTo(From) || To >= getNrChars()) return false;
@@ -260,16 +256,16 @@ namespace sp {
 			}
 
 			mainFile << buffer;
+			mainFile.flush();
 		}
-
-
+		
 		else {
 			if (!pointTo(From)) return false;
 			mainFile << Replacement;
+			mainFile.flush();
 		}
 
 
-		mainFile.flush();
 		return true;
 	}
 	bool File::deleteSection(Tspos From, Tspos To) {
@@ -289,11 +285,7 @@ namespace sp {
 			putPosition += static_cast<Tspos>(1);
 		}
 
-		std::error_code error;
-		std::experimental::filesystem::resize_file(mainPath, putPosition, error);
-		if (error) return false;
-		mainFile.flush();
-		return true;
+		return resize(static_cast<uint32>(putPosition));
 	}
 
 
@@ -1098,29 +1090,48 @@ namespace sp {
 		if (sizeThis > sizeOther) {
 			for (uint32 currentPosition = 0; currentPosition < sizeOther; ++currentPosition) {
 				mainFile.seekg(currentPosition);
-				Other.mainFile.seekg(currentPosition);
 				tempCharThis = mainFile.get();
+				Other.mainFile.seekg(currentPosition);
 				tempCharOther = Other.mainFile.get();
 
 				mainFile.seekg(currentPosition);
-				Other.mainFile.seekg(currentPosition);
 				mainFile.put(tempCharOther);
+				Other.mainFile.seekg(currentPosition);
 				Other.mainFile.put(tempCharThis);
 			}
+
+			for (uint32 currentPosition = sizeOther; currentPosition < sizeThis; ++currentPosition) {
+				mainFile.seekg(currentPosition);
+				Other.mainFile.seekg(currentPosition);
+				Other.mainFile.put(mainFile.get());
+			}
+
+			resize(sizeOther);
 		}
 		else {
 			for (uint32 currentPosition = 0; currentPosition < sizeThis; ++currentPosition) {
 				mainFile.seekg(currentPosition);
-				Other.mainFile.seekg(currentPosition);
 				tempCharThis = mainFile.get();
+				Other.mainFile.seekg(currentPosition);
 				tempCharOther = Other.mainFile.get();
 
 				mainFile.seekg(currentPosition);
-				Other.mainFile.seekg(currentPosition);
 				mainFile.put(tempCharOther);
+				Other.mainFile.seekg(currentPosition);
 				Other.mainFile.put(tempCharThis);
 			}
+
+			for (uint32 currentPosition = sizeThis; currentPosition < sizeOther; ++currentPosition) {
+				mainFile.seekg(currentPosition);
+				Other.mainFile.seekg(currentPosition);
+				mainFile.put(Other.mainFile.get());
+			}
+
+			Other.resize(sizeThis);
 		}
+
+		std::swap(newlineMode, Other.newlineMode);
+		return true;
 	}
 	bool File::rename(Tstr newName) {
 		Tstr newPath = mainPath;
@@ -1190,7 +1201,7 @@ namespace sp {
 
 
 	bool File::good() const {
-		return bool(this);
+		return this->operator bool();
 	}
 	void File::clear() {
 		mainFile.clear();
@@ -1395,10 +1406,10 @@ namespace sp {
 
 		return fileStr;
 	}
-	File::operator bool() {
+	File::operator bool() const {
 		return !(mainFile.eof() || mainFile.fail() || mainFile.bad() || TempError || ExternalError);
 	}
-	bool File::operator!() {
+	bool File::operator!() const {
 		return mainFile.eof() || mainFile.fail() || mainFile.bad() || TempError || ExternalError;
 	}
 
