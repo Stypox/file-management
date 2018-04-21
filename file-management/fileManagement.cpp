@@ -8,23 +8,21 @@
 #include "fileManagement.h"
 
 namespace sp {
-	FileState::FileState(bool Open, bool Eof, bool Fail, bool Bad, bool TempErr, bool ExtErr) : open(Open), eof(Eof), fail(Fail), bad(Bad), tempErr(TempErr), extErr(ExtErr) {}
+	FileState::FileState(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr) : open(Open), eofError(Eof), failError(Fail), badError(Bad), externalError(ExtErr) {}
 	FileState::operator bool() {
-		return !open || eof || fail || bad || tempErr || extErr;
+		return eofError || failError || badError || externalError;
 	}
 	std::string FileState::str() {
 		std::string fileState = "open:";
 		fileState += (open) ? "1" : "0";
 		fileState += " eofErr:";
-		fileState += (eof) ? "1" : "0";
+		fileState += (eofError) ? "1" : "0";
 		fileState += " failErr:";
-		fileState += (fail) ? "1" : "0";
+		fileState += (failError) ? "1" : "0";
 		fileState += " badErr:";
-		fileState += (bad) ? "1" : "0";
-		fileState += " tempErr:";
-		fileState += (tempErr) ? "1" : "0";
+		fileState += (badError) ? "1" : "0";
 		fileState += " extErr:";
-		fileState += (extErr) ? "1" : "0";
+		fileState += (externalError) ? "1" : "0";
 		return fileState;
 	}
 	void FileState::save(File &file) {
@@ -105,43 +103,6 @@ namespace sp {
 	}
 
 
-	uint32 File::countWords(Tstr Text) {
-		bool wasSpace = true;
-		uint32 nrWords = 0;
-
-		for (char letter : Text) {
-			if (isspace(letter)) wasSpace = true;
-			else if (wasSpace) {
-				wasSpace = false;
-				++nrWords;
-			}
-		}
-
-		return nrWords;
-	}
-	bool File::openTempToEditMain(Tfstm & TempFile) {
-		if (mainFile.is_open()) {
-			mainFile.close();
-		}
-		mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in);
-		if (!mainFile.is_open()) return false;
-
-
-		struct stat buffer;
-		if (stat(tempPath.c_str(), &buffer) == 0) {
-			TempFile.open(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-		}
-		else {
-			TempFile.open(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-		}
-		if (!TempFile.is_open()) {
-			TempError = true;
-			mainFile.close();
-			return false;
-		}
-
-		return true;
-	}
 	void File::moveFileContent(Tfstm & From, Tfstm & To) {
 		char tempChar;
 		while (1) {
@@ -289,10 +250,9 @@ namespace sp {
 	}
 
 
-	File::File(NLMode Mode) : mainPath(""), tempPath(defaultTempFilePath), TempError(0), ExternalError(0), newlineMode(Mode) {}
-	File::File(Tstr MainPath, NLMode Mode) : mainPath(MainPath), tempPath(MainPath + defaultTempFileExtension), TempError(0), ExternalError(0), newlineMode(Mode) {}
-	File::File(Tstr MainPath, Tstr TempPath, NLMode Mode) : mainPath(MainPath), tempPath(TempPath), TempError(0), ExternalError(0), newlineMode(Mode) {}
-	File::File(File & Source) : mainPath(Source.mainPath), tempPath(Source.tempPath), TempError(Source.TempError), ExternalError(Source.TempError), newlineMode(Source.newlineMode) {
+	File::File(NLMode Mode) : mainPath(""), ExternalError(0), newlineMode(Mode) {}
+	File::File(Tstr MainPath, NLMode Mode) : mainPath(MainPath), ExternalError(0), newlineMode(Mode) {}
+	File::File(File & Source) : mainPath(Source.mainPath), ExternalError(Source.ExternalError), newlineMode(Source.newlineMode) {
 		if (Source.isOpen()) {
 			open();
 			mainFile.seekg(Source.mainFile.tellg());
@@ -313,10 +273,10 @@ namespace sp {
 		return true;
 	}
 	bool File::pointTo(Tspos Position) {
-		if ((!mainFile.is_open() && !open()) || Position > getNrChars()) return false;
+		if (!mainFile.is_open() && !open()) return false;
 		mainFile.clear(mainFile.eofbit);
 		mainFile.seekg(Position);
-		return true;
+		return Position <= getNrChars();
 	}
 	bool File::pointTo(uint32 Line, uint32 Word, uint32 Char) {
 		if (!pointToBeg()) return false;
@@ -1205,8 +1165,7 @@ namespace sp {
 	}
 	void File::clear() {
 		mainFile.clear();
-		TempError = 0;
-		ExternalError = 0;
+		ExternalError = false;
 	}
 	bool File::eofErr() const {
 		return mainFile.eof();
@@ -1241,12 +1200,6 @@ namespace sp {
 			mainFile.clear(mainFile.eofbit);
 		}
 	}
-	bool File::tempErr() const {
-		return TempError;
-	}
-	void File::tempErr(bool Value) {
-		TempError = Value;
-	}
 	bool File::extErr() const {
 		return ExternalError;
 	}
@@ -1254,7 +1207,7 @@ namespace sp {
 		ExternalError = Value;
 	}
 	FileState File::state() const {
-		return FileState(mainFile.is_open(), mainFile.eof(), mainFile.fail(), mainFile.bad(), TempError, ExternalError);
+		return FileState(mainFile.is_open(), mainFile.eof(), mainFile.fail(), mainFile.bad(), ExternalError);
 	}
 
 
@@ -1265,50 +1218,44 @@ namespace sp {
 		if (mainFile.is_open()) mainFile.close();
 		mainPath = Path;
 	}
-	Tstr File::getTempPath() const {
-		return tempPath;
-	}
-	void File::setTempPath(Tstr TempPath) {
-		tempPath = TempPath;
-	}
 
 
 	File& File::operator>>(File &Out) {
-		if (!pointToBeg()) return *this;
-		if (Out.mainPath == mainPath || !Out.pointToBeg()) {
-			ExternalError = 1;
-			//Out.ExternalError = 1; //FARE se metterlo o no, perche' Out ha gia' il suo errore contenuto nel failbit del suo file e l'errore non e' esterno ma interno
+		if (!isOpen() && !open()) return *this;
+		if (!Out.isOpen() && !Out.open()) {
+			ExternalError = true;
 			return *this;
 		}
-		Tfstm tempFile(tempPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
-		if (!tempFile.is_open()) {
-			TempError = 1;
-			return *this;
+		uint32 sizeThis = getNrChars(), sizeOut = Out.getNrChars();
+		
+		char tempChar;
+		Tspos pointerGet = static_cast<Tspos>(sizeOut) - static_cast<Tspos>(1), pointerPut = static_cast<Tspos>(sizeThis + sizeOut) - static_cast<Tspos>(1);
+		while (pointerGet > -1) {
+			Out.mainFile.seekg(pointerGet);
+			tempChar = Out.mainFile.get();
+			Out.mainFile.seekg(pointerPut);
+			Out.mainFile.put(tempChar);
+
+			pointerGet -= 1;
+			pointerPut -= 1;
 		}
 
-		moveFileContent(Out.mainFile, tempFile);
-
-		Out.truncate();
+		Out.pointTo(0);
 		moveFileContent(mainFile, Out.mainFile);
 
-		tempFile.seekg(0);
-		moveFileContent(tempFile, Out.mainFile);
-
-		Out.update();
-		tempFile.close();
-		std::remove(tempPath.c_str());
+		Out.mainFile.flush();
 		return *this;
 	}
 	File& File::operator>>(int8 &Out) {
 		uint16 output;
 		mainFile >> output;
-		Out = (int8)output;
+		Out = static_cast<int8>(output);
 		return *this;
 	}
 	File& File::operator>>(uint8 &Out) {
 		uint16 output;
 		mainFile >> output;
-		Out = (uint8)output;
+		Out = static_cast<uint8>(output);
 		return *this;
 	}
 
@@ -1332,8 +1279,6 @@ namespace sp {
 		close();
 		newlineMode = Source.newlineMode;
 		mainPath = Source.mainPath;
-		tempPath = Source.tempPath;
-		TempError = Source.TempError;
 		ExternalError = Source.ExternalError;
 
 		if (Source.isOpen()) {
@@ -1407,10 +1352,10 @@ namespace sp {
 		return fileStr;
 	}
 	File::operator bool() const {
-		return !(mainFile.eof() || mainFile.fail() || mainFile.bad() || TempError || ExternalError);
+		return !(mainFile.eof() || mainFile.fail() || mainFile.bad() || ExternalError);
 	}
 	bool File::operator!() const {
-		return mainFile.eof() || mainFile.fail() || mainFile.bad() || TempError || ExternalError;
+		return mainFile.eof() || mainFile.fail() || mainFile.bad() || ExternalError;
 	}
 
 

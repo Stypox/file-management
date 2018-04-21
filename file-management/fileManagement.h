@@ -52,17 +52,14 @@ namespace sp {
 	constexpr std::streamoff fileNotOpen = -1;
 	constexpr std::streamoff outOfBounds = -2;
 
-	constexpr char defaultTempFilePath[] = "temp.tmp";
-	constexpr char defaultTempFileExtension[] = ".tmp";
-
 
 	class File;
 
 	struct FileState {
 	public:
-		bool open, eof, fail, bad, tempErr, extErr;
+		bool open, eofError, failError, badError, externalError;
 
-		FileState(bool Open, bool Eof, bool Fail, bool Bad, bool TempErr, bool ExtErr);
+		FileState(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr);
 
 		/*
 		Returns true if the file is open and there are no errors
@@ -111,8 +108,8 @@ namespace sp {
 	class File {
 	public:
 		Tfstm mainFile;
-		Tstr mainPath, tempPath;
-		bool TempError, ExternalError;
+		Tstr mainPath;
+		bool ExternalError;
 
 		NLMode newlineMode;
 
@@ -179,24 +176,11 @@ namespace sp {
 		*/
 		Tstr toString(Tstr &toConvert);
 
+
 		/*
-		Returns the number of words in a string based on the spaces
-		(' ',\f','\n','\r','\t','\v') between them.
-		*/
-		uint32 countWords(Tstr String);
-		/*
-		Opens the main file in binary-input mode and the temp file in
-		binary-input-output mode. This allows to edit the main file using the temp
-		file. Both pointers are moved to the start. The temp file should be closed.
-		Returns false if the main file or the temp file couldn't be opened,
-		otherwise returns true.
-		*/
-		bool openTempToEditMain(Tfstm &TempFile);
-		/*
-		Reads all the content of the first file and appends it to the second. The
-		first file should be open in binary-input mode and the second one in
-		binary-output mode. The pointer of the first file becomes -1, and the
-		pointer of the second file is moved to the end.
+		Reads all the content of the first file and writes it to the second
+		starting from where the pointer currently is. The first file should be open
+		in binary-input mode and the second one in binary-output mode.
 		*/
 		void moveFileContent(Tfstm &From, Tfstm &To);
 		/*
@@ -253,13 +237,6 @@ namespace sp {
 		*/
 		File(Tstr MainPath, NLMode Mode = defaultNewlineMode);
 		/*
-		Constructor with two strings. Initializes the main path to the first
-		parameter and the temp path to the second parameter. The newline mode is
-		initialized to the third parameter, if provided, otherwise it is
-		initialized based on the operating system.
-		*/
-		File(Tstr MainPath, Tstr TempPath, NLMode Mode = defaultNewlineMode);
-		/*
 		Copy constructor
 		*/
 		File(File & Source);
@@ -279,7 +256,8 @@ namespace sp {
 		Moves the pointer to the position specified by the parameter. The position
 		starts from zero, that is the first char of the file is at position 0. The
 		main file is opened in binary input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		bool pointTo(Tspos Position);
 		/*
@@ -461,6 +439,7 @@ namespace sp {
 		are returned in reverse order. If some (or all) lines are out of bounds
 		they get ignored. The lines are always separeted by '\n'. The main file is
 		opened in binary-input-output mode, if it wasn't already.
+		Returns an empty string if the main file couldn't be opened.
 		*/
 		Tstr getLines(uint32 From, uint32 To);
 		/*
@@ -469,6 +448,7 @@ namespace sp {
 		are returned in reverse order. If some (or all) words are out of bounds
 		they get ignored. The words are separeted by spaces ' '. The main file is
 		opened in binary-input-output mode, if it wasn't already.
+		Returns an empty string if the main file couldn't be opened.
 		*/
 		Tstr getWords(uint32 From, uint32 To);
 		/*
@@ -477,6 +457,7 @@ namespace sp {
 		the words are returned in reverse order. If some (or all) words are out of
 		bounds they get ignored. The words are separeted by spaces ' '. The main
 		file is opened in binary-input-output mode, if it wasn't already.
+		Returns an empty string if the main file couldn't be opened.
 		*/
 		Tstr getWords(uint32 Line, uint32 From, uint32 To);
 		/*
@@ -485,6 +466,7 @@ namespace sp {
 		are returned in reverse order. If some (or all) chars are out of bounds
 		they get ignored. The main file is opened in binary-input-output mode, if
 		it wasn't already.
+		Returns an empty string if the main file couldn't be opened.
 		*/
 		Tstr getChars(uint32 From, uint32 To);
 		/*
@@ -493,6 +475,7 @@ namespace sp {
 		bigger than the third the chars are returned in reverse order. If some (or
 		all) chars are out of bounds they get ignored. The main file is opened in
 		binary-input-output mode, if it wasn't already.
+		Returns an empty string if the main file couldn't be opened.
 		*/
 		Tstr getChars(uint32 Line, uint32 From, uint32 To);
 		/*
@@ -501,10 +484,17 @@ namespace sp {
 		third parameter is bigger than the fourth the chars are returned in reverse
 		order. If some (or all) chars are out of bounds they get ignored. The main
 		file is opened in binary-input-output mode, if it wasn't already.
+		Returns an empty string if the main file couldn't be opened.
 		*/
 		Tstr getChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
 
 
+		/*
+		Inserts the second parameter in the position specified by the first. The
+		main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
+		*/
 		template<typename T>
 		bool add(Tspos Pos, T ToAdd);
 		/*
@@ -779,8 +769,7 @@ namespace sp {
 		*/
 		bool isOpen() const;
 		/*
-		Closes and reopens the file to force it to save all the changes
-		Returns false if the file isn't already open or couldn't be opened, otherwise true
+		Flushes the file
 		*/
 		void update();
 
@@ -830,14 +819,6 @@ namespace sp {
 		*/
 		void badErr(bool Value);
 		/*
-		Returns true if there were errors while using the temp file
-		*/
-		bool tempErr() const;
-		/*
-		Sets the errors caused by the temp file state to a value
-		*/
-		void tempErr(bool Value);
-		/*
 		Returns true if there were errors while using an external file
 		*/
 		bool extErr() const;
@@ -860,14 +841,6 @@ namespace sp {
 		Closes the file if it is open
 		*/
 		void setPath(Tstr Path);
-		/*
-		Returns the path used to open the temp file
-		*/
-		Tstr getTempPath() const;
-		/*
-		Modifies the path used to open the temp file
-		*/
-		void setTempPath(Tstr TempPath);
 
 
 		template<typename T>
@@ -984,11 +957,11 @@ namespace sp {
 		/*
 		Returns true if there aren't errors, otherwise false
 		*/
-		operator bool();
+		operator bool() const;
 		/*
 		Returns false if there aren't errors, otherwise true
 		*/
-		bool operator!();
+		bool operator!() const;
 
 
 		/*

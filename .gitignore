@@ -8,3 +8,5 @@ file-management/*.txt
 file-management/*.vcxproj
 file-management/*.vcxproj.filters
 file-management/*.vcxproj.user
+
+*.ini
