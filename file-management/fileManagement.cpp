@@ -174,7 +174,7 @@ namespace sp {
 
 		return position;
 	}
-
+	
 	
 	bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
 		uint32 oldSize = (uint32)To - (uint32)From + 1,
@@ -995,7 +995,7 @@ namespace sp {
 		return true;
 	}
 
-	//TODO optimize and add copy()
+
 	bool File::create() {
 		mainFile.open(mainPath, std::ios_base::app);
 		mainFile.close();
@@ -1010,19 +1010,37 @@ namespace sp {
 		mainPath = newPath;
 		return true;
 	}
-	bool File::moveContent(File & toOverwrite) {
-		if (!toOverwrite.truncate()) {
-			ExternalError = 1;
-			return false;
+	bool File::copy(Tstr copyPath) {
+		if (!pointToBeg()) return false;
+		Tfstm copyFile;
+		if (std::experimental::filesystem::exists(copyPath)) {
+			copyFile.open(copyPath, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+		}
+		else {
+			copyFile.open(copyPath, std::ios_base::out | std::ios_base::binary | std::ios_base::app);
+		}
+
+		moveFileContent(mainFile, copyFile);
+		copyFile.close();
+		return true;
+	}
+	bool File::copy(File & toOverwrite) {
+		if (this == &toOverwrite) return true;
+		if (!toOverwrite.exists()) {
+			if (!toOverwrite.create()) {
+				ExternalError = 1;
+				return false;
+			}
+		}
+		else {
+			if (!toOverwrite.truncate()) {
+				ExternalError = 1;
+				return false;
+			}
 		}
 		if (!pointToBeg()) return false;
 
-		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof()) break;
-			toOverwrite << tempChar;
-		}
+		moveFileContent(mainFile, toOverwrite.mainFile);
 
 		toOverwrite.update();
 		return true;
@@ -1093,7 +1111,11 @@ namespace sp {
 	}
 	bool File::truncate() {
 		if (!resize(0)) return false;
-		if (mainFile.is_open()) mainFile.flush();
+		if (mainFile.is_open()) {
+			mainFile.flush();
+			mainFile.clear(mainFile.eofbit);
+			mainFile.seekg(0);
+		}
 		return true;
 	}
 	void File::remove() {

@@ -1,5 +1,6 @@
 //TODO non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara' impossibile da leggere o scrivere
 //TODO remove C-style conversions
+//TODO add lines-words range for loops
 
 //UTILI:
 /*
@@ -711,6 +712,7 @@ namespace sp {
 			couldn't be opened, otherwise true
 		*/
 		bool move(Tstr newPath);
+		bool copy(Tstr copyPath);
 		/*
 		Overwrites newFile with this file's content
 		Leaves all files open in binary input-output mode
@@ -718,7 +720,7 @@ namespace sp {
 		Returns false if either the parameter or the file
 			couldn't be opened, otherwise true
 		*/
-		bool moveContent(File &toOverwrite);
+		bool copy(File &toOverwrite);
 		/*
 		Swaps the content of this file with toSwap using a temp file
 		Leaves all files open in binary input-output mode
