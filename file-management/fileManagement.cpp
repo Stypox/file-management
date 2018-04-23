@@ -562,6 +562,7 @@ namespace sp {
 		return nrChars;
 	}
 	
+
 	Tstr File::getLine() {
 		Tstr line = "";
 
@@ -994,7 +995,7 @@ namespace sp {
 		return true;
 	}
 
-
+	//TODO optimize and add copy()
 	bool File::create() {
 		mainFile.open(mainPath, std::ios_base::app);
 		mainFile.close();
@@ -1002,22 +1003,10 @@ namespace sp {
 	}
 	bool File::move(Tstr newPath) {
 		if (mainFile.is_open()) mainFile.close();
-		mainFile.open(newPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-		if (!mainFile.is_open()) {
-			ExternalError = 1;
-			return false;
-		}
-		Tfstm oldFile(mainPath, std::ios_base::binary | std::ios_base::in);
-		if (!oldFile.is_open()) {
-			mainFile.close();
-			return false;
-		}
+		std::error_code e;
+		std::experimental::filesystem::rename(mainPath, newPath, e);
+		if (e) return false;
 
-		moveFileContent(oldFile, mainFile);
-
-		oldFile.close();
-		mainFile.flush();
-		std::remove(mainPath.c_str());
 		mainPath = newPath;
 		return true;
 	}
@@ -1103,9 +1092,9 @@ namespace sp {
 		return move(newPath);
 	}
 	bool File::truncate() {
-		if (mainFile.is_open()) mainFile.close();
-		mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-		return mainFile.is_open();
+		if (!resize(0)) return false;
+		if (mainFile.is_open()) mainFile.flush();
+		return true;
 	}
 	void File::remove() {
 		if (mainFile.is_open()) mainFile.close();
@@ -1149,8 +1138,10 @@ namespace sp {
 
 
 	bool File::exists() const {
-		struct stat buffer;
-		return (stat(mainPath.c_str(), &buffer) == 0);
+		std::error_code e;
+		bool returnValue = std::experimental::filesystem::exists(mainPath, e);
+		if (e) return false;
+		return returnValue;
 	}
 	struct stat File::info() {
 		mainFile.flush();
@@ -1228,16 +1219,12 @@ namespace sp {
 		}
 		uint32 sizeThis = getNrChars(), sizeOut = Out.getNrChars();
 		
-		char tempChar;
-		Tspos pointerGet = static_cast<Tspos>(sizeOut) - static_cast<Tspos>(1), pointerPut = static_cast<Tspos>(sizeThis + sizeOut) - static_cast<Tspos>(1);
-		while (pointerGet > -1) {
+		char tempChar;		
+		for (Tspos pointerGet = static_cast<Tspos>(sizeOut) - static_cast<Tspos>(1), pointerPut = static_cast<Tspos>(sizeThis + sizeOut) - static_cast<Tspos>(1); pointerGet > -1; pointerGet -= 1, pointerPut -= 1) {
 			Out.mainFile.seekg(pointerGet);
 			tempChar = Out.mainFile.get();
 			Out.mainFile.seekg(pointerPut);
 			Out.mainFile.put(tempChar);
-
-			pointerGet -= 1;
-			pointerPut -= 1;
 		}
 
 		Out.pointTo(0);
@@ -1262,13 +1249,27 @@ namespace sp {
 
 	File& File::operator<<(File &In) {
 		if (!pointToEnd()) return *this;
-		if (In.mainPath == mainPath || !In.pointToBeg()) {
-			ExternalError = 1;
-			//In.ExternalError = 1;
-			return *this;
-		}
 
-		moveFileContent(In.mainFile, mainFile);
+		if (this == &In) {
+			char tempChar;
+			uint32 size = getNrChars();
+			for (Tspos pointerGet = 0, pointerPut = size; pointerGet < size; pointerGet += 1, pointerPut += 1) {
+				mainFile.seekg(pointerGet);
+				tempChar = mainFile.get();
+
+				mainFile.seekg(pointerPut);
+				mainFile << tempChar;
+			}
+		}
+		else {
+			if (!In.pointToBeg()) {
+				ExternalError = 1;
+				return *this;
+			}
+			else {
+				moveFileContent(In.mainFile, mainFile);
+			}
+		}
 
 		mainFile.flush();
 		return *this;

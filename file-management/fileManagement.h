@@ -1,6 +1,3 @@
-//TODO nelle funzioni get rimuovo automaticamente il '\r' alla fine della linea, quindi non farlo nelle replace/add (se uno volesse mettere apposta i '\r' cosi' lo puo' fare)
-//TODO forse si puo' ottimizzare la scrittura su file scrivendo una stringa sola invece che due, es: "file << (Tstr + '\n');" invece che "file << Tstr << '\n';"
-//TODO specificare nella descrizione delle funzioni "Leaves the file open in binary input-output mode", "The file is opened, if it wasn't already", "Might set ... error/bit", "Moves/not the pointer"
 //TODO non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara' impossibile da leggere o scrivere
 //TODO remove C-style conversions
 
@@ -1111,9 +1108,10 @@ namespace sp {
 	
 	template<typename T>
 	inline bool File::operator=(T NewText) {
-		if (!truncate()) return false;
+		sp::Tstr newText = toString(NewText);
+		if (!pointToBeg() || !resize(newText.length())) return false;
 
-		mainFile << toString(NewText);
+		mainFile << newText;
 
 		mainFile.flush();
 		return true;
