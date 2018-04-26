@@ -747,7 +747,7 @@ namespace sp {
 
 
 	bool File::addChar(uint32 Char, char ToAdd) {
-		return addChar(dontMove, dontMove, Char, ToAdd);
+		return add(Char, ToAdd);
 	}
 	bool File::addChar(uint32 Line, uint32 Char, char ToAdd) {
 		return addChar(Line, dontMove, Char, ToAdd);
@@ -755,7 +755,7 @@ namespace sp {
 	bool File::addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd) {
 		Tspos position = getPositionMove(Line, Word, Char);
 		if (position < 0) return false;
-		return add(position, toString(ToAdd));
+		return add(position, ToAdd);
 	}
 
 	

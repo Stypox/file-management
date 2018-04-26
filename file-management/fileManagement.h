@@ -435,8 +435,8 @@ namespace sp {
 		Returns the interval of lines between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the lines
 		are returned in reverse order. If some (or all) lines are out of bounds
-		they get ignored. The lines are always separeted by '\n'. The main file is
-		opened in binary-input-output mode, if it wasn't already.
+		they get ignored. The main file is opened in binary-input-output mode, if
+		it wasn't already.
 		Returns an empty string if the main file couldn't be opened.
 		*/
 		Tstr getLines(uint32 From, uint32 To);
@@ -444,17 +444,18 @@ namespace sp {
 		Returns the interval of words between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the words
 		are returned in reverse order. If some (or all) words are out of bounds
-		they get ignored. The words are separeted by spaces ' '. The main file is
-		opened in binary-input-output mode, if it wasn't already.
+		they get ignored. Returned words are separeted by spaces ' '. The main file
+		is opened in binary-input-output mode, if it wasn't already.
 		Returns an empty string if the main file couldn't be opened.
 		*/
 		Tstr getWords(uint32 From, uint32 To);
 		/*
-		Returns the interval of words in a line (first parameter) between the second and the third
-		parameter, both included. If the second parameter is bigger than the third
-		the words are returned in reverse order. If some (or all) words are out of
-		bounds they get ignored. The words are separeted by spaces ' '. The main
-		file is opened in binary-input-output mode, if it wasn't already.
+		Returns the interval of words in a line (first parameter) between the
+		second and the third parameter, both included. If the second parameter is
+		bigger than the third the words are returned in reverse order. If some (or
+		all) words are out of bounds they get ignored. Returned words are separeted
+		by spaces ' '. The main file is opened in binary-input-output mode, if it
+		wasn't already.
 		Returns an empty string if the main file couldn't be opened.
 		*/
 		Tstr getWords(uint32 Line, uint32 From, uint32 To);
@@ -488,53 +489,61 @@ namespace sp {
 
 
 		/*
-		Inserts the second parameter in the position specified by the first. The
-		main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		Inserts the second parameter in the position specified by the first. If the
+		specified position is out of bounds some '\0' are added. The main file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool add(Tspos Pos, T ToAdd);
 		/*
-		Adds a line using a temp file
-		If the specified line is out of bounds some newlines get created FARE
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened, otherwise true
+		Inserts a line containing the second parameter before the line specified by
+		the first. If the specified line is out of bounds some newlines are
+		created. The main file is opened in binary-input-output mode, if it wasn't
+		already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool addLine(uint32 Line, T ToAdd);
 		/*
-		Adds a word using a temp file
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened or if the
-			specified word is out of bounds, otherwise true
+		Inserts the content of the second parameter before the word specified by
+		the first, with a space ' ' between them. The main file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool addWord(uint32 Word, T ToAdd);
 		/*
-		Adds a word in a line using a temp file
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened or if the
-			specified word is out of bounds, otherwise true
+		Inserts the content of the third parameter before a word (second parameter)
+		in a line (first parameter), with a space ' ' between them. The main file
+		is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool addWord(uint32 Line, uint32 Word, T ToAdd);
 		/*
-		Adds a char
-		Returns false if the file couldn't be opened or if the
-			specified char is out of bounds, otherwise true
+		Inserts the second parameter in the position specified by the first. If the
+		specified position is out of bounds some '\0' are added. The main file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool addChar(uint32 Char, char ToAdd);
 		/*
-		Adds a char in a line
-		Returns false if the file couldn't be opened or if the
-		specified char is out of bounds, otherwise true
+		Inserts the third parameter before a char (second parameter) in a line
+		(first parameter). The main file is opened in binary-input-output mode, if
+		it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		bool addChar(uint32 Line, uint32 Char, char ToAdd);
 		/*
-		Adds a char in a word in a line
-		Returns false if the file couldn't be opened or if the
-		specified char is out of bounds, otherwise true
+		Inserts the fourth parameter before a char (third parameter) in a word
+		(second parameter) in a line (first parameter). The main file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		bool addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd);
 
@@ -981,11 +990,17 @@ namespace sp {
 
 	template<typename T>
 	inline bool File::add(Tspos Pos, T ToAdd) {
-		if (!pointTo(Pos)) return false;
+		if (!open()) return false;
 		std::string toAdd = toString(ToAdd);
-		uint32_t fileLength = getNrChars();
+		uint32_t size = getNrChars();
 
-		for (Tspos pointerPosition = Pos; pointerPosition < fileLength; pointerPosition += 1) {
+		if (Pos >= size) {
+			mainFile.seekg(Pos);
+			mainFile << toAdd;
+			return true;
+		}
+
+		for (Tspos pointerPosition = Pos; pointerPosition < size; pointerPosition += 1) {
 			mainFile.seekg(pointerPosition);
 			toAdd.push_back(mainFile.get());
 
@@ -1006,10 +1021,10 @@ namespace sp {
 		if (position == outOfBounds) {
 			uint32 nrLines = getNrLines();
 			Tstr strToAppend = "";
-			for (uint32 currentLine = 0; currentLine < Line - nrLines; ++currentLine) {
+			for (uint32 currentLine = 0; currentLine <= Line - nrLines; ++currentLine) {
 				strToAppend += newLine;
 			}
-			return append(strToAppend + ToAdd);
+			return append(strToAppend + toString(ToAdd));
 		}
 		return add(position, toString(ToAdd) + newLine);
 	}
