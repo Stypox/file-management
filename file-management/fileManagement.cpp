@@ -746,6 +746,12 @@ namespace sp {
 	}
 
 
+	bool File::addChar(char ToAdd) {
+		if (!mainFile.is_open()) return false;
+		Tspos pointerPosition = mainFile.tellg();
+		if (pointerPosition < 0) return false;
+		return add(pointerPosition, ToAdd);
+	}
 	bool File::addChar(uint32 Char, char ToAdd) {
 		return add(Char, ToAdd);
 	}
@@ -759,12 +765,17 @@ namespace sp {
 	}
 
 	
-	File& File::replace(char ToPut) {
-		mainFile.put(ToPut);
-		return *this;
+	bool File::replaceChar(char Replacement) {
+		mainFile.put(Replacement);
+		mainFile.flush();
+		return !mainFile.eof();
 	}
 	bool File::replaceChar(uint32 Char, char Replacement) {
-		return replaceChar(dontMove, dontMove, Char, Replacement);
+		if (!open()) return false;
+		mainFile.seekg(Char);
+		mainFile.put(Replacement);
+		mainFile.flush();
+		return true;
 	}
 	bool File::replaceChar(uint32 Line, uint32 Char, char Replacement) {
 		return replaceChar(Line, dontMove, Char, Replacement);

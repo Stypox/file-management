@@ -75,9 +75,9 @@ namespace sp {
 
 	class FilePosition {
 		File * file;
-		uint32_t position;
+		uint32 position;
 	public:
-		FilePosition(File * file, uint32_t Position);
+		FilePosition(File * file, uint32 Position);
 
 		/*
 		Returns the char in the set position
@@ -94,9 +94,9 @@ namespace sp {
 
 	class FileIterator {
 		File * file;
-		uint32_t position;
+		uint32 position;
 	public:
-		FileIterator(File * file, uint32_t Position);
+		FileIterator(File * file, uint32 Position);
 
 		bool operator!= (const FileIterator& ToCompare);
 		FilePosition operator* () const;
@@ -189,8 +189,8 @@ namespace sp {
 		the first", -1 means "don't do anything". So only 
 		getPositionMove(-1, -1, -1) will surely return 0. The constexpr
 		sp::dontMove can be used as -1. The pointer is moved to an untraceable
-		position. The main file is opened in binary input-output
-		mode, if it wasn't already.
+		position. The main file is opened in binary-input-output mode, if it wasn't
+		already.
 		Returns -1 if the main file couldn't be opened and -2 if the specified
 		position is out of bounds. The constexpr sp::fileNotOpen (= -1) and
 		sp::outOfBounds (= -2) can be used to check.
@@ -200,48 +200,41 @@ namespace sp {
 
 		/*
 		Replaces all the chars of an interval (both ends included) with a string.
-		Uses a temp file only if the replacement is smaller than the interval to
-		replace. The main file is opened in binary input-output mode, if it wasn't
-		already.
-		Returns false if the main file or the temp file (when used) couldn't be
-		opened, otherwise returns true.
+		The main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool replaceSection(Tspos From, Tspos To, Tstr Replacement);
 		/*
-		Deletes all the chars between From and To, both included. Uses the temp
-		file. The main file is opened in binary input-output mode, if it wasn't
+		Deletes all the chars between the first and the second parameter, both
+		included. The main file is opened in binary-input-output mode, if it wasn't
 		already.
-		Returns false if the main file or the temp file couldn't be opened,
-		otherwise returns true.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteSection(Tspos From, Tspos To);
-
-
-
+		
 
 	public:
 		/*
-		Default constructor. Initializes the main path to an empty string and the
-		temp path to "temp.tmp". The newline mode is initialized to the first
-		parameter, if provided, otherwise it is initialized based on the operating
-		system.
+		Default constructor. Initializes the main path to an empty string. The
+		newline mode is initialized to the first parameter, if provided, otherwise
+		it is initialized based on the operating system.
 		*/
 		File(NLMode Mode = defaultNewlineMode);
 		/*
-		Constructor with a string. Initializes the main path to the first parameter
-		and tempPath to (parameter + ".tmp"). The newline mode is initialized to
-		the second parameter, if provided, otherwise it is initialized based on the
-		operating system.
+		Constructor with a string. Initializes the main path to the first
+		parameter. The newline mode is initialized to the second parameter, if
+		provided, otherwise it is initialized based on the operating system.
 		*/
 		File(Tstr MainPath, NLMode Mode = defaultNewlineMode);
 		/*
-		Copy constructor
+		Copy constructor.
 		*/
 		File(File & Source);
 		/*
 		Destructor. Closes the file.
 		*/
 		~File();
+
 
 		/*
 		Moves the pointer relative to the current position. The main file must be
@@ -397,7 +390,7 @@ namespace sp {
 		/*
 		Returns the char at the pointer position. The main file must be open in
 		binary-input or binary-input-output mode.
-		Returns -1 if the file is not open or the end was already reached.
+		Returns -1 if the main file is not open or the end was already reached.
 		*/
 		char getChar();
 		/*
@@ -524,6 +517,14 @@ namespace sp {
 		template<typename T>
 		bool addWord(uint32 Line, uint32 Word, T ToAdd);
 		/*
+		Inserts the parameter at the pointer position. If the pointer position is
+		out of bounds some '\0' are added.The main file must be open in
+		binary-input-output mode.
+		Returns false if the main file is not open or the end was already reached,
+		otherwise returns true.
+		*/
+		bool addChar(char ToAdd);
+		/*
 		Inserts the second parameter in the position specified by the first. If the
 		specified position is out of bounds some '\0' are added. The main file is
 		opened in binary-input-output mode, if it wasn't already.
@@ -550,53 +551,60 @@ namespace sp {
 
 
 		/*
-		Replaces the char at the pointer position with another char. The main file
-		must be open in binary-output mode.
-		Returns *this.
-		*/
-		File& replace(char ToPut);
-		/*
-		Replaces a line using a temp file
-		Deletes all '\r' at the end of the line FARE
-		If the specified line is out of bounds some newlines get created
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened, otherwise true
+		Replaces the content of the line specified by the first parameter with the
+		content of the second parameter. If the specified line is out of bounds
+		some newlines are created. The main file is opened in binary-input-output
+		mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool replaceLine(uint32 Line, T Replacement);
 		/*
-		Replaces a word using a temp file
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened or if the
-			specified word is out of bounds, otherwise true
+		Replaces the word specified by the first parameter with the content of the
+		second parameter. The main file is opened in binary-input-output mode, if
+		it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool replaceWord(uint32 Word, T Replacement);
 		/*
-		Replaces a word in a line using a temp file
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened or if the
-			specified word is out of bounds, otherwise true
+		Replaces a word (second parameter) in a line (first parameter) with the
+		content of the third parameter. The main file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool replaceWord(uint32 Line, uint32 Word, T Replacement);
 		/*
-		Replaces a char
-		Leaves the file open after returning
-		Returns false if the file couldn't be opened or if the
-			specified char is out of bounds, otherwise true
+		Replaces the char at the pointer position with the parameter. If the
+		pointer position is out of bounds some '\0' are added. The main file
+		must be open in binary-output or binary-input-output mode.
+		Returns false if the main file is not open, otherwise returns true.
+		*/
+		bool replaceChar(char Replacement);
+		/*
+		Replaces the char specified by the first parameter with the second
+		parameter. If the specified position is out of bounds some '\0' are added.
+		The main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool replaceChar(uint32 Char, char Replacement);
 		/*
-		Replaces a char in a line
-		Returns false if the file couldn't be opened or if the
-			specified char is out of bounds, otherwise true
+		Replaces a char (second parameter) in a line (first parameter) with the
+		third parameter. The main file is opened in binary-input-output mode, if
+		it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		bool replaceChar(uint32 Line, uint32 Char, char Replacement);
 		/*
-		Replaces a char in a word in a line
-		Returns false if the file couldn't be opened or if the
-			specified char is out of bounds, otherwise true
+		Replaces a char (third parameter) in a word (second parameter) in a line
+		(first parameter) with the fourth parameter. The main file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		bool replaceChar(uint32 Line, uint32 Word, uint32 Char, char Replacement);
 
@@ -990,9 +998,9 @@ namespace sp {
 
 	template<typename T>
 	inline bool File::add(Tspos Pos, T ToAdd) {
-		if (!open()) return false;
+		if (Pos < 0 || !open()) return false;
 		std::string toAdd = toString(ToAdd);
-		uint32_t size = getNrChars();
+		uint32 size = getNrChars();
 
 		if (Pos >= size) {
 			mainFile.seekg(Pos);
