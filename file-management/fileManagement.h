@@ -1,6 +1,9 @@
 //TODO non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara' impossibile da leggere o scrivere
-//TODO remove C-style conversions
-//TODO add lines-words range for loops
+//TODO remove C-style conversion
+//TODO add for(word : file.words()), for(line : file.lines())
+//TODO implement unix-windows conversion
+//TODO add pointToEnd(index);
+//TODO pointTo(inBounds line, inBounds word, outOfBounds char) shall not point to end, if not needed by functions
 
 //UTILI:
 /*
@@ -1051,13 +1054,13 @@ namespace sp {
 	inline bool File::replaceLine(uint32 Line, T Replacement) {
 		Tspos from, to;
 		from = getPositionMove(Line, dontMove, dontMove);
-		if (position == fileNotOpen) return false;
-		if (position == outOfBounds) {
+		if (from == fileNotOpen) return false;
+		if (from == outOfBounds) {
 			Tstr newLine = (newlineMode == NLMode::win ? "\r\n" : "\n");
 			uint32 nrLines = getNrLines();
 			Tstr strToAppend = "";
 
-			for (uint32 currentLine = 0; currentLine < Line - nrLines; ++currentLine) {
+			for (uint32 currentLine = 0; currentLine < Line - nrLines + 1; ++currentLine) {
 				strToAppend += newLine;
 			}
 			return append(strToAppend + Replacement);
@@ -1067,7 +1070,12 @@ namespace sp {
 		if (to == outOfBounds) {
 			return replaceSection(from, getNrChars() - 1, toString(Replacement));
 		}
-		return replaceSection(from, to - (Tspos)3, toString(Replacement));
+		if (newlineMode == NLMode::win) {
+			return replaceSection(from, to - static_cast<Tspos>(3), toString(Replacement));
+		}
+		else {
+			return replaceSection(from, to - static_cast<Tspos>(2), toString(Replacement));
+		}
 	}
 	template<typename T>
 	inline bool File::replaceWord(uint32 Word, T Replacement) {

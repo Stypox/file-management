@@ -333,7 +333,7 @@ namespace sp {
 		if (Char != dontMove && Char != 0) {
 			Tspos position = mainFile.tellg() + (Tspos)Char;
 			mainFile.seekg(0, std::ios_base::end);
-			if (position >= mainFile.tellg()) return false;
+			if (position >= mainFile.tellg()) return false; //TODO keep position and remove seekg->tellg to get the end point.
 
 			mainFile.seekg(position);
 		}
