@@ -165,7 +165,7 @@ namespace sp {
 
 		Tspos position = mainFile.tellg();
 		if (Char != dontMove && Char != 0) {
-			position += (Tspos)Char;
+			position += static_cast<Tspos>(Char);
 			if (position >= getNrChars()) {
 				position = outOfBounds;
 			}
@@ -177,8 +177,8 @@ namespace sp {
 	
 	
 	bool File::replaceSection(Tspos From, Tspos To, Tstr Replacement) {
-		uint32 oldSize = (uint32)To - (uint32)From + 1,
-			newSize = Replacement.size();
+		uint32 oldSize = static_cast<uint32>(To) - static_cast<uint32>(From) + 1,
+			newSize = static_cast<uint32>(Replacement.length());
 		
 		if (oldSize > newSize) {
 			if (!pointTo(From) || To >= getNrChars()) return false;
@@ -331,7 +331,7 @@ namespace sp {
 
 
 		if (Char != dontMove && Char != 0) {
-			Tspos position = mainFile.tellg() + (Tspos)Char;
+			Tspos position = mainFile.tellg() + static_cast<Tspos>(Char);
 			mainFile.seekg(0, std::ios_base::end);
 			if (position >= mainFile.tellg()) return false; //TODO keep position and remove seekg->tellg to get the end point.
 
@@ -411,7 +411,7 @@ namespace sp {
 
 		Tspos position = mainFile.tellg();
 		if (Char != dontMove && Char != 0) {
-			position += (Tspos)Char;
+			position += static_cast<Tspos>(Char);
 			if (position >= getNrChars()) {
 				position = outOfBounds;
 			}
@@ -532,7 +532,7 @@ namespace sp {
 		struct stat buffer;
 		if (::stat(mainPath.c_str(), &buffer) != 0) return 0;
 
-		return (uint32)buffer.st_size;
+		return static_cast<uint32>(buffer.st_size);
 	}
 	uint32 File::getNrChars(uint32 Line) {
 		Tspos from = getPosition(Line, dontMove, dontMove);
@@ -798,10 +798,10 @@ namespace sp {
 
 		if (to == outOfBounds) {
 			if (newlineMode == NLMode::win) {
-				return deleteSection(from - static_cast<Tspos>(2), getNrChars() - 1);
+				return resize(getNrChars() - 2);
 			}
 			else {
-				return deleteSection(from - static_cast<Tspos>(1), getNrChars() - 1);
+				return resize(getNrChars() - 1);
 			}
 		}
 		return deleteSection(from, to - static_cast<Tspos>(1));
@@ -810,7 +810,7 @@ namespace sp {
 		return deleteWord(dontMove, Word);
 	}
 	bool File::deleteWord(uint32 Line, uint32 Word) {
-		Tspos from, to;
+		Tspos from;
 		from = getPositionMove(Line, Word, dontMove);
 		if (from == fileNotOpen) return false;
 		if (from == outOfBounds) return true;
@@ -884,6 +884,7 @@ namespace sp {
 		return deleteWords(dontMove, From, To);
 	}
 	bool File::deleteWords(uint32 Line, uint32 From, uint32 To) {
+		if (From > To) std::swap(From, To);
 		Tspos from, to;
 		from = getPositionMove(Line, From, dontMove);
 		if (from == fileNotOpen) return false;
@@ -927,6 +928,7 @@ namespace sp {
 		return deleteChars(Line, dontMove, From, To);
 	}
 	bool File::deleteChars(uint32 Line, uint32 Word, uint32 From, uint32 To) {
+		if (From > To) std::swap(From, To);
 		Tspos from, to;
 		from = getPositionMove(Line, Word, From);
 		if (from == fileNotOpen) return false;
@@ -941,7 +943,7 @@ namespace sp {
 
 
 	bool File::appendChar(char ToAppend) {
-		return append(Tstr(&ToAppend));
+		return append(toString(&ToAppend));
 	}
 	bool File::appendChar(uint32 Line, char ToAppend) {
 		if (!pointTo(Line, dontMove, dontMove)) return false;
@@ -949,11 +951,11 @@ namespace sp {
 		char tempChar;
 		while (1) {
 			tempChar = mainFile.get();
-			if (mainFile.eof()) return append(Tstr(&ToAppend));
+			if (mainFile.eof()) return append(toString(&ToAppend));
 			if (tempChar == '\r') break;
 		}
 
-		return add(mainFile.tellg() - (Tspos)1, Tstr(&ToAppend));
+		return add(mainFile.tellg() - static_cast<Tspos>(1), toString(ToAppend));
 	}
 	bool File::appendChar(uint32 Line, uint32 Word, char ToAppend) {
 		if (!pointTo(Line, Word, dontMove)) return false;
@@ -961,11 +963,11 @@ namespace sp {
 		char tempChar;
 		while (1) {
 			tempChar = mainFile.get();
-			if (mainFile.eof()) return append(Tstr(&ToAppend));
+			if (mainFile.eof()) return append(toString(&ToAppend));
 			if (isspace(tempChar)) break;
 		}
 
-		return add(mainFile.tellg() - (Tspos)1, Tstr(&ToAppend));
+		return add(mainFile.tellg() - static_cast<Tspos>(1), toString(&ToAppend));
 	}
 
 

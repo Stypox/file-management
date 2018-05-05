@@ -431,7 +431,7 @@ namespace sp {
 		Returns the interval of lines between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the lines
 		are returned in reverse order. If some (or all) lines are out of bounds
-		they get ignored. The main file is opened in binary-input-output mode, if
+		they are ignored. The main file is opened in binary-input-output mode, if
 		it wasn't already.
 		Returns an empty string if the main file couldn't be opened.
 		*/
@@ -440,7 +440,7 @@ namespace sp {
 		Returns the interval of words between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the words
 		are returned in reverse order. If some (or all) words are out of bounds
-		they get ignored. Returned words are separeted by spaces ' '. The main file
+		they are ignored. Returned words are separeted by spaces ' '. The main file
 		is opened in binary-input-output mode, if it wasn't already.
 		Returns an empty string if the main file couldn't be opened.
 		*/
@@ -449,7 +449,7 @@ namespace sp {
 		Returns the interval of words in a line (first parameter) between the
 		second and the third parameter, both included. If the second parameter is
 		bigger than the third the words are returned in reverse order. If some (or
-		all) words are out of bounds they get ignored. Returned words are separeted
+		all) words are out of bounds they are ignored. Returned words are separeted
 		by spaces ' '. The main file is opened in binary-input-output mode, if it
 		wasn't already.
 		Returns an empty string if the main file couldn't be opened.
@@ -459,7 +459,7 @@ namespace sp {
 		Returns the interval of chars between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the chars
 		are returned in reverse order. If some (or all) chars are out of bounds
-		they get ignored. The main file is opened in binary-input-output mode, if
+		they are ignored. The main file is opened in binary-input-output mode, if
 		it wasn't already.
 		Returns an empty string if the main file couldn't be opened.
 		*/
@@ -468,7 +468,7 @@ namespace sp {
 		Returns the interval of chars in a line (first parameter) between the
 		second and the third parameter, both included. If the second parameter is
 		bigger than the third the chars are returned in reverse order. If some (or
-		all) chars are out of bounds they get ignored. The main file is opened in
+		all) chars are out of bounds they are ignored. The main file is opened in
 		binary-input-output mode, if it wasn't already.
 		Returns an empty string if the main file couldn't be opened.
 		*/
@@ -477,7 +477,7 @@ namespace sp {
 		Returns the interval of chars in a word (second parameter) in a line (first
 		parameter) between the third and the fourth parameter, both included. If the
 		third parameter is bigger than the fourth the chars are returned in reverse
-		order. If some (or all) chars are out of bounds they get ignored. The main
+		order. If some (or all) chars are out of bounds they are ignored. The main
 		file is opened in binary-input-output mode, if it wasn't already.
 		Returns an empty string if the main file couldn't be opened.
 		*/
@@ -613,55 +613,56 @@ namespace sp {
 
 
 		/*
-		Deletes a line using a temp file
-		If the specified line is out of bounds nothing happens, returning true
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened, otherwise true
+		Deletes the line specified by the parameter. If the specified line is out
+		of bounds the function does nothing and returns true. The main file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteLine(uint32 Line);
 		/*
-		Deletes a word and all the spaces after it using a temp file
-		The spaces are deleted if it's not \r
-		If the specified word is out of bounds nothing happens, returning true
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened, otherwise true
+		Deletes the word specified by the parameter and all the spaces after it
+		until another word, a newline or the end of the file are reached. If the
+		specified word is out of bounds the function does nothing and returns true.
+		The main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteWord(uint32 Word);
 		/*
-		Deletes a word and a space using a temp file
-		The space is deleted after if it's not \r, otherwise before
-		If the specified word is out of bounds nothing happens, returning true
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened, otherwise true
+		Deletes a word (second parameter) in a line (first parameter) and all the
+		spaces after it until another word, a newline or the end of the file are
+		reached. If the specified word is out of bounds the function does nothing
+		and returns true. The main file is opened in binary-input-output mode, if
+		it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteWord(uint32 Line, uint32 Word);
 		/*
-		Deletes the char at the pointer position. Uses the temp file. The main file
-		must be open.
-		Returns false if the main file or the temp file couldn't be opened or if
-		the main file is not open, otherwise returns true.
-		TODO test
+		Deletes the char at the pointer position. If the pointer position is out of
+		bounds the function does nothing and returns true. The main file must be
+		open in binary-input-output mode.
+		Returns false if the main file is not open, otherwise returns true.
 		*/
 		bool deleteChar();
 		/*
-		Deletes a char using a temp file
-		If the specified char is out of bounds nothing happens, returning true
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened, otherwise true
+		Deletes the char specified by the parameter. If the specified char is out
+		of bounds the function does nothing and returns true. The main file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteChar(uint32 Char);
 		/*
-		Deletes a char in a line using a temp file
-		If the specified char is out of bounds nothing happens, returning true
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened, otherwise true
+		Deletes a char (second parameter) in a line (first parameter). If the
+		specified char is out of bounds the function does nothing and returns true.
+		The main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteChar(uint32 Line, uint32 Char);
 		/*
-		Deletes a char in a word in a line using a temp file
-		If the specified char is out of bounds nothing happens, returning true
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened, otherwise true
+		Deletes a char (third parameter) in a word (second parameter) in a line
+		(first parameter). If the specified char is out of bounds the function does
+		nothing and returns true. The main file is opened in binary-input-output
+		mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteChar(uint32 Line, uint32 Word, uint32 Char);
 
