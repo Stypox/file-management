@@ -8,6 +8,68 @@
 #include "fileManagement.h"
 
 namespace sp {
+	sp::Tstr spc(char letter) {
+		switch (letter) {
+		case '\0':
+			return "\\0";
+		case ' ':
+			return "_";
+		case '\t':
+			return "\\t";
+		case '\n':
+			return "\\n\n";
+		case '\v':
+			return "\\v";
+		case '\f':
+			return "\\f";
+		case '\r':
+			return "\\r";
+		case -1:
+			return "-1";
+		default:
+			return &letter;
+		}
+	}
+	sp::Tstr spc(sp::uint32 number) {
+		return std::to_string(number);
+	}
+	sp::Tstr spc(char letter, sp::int32 & line, sp::NLMode mode = sp::NLMode::unix, char previousLetter = 0) {
+		switch (letter) {
+		case '\0':
+			return "\\0";
+		case ' ':
+			return "_";
+		case '\t':
+			return "\\t";
+		case '\n':
+			if (line == 0) return "\\n\n";
+			if (previousLetter == '\r' || mode == sp::NLMode::unix) return sp::Tstr("\\n\n") + std::to_string(line++) + sp::Tstr(" ");
+			return sp::Tstr("\\n");
+		case '\v':
+			return "\\v";
+		case '\f':
+			return "\\f";
+		case '\r':
+			return "\\r";
+		case -1:
+			return "-1";
+		default:
+			return &letter;
+		}
+	}
+	sp::Tstr spc(sp::Tstr str, sp::NLMode mode = sp::NLMode::unix) {
+		sp::Tstr returnStr = "";
+		sp::int32 line = 2;
+		char previousLetter = 0;
+		for (char letter : str) {
+			returnStr += spc(letter, line, mode, previousLetter);
+			previousLetter = letter;
+		}
+		if (line != 2) returnStr = "\n1 " + returnStr + "\n";
+
+		return returnStr;
+	}
+
 	FileState::FileState(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr) : open(Open), eofError(Eof), failError(Fail), badError(Bad), externalError(ExtErr) {}
 	FileState::operator bool() {
 		return eofError || failError || badError || externalError;
@@ -810,38 +872,142 @@ namespace sp {
 		return deleteWord(dontMove, Word);
 	}
 	bool File::deleteWord(uint32 Line, uint32 Word) {
-		Tspos from;
+		std::cout << "A";
+		Tspos from, to;
 		from = getPositionMove(Line, Word, dontMove);
 		if (from == fileNotOpen) return false;
 		if (from == outOfBounds) return true;
 
 		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
-			if (isspace(tempChar)) {
-				if (newlineMode == NLMode::win) {
+		if (newlineMode == NLMode::win) {
+			bool endLine = true;
+			while (1) {
+				tempChar = mainFile.get();
+				if (mainFile.eof()) {
+					mainFile.clear(mainFile.eofbit);
+					to = static_cast<Tspos>(getNrChars() - 1);
+					break;
+				}
+				std::cout << " B" << spc(tempChar);
+				if (isspace(tempChar)) {
 					while (1) {
-						if (!isspace(tempChar)) break;
+						std::cout << " C" << spc(tempChar);
 						if (tempChar == '\r') {
 							tempChar = mainFile.get();
-							if (tempChar == '\n' || !isspace(tempChar)) break;
+							std::cout << " D" << spc(tempChar);
+							if (tempChar == '\n') {
+								to = mainFile.tellg() - static_cast<Tspos>(3);
+								break;
+							}
+							goto falseNewlineTo;
 						}
+
 						tempChar = mainFile.get();
-						if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
+						falseNewlineTo:
+						if (mainFile.eof()) {
+							mainFile.clear(mainFile.eofbit);
+							to = static_cast<Tspos>(getNrChars() - 1);
+							break;
+						}
+						if (!isspace(tempChar)) {
+							to = mainFile.tellg() - static_cast<Tspos>(2);
+							endLine = false;
+							break;
+						}
 					}
 					break;
 				}
-				else {
-					while (1) {
-						if (!isspace(tempChar) || tempChar == '\n') break;
-						tempChar = mainFile.get();
-						if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
+			}
+			std::cout << " E" << endLine;
+			Tspos currentPosition = from;
+			while (1) {
+				currentPosition -= static_cast<Tspos>(1);
+				if (currentPosition < static_cast<Tspos>(0)) {
+					from = static_cast<Tspos>(0);
+					break;
+				}
+				mainFile.seekg(currentPosition);
+				tempChar = mainFile.get();
+				std::cout << " F" << spc(tempChar);
+
+				falseNewlineFrom:
+				if (!isspace(tempChar)) {
+					if (endLine) from = currentPosition + static_cast<Tspos>(1);
+					break;
+				}
+				if (tempChar == '\n') {
+					currentPosition -= static_cast<Tspos>(1);
+					if (currentPosition < static_cast<Tspos>(0)) {
+						from = static_cast<Tspos>(0);
+						break;
 					}
+					mainFile.seekg(currentPosition);
+					tempChar = mainFile.get();
+					std::cout << " G" << spc(tempChar);
+
+					if (tempChar == '\r') {
+						from = currentPosition + static_cast<Tspos>(2);
+						break;
+					}
+					goto falseNewlineFrom;
 				}
 			}
 		}
-		return deleteSection(from, mainFile.tellg() - static_cast<Tspos>(2));
+		else {
+			bool endLine = true;
+			while (1) {
+				tempChar = mainFile.get();
+				if (mainFile.eof()) {
+					mainFile.clear(mainFile.eofbit);
+					to = static_cast<Tspos>(getNrChars() - 1);
+					break;
+				}
+				std::cout << " B" << spc(tempChar);
+				if (isspace(tempChar)) {
+					while (1) {
+						if (tempChar == '\n') {
+							to = mainFile.tellg() - static_cast<Tspos>(2);
+							break;
+						}
+
+						tempChar = mainFile.get();
+						if (mainFile.eof()) {
+							mainFile.clear(mainFile.eofbit);
+							to = static_cast<Tspos>(getNrChars() - 1);
+							break;
+						}
+						if (!isspace(tempChar)) {
+							to = mainFile.tellg() - static_cast<Tspos>(2);
+							endLine = false;
+							break;
+						}
+					}
+					break;
+				}
+			}
+			Tspos currentPosition = from;
+			while (1) {
+				currentPosition -= static_cast<Tspos>(1);
+				if (currentPosition < static_cast<Tspos>(0)) {
+						from = static_cast<Tspos>(0);
+						break;
+					}
+				mainFile.seekg(currentPosition);
+				tempChar = mainFile.get();
+
+				if (!isspace(tempChar)) {
+					if (endLine) from = currentPosition + static_cast<Tspos>(1);
+					break;
+				}
+				if (tempChar == '\n') {
+					from = currentPosition + static_cast<Tspos>(1);
+					break;
+				}
+			}
+		}
+
+		std::cout << " Z " << from << " " << to;
+		return deleteSection(from, to);
 	}
 	bool File::deleteChar() {
 		if (!mainFile.is_open()) return false;
