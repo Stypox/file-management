@@ -872,9 +872,7 @@ namespace sp {
 		return deleteWord(dontMove, Word);
 	}
 	bool File::deleteWord(uint32 Line, uint32 Word) {
-		std::cout << "A";
-		Tspos from, to;
-		from = getPositionMove(Line, Word, dontMove);
+		Tspos from = getPositionMove(Line, Word, dontMove), to;
 		if (from == fileNotOpen) return false;
 		if (from == outOfBounds) return true;
 
@@ -888,18 +886,15 @@ namespace sp {
 					to = static_cast<Tspos>(getNrChars() - 1);
 					break;
 				}
-				std::cout << " B" << spc(tempChar);
 				if (isspace(tempChar)) {
 					while (1) {
-						std::cout << " C" << spc(tempChar);
 						if (tempChar == '\r') {
 							tempChar = mainFile.get();
-							std::cout << " D" << spc(tempChar);
 							if (tempChar == '\n') {
 								to = mainFile.tellg() - static_cast<Tspos>(3);
 								break;
 							}
-							goto falseNewlineTo;
+							else goto falseNewlineTo;
 						}
 
 						tempChar = mainFile.get();
@@ -918,7 +913,6 @@ namespace sp {
 					break;
 				}
 			}
-			std::cout << " E" << endLine;
 			Tspos currentPosition = from;
 			while (1) {
 				currentPosition -= static_cast<Tspos>(1);
@@ -928,7 +922,6 @@ namespace sp {
 				}
 				mainFile.seekg(currentPosition);
 				tempChar = mainFile.get();
-				std::cout << " F" << spc(tempChar);
 
 				falseNewlineFrom:
 				if (!isspace(tempChar)) {
@@ -943,13 +936,12 @@ namespace sp {
 					}
 					mainFile.seekg(currentPosition);
 					tempChar = mainFile.get();
-					std::cout << " G" << spc(tempChar);
 
 					if (tempChar == '\r') {
 						from = currentPosition + static_cast<Tspos>(2);
 						break;
 					}
-					goto falseNewlineFrom;
+					else goto falseNewlineFrom;
 				}
 			}
 		}
@@ -962,7 +954,6 @@ namespace sp {
 					to = static_cast<Tspos>(getNrChars() - 1);
 					break;
 				}
-				std::cout << " B" << spc(tempChar);
 				if (isspace(tempChar)) {
 					while (1) {
 						if (tempChar == '\n') {
@@ -989,9 +980,9 @@ namespace sp {
 			while (1) {
 				currentPosition -= static_cast<Tspos>(1);
 				if (currentPosition < static_cast<Tspos>(0)) {
-						from = static_cast<Tspos>(0);
-						break;
-					}
+					from = static_cast<Tspos>(0);
+					break;
+				}
 				mainFile.seekg(currentPosition);
 				tempChar = mainFile.get();
 
@@ -1006,7 +997,6 @@ namespace sp {
 			}
 		}
 
-		std::cout << " Z " << from << " " << to;
 		return deleteSection(from, to);
 	}
 	bool File::deleteChar() {
@@ -1051,41 +1041,94 @@ namespace sp {
 	}
 	bool File::deleteWords(uint32 Line, uint32 From, uint32 To) {
 		if (From > To) std::swap(From, To);
-		Tspos from, to;
-		from = getPositionMove(Line, From, dontMove);
+		Tspos from = getPositionMove(Line, From, dontMove), to;
 		if (from == fileNotOpen) return false;
 		if (from == outOfBounds) return true;
-
-		pointTo(Line, To, dontMove);
+		
 		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
-			if (isspace(tempChar)) {
-				if (newlineMode == NLMode::win) {
-					while (1) {
-						falseNewline:
-						if (!isspace(tempChar)) break;
-						if (tempChar == '\r') {
-							tempChar = mainFile.get();
-							if (tempChar == '\n') break;
-							goto falseNewline;
-						}
-						tempChar = mainFile.get();
-						if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
-					}
+		Tstr lines = "";
+		if (newlineMode == NLMode::win) {
+
+		}
+		else {
+			bool wasSpace = true, firstWordEndLine = false, lastWordEndLine = false, atFirstWord = true;
+			for (uint32 currentWord = From; currentWord <= To;) {
+				tempChar = mainFile.get();
+				if (mainFile.eof()) {
+					lastWordEndLine = true;
+					to = static_cast<Tspos>(getNrChars() - 1);
 					break;
 				}
-				else {
-					while (1) {
-						if (!isspace(tempChar) || tempChar == '\n') break;
-						tempChar = mainFile.get();
-						if (mainFile.eof()) return deleteSection(from, getNrChars() - 1);
+				if (isspace(tempChar)) {
+					wasSpace = true;
+					if (tempChar == '\n') {
+						if (atFirstWord) {
+							firstWordEndLine = true;
+							atFirstWord = false;
+						}
+						lines += '\n';
+					}
+					else atFirstWord = false;
+				}
+				else if (wasSpace) {
+					wasSpace = false;
+					++currentWord;
+				}
+			}
+			if (mainFile.eof()) {
+				mainFile.clear(mainFile.eofbit);
+			}
+			else {				//TODO maybe it's not needed
+				while (1) {
+					tempChar = mainFile.get();
+					if (mainFile.eof()) {
+						mainFile.clear(mainFile.eofbit);
+						to = static_cast<Tspos>(getNrChars() - 1);
+						break;
+					}
+					if (isspace(tempChar)) {
+						while (1) {
+							if (tempChar == '\n') {
+								to = mainFile.tellg() - static_cast<Tspos>(2);
+								lastWordEndLine = true;
+								break;
+							}
+
+							tempChar = mainFile.get();
+							if (mainFile.eof()) {
+								mainFile.clear(mainFile.eofbit);
+								to = static_cast<Tspos>(getNrChars() - 1);
+								break;
+							}
+							if (!isspace(tempChar)) {
+								to = mainFile.tellg() - static_cast<Tspos>(2);
+								break;
+							}
+						}
+						break;
 					}
 				}
 			}
+			Tspos currentPosition = from;
+			while (1) {
+				currentPosition -= static_cast<Tspos>(1);
+				if (currentPosition < static_cast<Tspos>(0)) {
+					from = static_cast<Tspos>(0);
+					break;
+				}
+				mainFile.seekg(currentPosition);
+				tempChar = mainFile.get();
+
+				if (!isspace(tempChar)) {
+					if (firstWordEndLine || (lastWordEndLine && lines == "")) from = currentPosition + static_cast<Tspos>(1);
+					break;
+				}
+				if (tempChar == '\n') {
+					from = currentPosition + static_cast<Tspos>(1);
+					break;
+				}			
+			}
 		}
-		return deleteSection(from, mainFile.tellg() - static_cast<Tspos>(2));
 	}
 	bool File::deleteChars(uint32 From, uint32 To) {
 		return deleteChars(dontMove, dontMove, From, To);
