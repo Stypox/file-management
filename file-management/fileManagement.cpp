@@ -243,7 +243,7 @@ namespace sp {
 			newSize = static_cast<uint32>(Replacement.length());
 		
 		if (oldSize > newSize) {
-			if (!pointTo(From) || To >= getNrChars()) return false;
+			if (To >= getNrChars() || !pointTo(From)) return false;
 			mainFile << Replacement;
 
 			char tempChar;
@@ -263,32 +263,34 @@ namespace sp {
 		}
 		
 		else if (oldSize < newSize) {
+			if (To >= getNrChars() || !open()) return false;
 			uint32 fileLength = getNrChars();
-			if (!pointTo(From) || To >= getNrChars()) return false;
 
-			mainFile << Replacement.substr(0, oldSize);
-			Tstr buffer = Replacement.substr(oldSize, newSize - oldSize);
+			char tempChar;
+			Tspos getPosition = static_cast<Tspos>(fileLength - 1), putPosition = static_cast<Tspos>(fileLength + newSize - oldSize - 1);
+			while (getPosition > To) {
+				mainFile.seekg(getPosition);
+				tempChar = mainFile.get();
+				std::cout << spc(tempChar) << "\n";
+				mainFile.seekg(putPosition);
+				mainFile.put(tempChar);
 
-			for (Tspos pointerPosition = oldSize + From; pointerPosition < fileLength; pointerPosition += 1) {
-				mainFile.seekg(pointerPosition);
-				buffer.push_back(mainFile.get());
-
-				mainFile.seekg(pointerPosition);
-				mainFile.put(buffer[0]);
-				buffer.erase(0, 1);
+				getPosition -= static_cast<Tspos>(1);
+				putPosition -= static_cast<Tspos>(1);
 			}
 
-			mainFile << buffer;
+			mainFile.seekg(From);
+			mainFile << Replacement;
+
 			mainFile.flush();
 		}
 		
 		else {
-			if (!pointTo(From)) return false;
+			if (To >= getNrChars() || !pointTo(From)) return false;
 			mainFile << Replacement;
 			mainFile.flush();
 		}
-
-
+		
 		return true;
 	}
 	bool File::deleteSection(Tspos From, Tspos To) {
