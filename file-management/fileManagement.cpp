@@ -894,11 +894,11 @@ namespace sp {
 								to = mainFile.tellg() - static_cast<Tspos>(3);
 								break;
 							}
-							else goto falseNewlineTo;
+							else goto falseNewlineA;
 						}
 
 						tempChar = mainFile.get();
-						falseNewlineTo:
+						falseNewlineA:
 						if (mainFile.eof()) {
 							mainFile.clear(mainFile.eofbit);
 							to = static_cast<Tspos>(getNrChars() - 1);
@@ -923,7 +923,7 @@ namespace sp {
 				mainFile.seekg(currentPosition);
 				tempChar = mainFile.get();
 
-				falseNewlineFrom:
+				falseNewlineB:
 				if (!isspace(tempChar)) {
 					if (endLine) from = currentPosition + static_cast<Tspos>(1);
 					break;
@@ -941,7 +941,7 @@ namespace sp {
 						from = currentPosition + static_cast<Tspos>(2);
 						break;
 					}
-					else goto falseNewlineFrom;
+					else goto falseNewlineB;
 				}
 			}
 		}
@@ -1048,53 +1048,59 @@ namespace sp {
 		char tempChar;
 		Tstr lines = "";
 		if (newlineMode == NLMode::win) {
+			bool wasSpace = true, firstWordEndLine = false, lastWordEndLine = false;
 
-		}
-		else {
-			bool wasSpace = true, firstWordEndLine = false, lastWordEndLine = false, atFirstWord = true;
 			for (uint32 currentWord = From; currentWord <= To;) {
 				tempChar = mainFile.get();
+
+				falseNewlineA:
 				if (mainFile.eof()) {
-					lastWordEndLine = true;
+					firstWordEndLine = true;
 					to = static_cast<Tspos>(getNrChars() - 1);
 					break;
 				}
 				if (isspace(tempChar)) {
 					wasSpace = true;
-					if (tempChar == '\n') {
-						if (atFirstWord) {
-							firstWordEndLine = true;
-							atFirstWord = false;
+					if (tempChar == '\r') {
+						tempChar = mainFile.get();
+						if (tempChar == '\n') {
+							if (currentWord == From + 1) {
+								firstWordEndLine = true;
+							}
+							lines += "\r\n";
 						}
-						lines += '\n';
+						else goto falseNewlineA;
 					}
-					else atFirstWord = false;
 				}
 				else if (wasSpace) {
 					wasSpace = false;
 					++currentWord;
 				}
 			}
+
+			tempChar = mainFile.get();
 			if (mainFile.eof()) {
+				firstWordEndLine = true;
 				mainFile.clear(mainFile.eofbit);
+				to = static_cast<Tspos>(getNrChars() - 1);
 			}
-			else {				//TODO maybe it's not needed
+			else {
 				while (1) {
-					tempChar = mainFile.get();
-					if (mainFile.eof()) {
-						mainFile.clear(mainFile.eofbit);
-						to = static_cast<Tspos>(getNrChars() - 1);
-						break;
-					}
 					if (isspace(tempChar)) {
 						while (1) {
-							if (tempChar == '\n') {
-								to = mainFile.tellg() - static_cast<Tspos>(2);
-								lastWordEndLine = true;
-								break;
+							if (tempChar == '\r') {
+								tempChar = mainFile.get();
+								if (tempChar == '\n') {
+									to = mainFile.tellg() - static_cast<Tspos>(3);
+									lastWordEndLine = true;
+									break;
+								}
+								else goto falseNewlineB;
 							}
 
 							tempChar = mainFile.get();
+
+							falseNewlineB:
 							if (mainFile.eof()) {
 								mainFile.clear(mainFile.eofbit);
 								to = static_cast<Tspos>(getNrChars() - 1);
@@ -1107,8 +1113,114 @@ namespace sp {
 						}
 						break;
 					}
+
+					tempChar = mainFile.get();
+					if (mainFile.eof()) {
+						mainFile.clear(mainFile.eofbit);
+						to = static_cast<Tspos>(getNrChars() - 1);
+						break;
+					}
 				}
 			}
+
+			Tspos currentPosition = from;
+			while (1) {
+				currentPosition -= static_cast<Tspos>(1);
+				if (currentPosition < static_cast<Tspos>(0)) {
+					from = static_cast<Tspos>(0);
+					break;
+				}
+				mainFile.seekg(currentPosition);
+				tempChar = mainFile.get();
+
+				falseNewlineC:
+				if (!isspace(tempChar)) {
+					if (firstWordEndLine || (lastWordEndLine && lines == "")) from = currentPosition + static_cast<Tspos>(1);
+					break;
+				}
+				if (tempChar == '\n') {
+					currentPosition -= static_cast<Tspos>(1);
+					if (currentPosition < static_cast<Tspos>(0)) {
+						from = static_cast<Tspos>(0);
+						break;
+					}
+					mainFile.seekg(currentPosition);
+					tempChar = mainFile.get();
+
+					if (tempChar == '\r') {
+						from = currentPosition + static_cast<Tspos>(2);
+						break;
+					}
+					else goto falseNewlineC;
+				}
+			}
+		}
+		else {
+			bool wasSpace = true, firstWordEndLine = false, lastWordEndLine = false;
+
+			for (uint32 currentWord = From; currentWord <= To;) {
+				tempChar = mainFile.get();
+
+				if (mainFile.eof()) {
+					firstWordEndLine = true;
+					to = static_cast<Tspos>(getNrChars() - 1);
+					break;
+				}
+				if (isspace(tempChar)) {
+					wasSpace = true;
+					if (tempChar == '\n') {
+						if (currentWord == From + 1) {
+							firstWordEndLine = true;
+						}
+						lines += '\n';
+					}
+				}
+				else if (wasSpace) {
+					wasSpace = false;
+					++currentWord;
+				}
+			}
+
+			tempChar = mainFile.get();
+			if (mainFile.eof()) {
+				firstWordEndLine = true;
+				mainFile.clear(mainFile.eofbit);
+				to = static_cast<Tspos>(getNrChars() - 1);
+			}
+			else {
+				while (1) {
+					if (isspace(tempChar)) {
+						while (1) {
+							if (tempChar == '\n') {
+								to = mainFile.tellg() - static_cast<Tspos>(2);
+								lastWordEndLine = true;
+								break;
+							}
+
+							tempChar = mainFile.get();
+
+							if (mainFile.eof()) {
+								mainFile.clear(mainFile.eofbit);
+								to = static_cast<Tspos>(getNrChars() - 1);
+								break;
+							}
+							if (!isspace(tempChar)) {
+								to = mainFile.tellg() - static_cast<Tspos>(2);
+								break;
+							}
+						}
+						break;
+					}
+
+					tempChar = mainFile.get();
+					if (mainFile.eof()) {
+						mainFile.clear(mainFile.eofbit);
+						to = static_cast<Tspos>(getNrChars() - 1);
+						break;
+					}
+				}
+			}
+
 			Tspos currentPosition = from;
 			while (1) {
 				currentPosition -= static_cast<Tspos>(1);
@@ -1129,6 +1241,8 @@ namespace sp {
 				}			
 			}
 		}
+
+		return replaceSection(from, to, lines);
 	}
 	bool File::deleteChars(uint32 From, uint32 To) {
 		return deleteChars(dontMove, dontMove, From, To);
