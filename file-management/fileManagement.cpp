@@ -283,7 +283,9 @@ namespace sp {
 	}
 	bool File::deleteSection(Tspos From, Tspos To) {
 		if (!mainFile.is_open() && !open()) return false;
-		if (From > getNrChars()) return true;
+		uint32 fileSize = getNrChars();
+		if (From >= fileSize) return true;
+		if (To >= fileSize - 1) return resize(static_cast<uint32>(From));
 
 		char tempChar;
 		Tspos getPosition = To + static_cast<Tspos>(1), putPosition = From;
@@ -850,11 +852,12 @@ namespace sp {
 
 		if (to == outOfBounds) {
 			if (newlineMode == NLMode::win) {
-				return resize(getNrChars() - 2);
+				if (from > static_cast<Tspos>(1)) from -= static_cast<Tspos>(2);
 			}
 			else {
-				return resize(getNrChars() - 1);
+				if (from > static_cast<Tspos>(0)) from -= static_cast<Tspos>(1);
 			}
+			return resize(static_cast<uint32>(from));
 		}
 		return deleteSection(from, to - static_cast<Tspos>(1));
 	}
@@ -873,7 +876,7 @@ namespace sp {
 				tempChar = mainFile.get();
 				if (mainFile.eof()) {
 					mainFile.clear(mainFile.eofbit);
-					to = static_cast<Tspos>(getNrChars() - 1);
+					to = maxFileSize;
 					break;
 				}
 				if (isspace(tempChar)) {
@@ -891,7 +894,7 @@ namespace sp {
 						falseNewlineA:
 						if (mainFile.eof()) {
 							mainFile.clear(mainFile.eofbit);
-							to = static_cast<Tspos>(getNrChars() - 1);
+							to = maxFileSize;
 							break;
 						}
 						if (!isspace(tempChar)) {
@@ -941,7 +944,7 @@ namespace sp {
 				tempChar = mainFile.get();
 				if (mainFile.eof()) {
 					mainFile.clear(mainFile.eofbit);
-					to = static_cast<Tspos>(getNrChars() - 1);
+					to = maxFileSize;
 					break;
 				}
 				if (isspace(tempChar)) {
@@ -954,7 +957,7 @@ namespace sp {
 						tempChar = mainFile.get();
 						if (mainFile.eof()) {
 							mainFile.clear(mainFile.eofbit);
-							to = static_cast<Tspos>(getNrChars() - 1);
+							to = maxFileSize;
 							break;
 						}
 						if (!isspace(tempChar)) {
@@ -1018,12 +1021,14 @@ namespace sp {
 
 		if (to == outOfBounds) {
 			if (newlineMode == NLMode::win) {
-				return deleteSection(from - static_cast<Tspos>(2), getNrChars() - 1);
+				if (from > static_cast<Tspos>(1)) from -= static_cast<Tspos>(2);
 			}
 			else {
-				return deleteSection(from - static_cast<Tspos>(1), getNrChars() - 1);
+				if (from > static_cast<Tspos>(0)) from -= static_cast<Tspos>(1);
 			}
+			return resize(static_cast<uint32>(from));
 		}
+		
 		return deleteSection(from, to - static_cast<Tspos>(1));
 	}
 	bool File::deleteWords(uint32 From, uint32 To) {
@@ -1046,7 +1051,7 @@ namespace sp {
 				falseNewlineA:
 				if (mainFile.eof()) {
 					firstWordEndLine = true;
-					to = static_cast<Tspos>(getNrChars() - 1);
+					to = getNrChars() - 1;
 					break;
 				}
 				if (isspace(tempChar)) {
@@ -1072,7 +1077,7 @@ namespace sp {
 			if (mainFile.eof()) {
 				firstWordEndLine = true;
 				mainFile.clear(mainFile.eofbit);
-				to = static_cast<Tspos>(getNrChars() - 1);
+				to = getNrChars() - 1;
 			}
 			else {
 				while (1) {
@@ -1093,7 +1098,7 @@ namespace sp {
 							falseNewlineB:
 							if (mainFile.eof()) {
 								mainFile.clear(mainFile.eofbit);
-								to = static_cast<Tspos>(getNrChars() - 1);
+								to = getNrChars() - 1;
 								break;
 							}
 							if (!isspace(tempChar)) {
@@ -1107,7 +1112,7 @@ namespace sp {
 					tempChar = mainFile.get();
 					if (mainFile.eof()) {
 						mainFile.clear(mainFile.eofbit);
-						to = static_cast<Tspos>(getNrChars() - 1);
+						to = getNrChars() - 1;
 						break;
 					}
 				}
@@ -1153,7 +1158,7 @@ namespace sp {
 
 				if (mainFile.eof()) {
 					firstWordEndLine = true;
-					to = static_cast<Tspos>(getNrChars() - 1);
+					to = getNrChars() - 1;
 					break;
 				}
 				if (isspace(tempChar)) {
@@ -1175,7 +1180,7 @@ namespace sp {
 			if (mainFile.eof()) {
 				firstWordEndLine = true;
 				mainFile.clear(mainFile.eofbit);
-				to = static_cast<Tspos>(getNrChars() - 1);
+				to = getNrChars() - 1;
 			}
 			else {
 				while (1) {
@@ -1191,7 +1196,7 @@ namespace sp {
 
 							if (mainFile.eof()) {
 								mainFile.clear(mainFile.eofbit);
-								to = static_cast<Tspos>(getNrChars() - 1);
+								to = getNrChars() - 1;
 								break;
 							}
 							if (!isspace(tempChar)) {
@@ -1205,7 +1210,7 @@ namespace sp {
 					tempChar = mainFile.get();
 					if (mainFile.eof()) {
 						mainFile.clear(mainFile.eofbit);
-						to = static_cast<Tspos>(getNrChars() - 1);
+						to = getNrChars() - 1;
 						break;
 					}
 				}
@@ -1249,7 +1254,7 @@ namespace sp {
 		to = getPositionMove(Line, Word, To);
 
 		if (to == outOfBounds) {
-			return deleteSection(from, getNrChars() - 1);
+			return resize(static_cast<uint32>(from));
 		}
 		return deleteSection(from, to);
 	}

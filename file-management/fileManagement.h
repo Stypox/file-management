@@ -49,6 +49,7 @@ namespace sp {
 #endif
 
 	constexpr uint32 dontMove = UINT32_MAX;
+	constexpr uint32 maxFileSize = UINT32_MAX - 1;
 	 
 	constexpr std::streamoff fileNotOpen = -1;
 	constexpr std::streamoff outOfBounds = -2;
@@ -620,19 +621,18 @@ namespace sp {
 		*/
 		bool deleteLine(uint32 Line);
 		/*
-		Deletes the word specified by the parameter and all the spaces after it
-		until another word, a newline or the end of the file are reached. If the
-		specified word is out of bounds the function does nothing and returns true.
-		The main file is opened in binary-input-output mode, if it wasn't already.
+		Deletes the word specified by the parameter and all the spaces around it,
+		unless they are required as word dividers. If the specified word is out
+		of bounds the function does nothing and returns true. The main file is
+		opened in binary-input-output mode, if it wasn't already.
 		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteWord(uint32 Word);
 		/*
 		Deletes a word (second parameter) in a line (first parameter) and all the
-		spaces after it until another word, a newline or the end of the file are
-		reached. If the specified word is out of bounds the function does nothing
-		and returns true. The main file is opened in binary-input-output mode, if
-		it wasn't already.
+		spaces around it, unless they are required as word dividers. If the
+		specified word is out of bounds the function does nothing and returns true.
+		The main file is opened in binary-input-output mode, if it wasn't already.
 		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteWord(uint32 Line, uint32 Word);
@@ -667,11 +667,53 @@ namespace sp {
 		bool deleteChar(uint32 Line, uint32 Word, uint32 Char);
 
 
+		/*
+		Deletes the interval of lines between the first and the second parameter,
+		both included. If some (or all) lines are out of bounds they are ignored.
+		The main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
+		*/
 		bool deleteLines(uint32 From, uint32 To);
+		/*
+		Deletes the interval of words between the first and the second parameter,
+		both included. Deletes all the spaces around the interval, unless they are
+		required as word dividers. If some (or all) words are out of bounds they
+		are ignored. The main file is opened in binary-input-output mode, if it
+		wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
+		*/
 		bool deleteWords(uint32 From, uint32 To);
+		/*
+		Deletes the interval of words in a line (first parameter) between the
+		second and the third parameter, both included. Deletes all the spaces
+		around the interval, unless they are required as word dividers. If some (or
+		all) words are out of bounds they are ignored. The main file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
+		*/
 		bool deleteWords(uint32 Line, uint32 From, uint32 To);
+		/*
+		Deletes the interval of chars between the first and the second parameter,
+		both included. If some (or all) chars are out of bounds they are ignored.
+		The main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
+		*/
 		bool deleteChars(uint32 From, uint32 To);
+		/*
+		Deletes the interval of chars in a line (first parameter) between the
+		second and the third parameter, both included. If some (or all) chars are
+		out of bounds they are ignored. The main file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
+		*/
 		bool deleteChars(uint32 Line, uint32 From, uint32 To);
+		/*
+		Deletes the interval of chars in a word (second parameter) in a line (first
+		parameter) between the third and the fourth parameter, both included. If
+		some (or all) chars are out of bounds they are ignored. The main file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
+		*/
 		bool deleteChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
 
 
