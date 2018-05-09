@@ -247,41 +247,29 @@ namespace sp {
 			mainFile << Replacement;
 
 			char tempChar;
-			Tspos getPosition = To + static_cast<Tspos>(1), putPosition = From + static_cast<Tspos>(newSize);
-			while (1) {
+			for (Tspos getPosition = To + static_cast<Tspos>(1), putPosition = From + static_cast<Tspos>(newSize);; getPosition += static_cast<Tspos>(1), putPosition += static_cast<Tspos>(1)) {
 				mainFile.seekg(getPosition);
 				tempChar = mainFile.get();
-				if (mainFile.eof()) break;
+				if (mainFile.eof()) return resize(static_cast<uint32>(putPosition));
 				mainFile.seekg(putPosition);
 				mainFile.put(tempChar);
-
-				getPosition += static_cast<Tspos>(1);
-				putPosition += static_cast<Tspos>(1);
 			}
-
-			return resize(static_cast<uint32>(putPosition));
 		}
 		
 		else if (oldSize < newSize) {
 			if (To >= getNrChars() || !open()) return false;
-			uint32 fileLength = getNrChars();
+			uint32 fileSize = getNrChars();
 
 			char tempChar;
-			Tspos getPosition = static_cast<Tspos>(fileLength - 1), putPosition = static_cast<Tspos>(fileLength + newSize - oldSize - 1);
-			while (getPosition > To) {
+			for (Tspos getPosition = fileSize - 1, putPosition = fileSize + newSize - oldSize - 1; getPosition > To; getPosition -= static_cast<Tspos>(1), putPosition -= static_cast<Tspos>(1)) {
 				mainFile.seekg(getPosition);
 				tempChar = mainFile.get();
-				std::cout << spc(tempChar) << "\n";
 				mainFile.seekg(putPosition);
 				mainFile.put(tempChar);
-
-				getPosition -= static_cast<Tspos>(1);
-				putPosition -= static_cast<Tspos>(1);
 			}
 
 			mainFile.seekg(From);
 			mainFile << Replacement;
-
 			mainFile.flush();
 		}
 		

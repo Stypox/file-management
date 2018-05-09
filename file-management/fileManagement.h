@@ -1003,24 +1003,20 @@ namespace sp {
 	template<typename T>
 	inline bool File::add(Tspos Pos, T ToAdd) {
 		if (Pos < 0 || !open()) return false;
-		std::string toAdd = toString(ToAdd);
-		uint32 size = getNrChars();
+		Tstr toAdd = toString(ToAdd);
+		uint32 fileSize = getNrChars();
 
-		if (Pos >= size) {
-			mainFile.seekg(Pos);
-			mainFile << toAdd;
-			return true;
+		if (Pos < fileSize) {
+			char tempChar;
+			for (Tspos getPosition = fileSize - 1, putPosition = fileSize + toAdd.length() - 1; getPosition >= Pos; getPosition -= static_cast<Tspos>(1), putPosition -= static_cast<Tspos>(1)) {
+				mainFile.seekg(getPosition);
+				tempChar = mainFile.get();
+				mainFile.seekg(putPosition);
+				mainFile.put(tempChar);
+			}
 		}
 
-		for (Tspos pointerPosition = Pos; pointerPosition < size; pointerPosition += 1) {
-			mainFile.seekg(pointerPosition);
-			toAdd.push_back(mainFile.get());
-
-			mainFile.seekg(pointerPosition);
-			mainFile.put(toAdd[0]);
-			toAdd.erase(0, 1);
-		}
-
+		mainFile.seekg(Pos);
 		mainFile << toAdd;
 		mainFile.flush();
 		return true;
