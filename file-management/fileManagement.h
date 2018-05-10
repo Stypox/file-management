@@ -4,6 +4,8 @@
 //TODO implement unix-windows conversion
 //TODO add pointToEnd(index);
 //TODO pointTo(inBounds line, inBounds word, outOfBounds char) shall not point to end, if not needed by functions
+//TODO remove main file: now there is only one type of file
+//TODO implement error system
 
 //UTILI:
 /*
@@ -717,39 +719,57 @@ namespace sp {
 		bool deleteChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
 
 
+		/*
+		Appends the content of the parameter to the end of the main file. The main
+		file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
+		*/
 		template<typename T>
 		bool append(T ToAppend);
 		/*
-		Adds a line (with endline before it) at the end of the file
-		Returns false if the file couldn't be opened, otherwise true
+		Appends a line containing the parameter to the end of the main file. The
+		main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool appendLine(T ToAppend);
 		/*
-		Adds a word (with a space before it) at the end of the file
-		Returns false if the file couldn't be opened, otherwise true
+		Appends the content of the parameter to the end of the main file. Also adds
+		a space ' ' before it, but only if the main file didn't end with a space.
+		The main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool appendWord(T ToAppend);
 		/*
-		Adds a word (with a space before it) after the specified word
-		Returns false if the file couldn't be opened, otherwise true
+		Appends the content of the second parameter to the end of a line (first
+		parameter). Also adds a space ' ' before it, but only if the line didn't
+		end with a space. The main file is opened in binary-input-output mode, if
+		it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool appendWord(uint32 Line, T ToAppend);
 		/*
-		Adds a char at the end of the file
-		Returns false if the file couldn't be opened, otherwise true
+		Appends the parameter to the end of the main file. The main file is opened
+		in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.
 		*/
 		bool appendChar(char ToAppend);
 		/*
-		Adds a char at the end of the specified line
-		Returns false if the file couldn't be opened, otherwise true
+		Appends the second parameter to the end of a line (first parameter). The
+		main file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		bool appendChar(uint32 Line, char ToAppend);
 		/*
-		Adds a char at the end of the specified word
-		Returns false if the file couldn't be opened, otherwise true
+		Appends the third parameter to the end of a word (second parameter) in a
+		line (first parameter). The main file is opened in binary-input-output
+		mode, if it wasn't already.
+		Returns false if the main file couldn't be opened or if the specified
+		position is out of bounds, otherwise returns true.
 		*/
 		bool appendChar(uint32 Line, uint32 Word, char ToAppend);
 
@@ -1150,20 +1170,27 @@ namespace sp {
 	}
 	template<typename T>
 	inline bool File::appendWord(T ToAppend) {
-		return append(" " + toString(ToAppend));
+		uint32 fileSize = getNrChars();
+		if (fileSize != 0) {
+			if (!pointTo(fileSize - 1)) return false;
+			if (isspace(mainFile.get())) return append(toString(ToAppend));
+			return append(" " + toString(ToAppend));
+		}
+		return append(toString(ToAppend));		
 	}
 	template<typename T>
 	inline bool File::appendWord(uint32 Line, T ToAppend) {
-		if (!pointTo(Line, dontMove, dontMove)) return false;
-
-		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof()) return append(" " + toString(ToAppend));
-			if (tempChar == '\r') break;
+		Tspos pos = getPositionMove(Line + 1, dontMove, dontMove);
+		if (pos == fileNotOpen) return false;
+		if (pos == outOfBounds) {
+			if (Line >= getNrLines()) return false;
+			return appendWord(ToAppend);
 		}
+		pos -= static_cast<Tspos>(newlineMode == NLMode::win ? 2 : 1);
 
-		return add(mainFile.tellg() - (Tspos)1, " " + toString(ToAppend));
+		mainFile.seekg(pos - static_cast<Tspos>(1));
+		if (isspace(mainFile.get())) return add(pos, ToAppend);
+		return add(pos, " " + toString(ToAppend));
 	}
 
 	template<typename T>

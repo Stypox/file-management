@@ -1261,19 +1261,17 @@ namespace sp {
 
 
 	bool File::appendChar(char ToAppend) {
-		return append(toString(&ToAppend));
+		return append(ToAppend);
 	}
 	bool File::appendChar(uint32 Line, char ToAppend) {
-		if (!pointTo(Line, dontMove, dontMove)) return false;
-	
-		char tempChar;
-		while (1) {
-			tempChar = mainFile.get();
-			if (mainFile.eof()) return append(toString(&ToAppend));
-			if (tempChar == '\r') break;
+		Tspos pos = getPositionMove(Line + 1, dontMove, dontMove);
+		if (pos == fileNotOpen) return false;
+		if (pos == outOfBounds) {
+			if (Line >= getNrLines()) return false;
+			return append(ToAppend);
 		}
 
-		return add(mainFile.tellg() - static_cast<Tspos>(1), toString(ToAppend));
+		return add(pos - static_cast<Tspos>(newlineMode == NLMode::win ? 2 : 1), ToAppend);
 	}
 	bool File::appendChar(uint32 Line, uint32 Word, char ToAppend) {
 		if (!pointTo(Line, Word, dontMove)) return false;
@@ -1281,11 +1279,11 @@ namespace sp {
 		char tempChar;
 		while (1) {
 			tempChar = mainFile.get();
-			if (mainFile.eof()) return append(toString(&ToAppend));
+			if (mainFile.eof()) return append(ToAppend);
 			if (isspace(tempChar)) break;
 		}
 
-		return add(mainFile.tellg() - static_cast<Tspos>(1), toString(&ToAppend));
+		return add(mainFile.tellg() - static_cast<Tspos>(1), ToAppend);
 	}
 
 
