@@ -791,7 +791,8 @@ namespace sp {
 		bool create();
 		/*
 		Moves this file to the path specified by the parameter, and changes the
-		path. This file is closed.
+		path. Overwrites the file specified by the parameter if it already exists.
+		This file is closed.
 		Returns false if the file couldn't be moved, otherwise returns true.
 		*/
 		bool move(Tstr newPath);
@@ -808,32 +809,32 @@ namespace sp {
 		parameter if it doesn't exist. The newline mode is also copied to the
 		parameter. This file and the parameter are opened in binary-input-output
 		mode, if they weren't already.
-		Returns false if this file or the parameter couldn't be opened,
-		otherwise returns true.
+		Returns false if this file or the parameter couldn't be opened, otherwise
+		returns true.
 		*/
 		bool copy(File &toOverwrite);
 		/*
-		Swaps this file with the parameter. Also swaps the newline modes. This file
-		and the parameter are opened in binary-input-output mode, if they weren't
-		already.
-		Returns false if this file or the parameter couldn't be opened,
-		otherwise returns true.
+		Swaps this file with the parameter. Also swaps the newline modes.
+		Overwrites the file specified by the parameter if it already exists. This
+		file and the parameter are opened in binary-input-output mode, if they
+		weren't already.
+		Returns false if this file or the parameter couldn't be opened, otherwise
+		returns true.
 		*/
 		bool swap(File &Other);
 		/*
 		Changes this file's name to the parameter. This file is closed.
-		Returns false if the file couldn't be renamed, otherwise returns true.
+		Returns false if this file couldn't be renamed, otherwise returns true.
 		*/
 		bool rename(Tstr newName);
 		/*
-		Deletes all the file's content
-		Leaves the file open in binary input-output mode
-		Returns false if the file couldn't be opened, otherwise true
+		Deletes all the content of this file. If this file is open its pointer is
+		moved to the beginning and its eofbit is cleared.
+		Returns false if this file couldn't be truncated, otherwise returns true.
 		*/
 		bool truncate();
 		/*
-		Removes the file
-		Automatically closes the file if it's open
+		Removes this file after closing it, if it was open.
 		*/
 		void remove();
 

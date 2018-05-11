@@ -1321,6 +1321,8 @@ namespace sp {
 
 
 	bool File::create() {
+		if (exists()) return true;
+		if (mainFile.is_open()) mainFile.close();
 		mainFile.open(mainPath, std::ios_base::app);
 		mainFile.close();
 		return open();
@@ -1328,7 +1330,7 @@ namespace sp {
 	bool File::move(Tstr newPath) {
 		if (mainFile.is_open()) mainFile.close();
 		std::error_code e;
-		std::experimental::filesystem::rename(mainPath, newPath, e);
+		std::experimental::filesystem::rename(mainPath, newPath, e); //TODO doesn't work with not existing files.
 		if (e) return false;
 
 		mainPath = newPath;
@@ -1342,6 +1344,10 @@ namespace sp {
 		}
 		else {
 			copyFile.open(copyPath, std::ios_base::out | std::ios_base::binary | std::ios_base::app);
+		}
+		if (!copyFile.is_open()) {
+			ExternalError = true;
+			return false;
 		}
 
 		moveFileContent(mainFile, copyFile);
@@ -1454,9 +1460,8 @@ namespace sp {
 	bool File::resize(uint32 newSize) {
 		std::error_code error;
 		std::experimental::filesystem::resize_file(mainPath, newSize, error);
-		if (error) return false;
 		if (mainFile.is_open()) mainFile.flush();
-		return true;
+		return !error;
 	}
 
 
