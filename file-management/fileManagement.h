@@ -6,16 +6,16 @@
 //TODO pointTo(inBounds line, inBounds word, outOfBounds char) shall not point to end, if not needed by functions
 //TODO remove main file: now there is only one type of file
 //TODO implement error system
+//TODO newline mode auto-detection in constructor
 
 //UTILI:
 /*
-max 75 chars x linea
+max 75 chars x line
 
-main file - temp file
+this file
 
-The main file is opened in binary input-output mode, if it wasn't already.
-Returns false if the main file or the temp file couldn't be opened, otherwise returns true. // The main file must be open in binary-output mode.
-Uses the temp file.
+This file is opened in binary input-output mode, if it wasn't already.
+Returns false if this file couldn't be opened, otherwise returns true. // This file must be open in binary-output mode.
 The pointer is not moved. // The pointer is moved to an untraceable position.
 */
 
@@ -195,41 +195,41 @@ namespace sp {
 		the first", -1 means "don't do anything". So only 
 		getPositionMove(-1, -1, -1) will surely return 0. The constexpr
 		sp::dontMove can be used as -1. The pointer is moved to an untraceable
-		position. The main file is opened in binary-input-output mode, if it wasn't
+		position. This file is opened in binary-input-output mode, if it wasn't
 		already.
-		Returns -1 if the main file couldn't be opened and -2 if the specified
-		position is out of bounds. The constexpr sp::fileNotOpen (= -1) and
-		sp::outOfBounds (= -2) can be used to check.
+		Returns -1 if this file couldn't be opened and -2 if the specified position
+		is out of bounds. The constexpr sp::fileNotOpen (= -1) and sp::outOfBounds
+		(= -2) can be used to check.
 		*/
 		Tspos getPositionMove(uint32 Line, uint32 Word, uint32 Char);
 
 
 		/*
 		Replaces all the chars of an interval (both ends included) with a string.
-		The main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		This file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool replaceSection(Tspos From, Tspos To, Tstr Replacement);
 		/*
 		Deletes all the chars between the first and the second parameter, both
-		included. The main file is opened in binary-input-output mode, if it wasn't
+		included. This file is opened in binary-input-output mode, if it wasn't
 		already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteSection(Tspos From, Tspos To);
 		
 
 	public:
 		/*
-		Default constructor. Initializes the main path to an empty string. The
-		newline mode is initialized to the first parameter, if provided, otherwise
-		it is initialized based on the operating system.
+		Default constructor. Initializes the path to an empty string. The newline
+		mode is initialized to the first parameter, if provided, otherwise it is
+		initialized based on the operating system.
 		*/
 		File(NLMode Mode = defaultNewlineMode);
 		/*
-		Constructor with a string. Initializes the main path to the first
-		parameter. The newline mode is initialized to the second parameter, if
-		provided, otherwise it is initialized based on the operating system.
+		Constructor with a string. Initializes the path to the first parameter. The
+		newline mode is initialized to the second parameter, if provided, otherwise
+		it is initialized based on the operating system.
 		*/
 		File(Tstr MainPath, NLMode Mode = defaultNewlineMode);
 		/*
@@ -243,18 +243,18 @@ namespace sp {
 
 
 		/*
-		Moves the pointer relative to the current position. The main file must be
-		open in binary-input-output mode.
-		Returns false if the main file is not open or the end was already reached,
+		Moves the pointer relative to the current position. This file must be open
+		in binary-input-output mode.
+		Returns false if this file is not open or the end was already reached,
 		otherwise returns true.
 		*/
 		bool pointMove(Tspos Offset);
 		/*
 		Moves the pointer to the position specified by the parameter. The position
-		starts from zero, that is the first char of the file is at position 0. The
-		main file is opened in binary input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		starts from zero, that is the first char of the file is at position 0. This
+		file is opened in binary input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		bool pointTo(Tspos Position);
 		/*
@@ -263,22 +263,22 @@ namespace sp {
 		pointTo(0, 0, 0) points to the first char of the first word of the first
 		line (not necessarily to the beginning of the file). While 0 means "move to
 		the first", -1 means "don't move". So only pointTo(-1, -1, -1) will surely
-		point to the beginning. The constexpr sp::dontMove can be used as -1. The 
-		main file is opened in binary input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		point to the beginning. The constexpr sp::dontMove can be used as -1. This
+		file is opened in binary input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		bool pointTo(uint32 Line, uint32 Word, uint32 Char);
 		/*
-		Moves the pointer to the beginning of the main file and clears its eofbit.
-		The main file is opened in binary input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Moves the pointer to the beginning of this file and clears its eofbit. This
+		file is opened in binary input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool pointToBeg();
 		/*
-		Moves the pointer to the end of the main file and clears its eofbit.
-		The main file is opened in binary input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Moves the pointer to the end of this file and clears its eofbit. This file
+		is opened in binary input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool pointToEnd();
 		/*
@@ -288,11 +288,11 @@ namespace sp {
 		word of the first line (not necessarily 0). While 0 means "look for the
 		first", -1 means "don't do anything". So only getPosition(-1, -1, -1) will
 		surely return 0. The pointer is not moved. The constexpr sp::dontMove can
-		be used as -1.The main file is opened inbinary input-output mode, if it
-		wasn't already.
-		Returns -1 if the main file couldn't be opened and -2 if the specified
-		position is out of bounds. The constexpr sp::fileNotOpen (= -1) and
-		sp::outOfBounds (= -2) can be used to check.
+		be used as -1. This file is opened inbinary input-output mode, if it wasn't
+		already.
+		Returns -1 if this file couldn't be opened and -2 if the specified position
+		is out of bounds. The constexpr sp::fileNotOpen (= -1) and sp::outOfBounds
+		(= -2) can be used to check.
 		*/
 		Tspos getPosition(uint32 Line, uint32 Word, uint32 Char);
 
@@ -300,41 +300,41 @@ namespace sp {
 		/*
 		Returns the number of lines (visible in a text editor: if the file is empty
 		1 is returned, if there is one newline 2 is returned...). The pointer is
-		not moved. The main file is opened in binary input-output mode, if it
-		wasn't already.
-		Returns 0 if the main file couldn't be opened.
+		not moved. This file is opened in binary input-output mode, if it wasn't
+		already.
+		Returns 0 if this file couldn't be opened.
 		*/
 		uint32 getNrLines();
 		/*
 		Returns the number of words divided by spaces. The pointer is not moved.
-		The main file is opened in binary input-output mode, if it wasn't already.
-		Returns 0 if the main file couldn't be opened.
+		This file is opened in binary input-output mode, if it wasn't already.
+		Returns 0 if this file couldn't be opened.
 		*/
 		uint32 getNrWords();
 		/*
 		Returns the number of words in the line specified by the parameter divided
-		by spaces. The pointer is not moved. The main file is opened in binary 
-		input-output mode, if it wasn't already.
-		Returns 0 if the main file couldn't be opened.
+		by spaces. The pointer is not moved. This file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns 0 if this file couldn't be opened.
 		*/
 		uint32 getNrWords(uint32 Line);
 		/*
 		Returns the number of chars (or bytes). The pointer is not moved.
-		Returns 0 if the main file couldn't be accessed via "stat".
+		Returns 0 if this file couldn't be accessed via "stat".
 		*/
 		uint32 getNrChars();
 		/*
 		Returns the number of chars in the line specified by the parameter. The
-		pointer is not moved. The main file is opened in binary input-output mode,
-		if it wasn't already.
-		Returns 0 if the main file couldn't be opened.
+		pointer is not moved. This file is opened in binary input-output mode, if
+		it wasn't already.
+		Returns 0 if this file couldn't be opened.
 		*/
 		uint32 getNrChars(uint32 Line);
 		/*
 		Returns the number of chars in a word (second parameter) in a line (first
-		parameter). The pointer is not moved. The main file is opened in binary
-		input-output mode, if it wasn't already.
-		Returns 0 if the main file couldn't be opened.
+		parameter). The pointer is not moved. This file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns 0 if this file couldn't be opened.
 		*/
 		uint32 getNrChars(uint32 Line, uint32 Word);
 
@@ -342,90 +342,90 @@ namespace sp {
 
 		/*
 		Returns all the chars after the pointer until the end of the line or the
-		end of the main file are reached. The main file must be open in
-		binary-input or binary-input-output mode.
-		Returns an empty string if the main file is not open or the end was already
+		end of this file are reached. This file must be open in binary-input or
+		binary-input-output mode.
+		Returns an empty string if this file is not open or the end was already
 		reached.
 		*/
 		Tstr getLine();
 		/*
 		Saves on the parameter all the chars after the pointer until the end of the
-		line or the end of the main file are reached. The main file must be open in
+		line or the end of this file are reached. This file must be open in
 		binary-input or binary-input-output mode.
-		Returns false if the main file is not open or the end was already reached,
+		Returns false if this file is not open or the end was already reached,
 		otherwise returns true.
 		*/
 		bool getLine(Tstr &Line);
 		/*
-		Returns the line specified by the parameter. The main file is opened in
+		Returns the line specified by the parameter. This file is opened in
 		binary-input-output mode, if it wasn't already.
-		Returns an empty string if the main file couldn't be opened or if the
-		specified line is out of bounds.
+		Returns an empty string if this file couldn't be opened or if the specified
+		line is out of bounds.
 		*/
 		Tstr getLine(uint32 Line);
 		/*
-		Returns all the chars after the pointer until a space or the end of the
-		main file are reached. The main file must be open in binary-input mode or
+		Returns all the chars after the pointer until a space or the end of this
+		file are reached. This file must be open in binary-input mode or
 		binary-input-output mode.
-		Returns an empty string if the main file is not open or the end was already
+		Returns an empty string if this file is not open or the end was already
 		reached.
 		*/
 		Tstr getWord();
 		/*
 		Saves on the parameter all the characters after the pointer until a space
-		or the end of the main file are reached. The main file must be open in
-		binary-input or binary-input-output mode.
-		Returns false if the main file is not open or the end was already reached,
+		or the end of this file are reached. This file must be open in binary-input
+		or binary-input-output mode.
+		Returns false if this file is not open or the end was already reached,
 		otherwise returns true.
 		*/
 		bool getWord(Tstr &Word);
 		/*
-		Returns the word specified by the parameter. The main file is opened in
+		Returns the word specified by the parameter. This file is opened in
 		binary-input-output mode, if it wasn't already.
-		Returns an empty string if the main file couldn't be opened or if the
-		specified word is out of bounds.
+		Returns an empty string if this file couldn't be opened or if the specified
+		word is out of bounds.
 		*/
 		Tstr getWord(uint32 Word);
 		/*
-		Returns a word (second parameter) in a line (first parameter). The main
-		file is opened in binary-input-output mode, if it wasn't already.
-		Returns an empty string if the main file couldn't be opened or if the
-		specified word is out of bounds.
+		Returns a word (second parameter) in a line (first parameter). This file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns an empty string if this file couldn't be opened or if the specified
+		word is out of bounds.
 		*/
 		Tstr getWord(uint32 Line, uint32 Word);
 		/*
-		Returns the char at the pointer position. The main file must be open in
+		Returns the char at the pointer position. This file must be open in
 		binary-input or binary-input-output mode.
-		Returns -1 if the main file is not open or the end was already reached.
+		Returns -1 if this file is not open or the end was already reached.
 		*/
 		char getChar();
 		/*
-		Saves the char at the pointer position on the parameter. The main file must
-		be open in binary-input or binary-input-output mode.
-		Returns false if the main file is not open or the end was already reached,
+		Saves the char at the pointer position on the parameter. This file must be
+		open in binary-input or binary-input-output mode.
+		Returns false if this file is not open or the end was already reached,
 		otherwise returns true.
 		*/
 		bool getChar(char &Char);
 		/*
-		Returns the char specified by the parameter. The main file is opened in
+		Returns the char specified by the parameter. This file is opened in
 		binary-input-output mode, if it wasn't already.
-		Returns -1 if the main file couldn't be opened or if the specified line is
-		out of bounds.
+		Returns -1 if this file couldn't be opened or if the specified line is out
+		of bounds.
 		*/
 		char getChar(uint32 Char);
 		/*
-		Returns a char (second parameter) in a line (first parameter). The main
-		file is opened in binary-input-output mode, if it wasn't already.
-		Returns -1 if the main file couldn't be opened or if the specified char is
-		out of bounds.
+		Returns a char (second parameter) in a line (first parameter). This file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns -1 if this file couldn't be opened or if the specified char is out
+		of bounds.
 		*/
 		char getChar(uint32 Line, uint32 Char);
 		/*
 		Returns a char (third parameter) in a word (second parameter) in a line
-		(first parameter). The main file is opened in binary-input-output mode, if
-		it wasn't already.
-		Returns -1 if the main file couldn't be opened or if the specified char is
-		out of bounds.
+		(first parameter). This file is opened in binary-input-output mode, if it
+		wasn't already.
+		Returns -1 if this file couldn't be opened or if the specified char is out
+		of bounds.
 		*/
 		char getChar(uint32 Line, uint32 Word, uint32 Char);
 
@@ -434,18 +434,18 @@ namespace sp {
 		Returns the interval of lines between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the lines
 		are returned in reverse order. If some (or all) lines are out of bounds
-		they are ignored. The main file is opened in binary-input-output mode, if
-		it wasn't already.
-		Returns an empty string if the main file couldn't be opened.
+		they are ignored. This file is opened in binary-input-output mode, if it
+		wasn't already.
+		Returns an empty string if this file couldn't be opened.
 		*/
 		Tstr getLines(uint32 From, uint32 To);
 		/*
 		Returns the interval of words between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the words
 		are returned in reverse order. If some (or all) words are out of bounds
-		they are ignored. Returned words are separeted by spaces ' '. The main file
-		is opened in binary-input-output mode, if it wasn't already.
-		Returns an empty string if the main file couldn't be opened.
+		they are ignored. Returned words are separeted by spaces ' '. This file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns an empty string if this file couldn't be opened.
 		*/
 		Tstr getWords(uint32 From, uint32 To);
 		/*
@@ -453,104 +453,104 @@ namespace sp {
 		second and the third parameter, both included. If the second parameter is
 		bigger than the third the words are returned in reverse order. If some (or
 		all) words are out of bounds they are ignored. Returned words are separeted
-		by spaces ' '. The main file is opened in binary-input-output mode, if it
+		by spaces ' '. This file is opened in binary-input-output mode, if it
 		wasn't already.
-		Returns an empty string if the main file couldn't be opened.
+		Returns an empty string if this file couldn't be opened.
 		*/
 		Tstr getWords(uint32 Line, uint32 From, uint32 To);
 		/*
 		Returns the interval of chars between the first and the second parameter,
 		both included. If the first parameter is bigger than the second the chars
 		are returned in reverse order. If some (or all) chars are out of bounds
-		they are ignored. The main file is opened in binary-input-output mode, if
-		it wasn't already.
-		Returns an empty string if the main file couldn't be opened.
+		they are ignored. This file is opened in binary-input-output mode, if it
+		wasn't already.
+		Returns an empty string if this file couldn't be opened.
 		*/
 		Tstr getChars(uint32 From, uint32 To);
 		/*
 		Returns the interval of chars in a line (first parameter) between the
 		second and the third parameter, both included. If the second parameter is
 		bigger than the third the chars are returned in reverse order. If some (or
-		all) chars are out of bounds they are ignored. The main file is opened in
+		all) chars are out of bounds they are ignored. This file is opened in
 		binary-input-output mode, if it wasn't already.
-		Returns an empty string if the main file couldn't be opened.
+		Returns an empty string if this file couldn't be opened.
 		*/
 		Tstr getChars(uint32 Line, uint32 From, uint32 To);
 		/*
 		Returns the interval of chars in a word (second parameter) in a line (first
-		parameter) between the third and the fourth parameter, both included. If the
-		third parameter is bigger than the fourth the chars are returned in reverse
-		order. If some (or all) chars are out of bounds they are ignored. The main
-		file is opened in binary-input-output mode, if it wasn't already.
-		Returns an empty string if the main file couldn't be opened.
+		parameter) between the third and the fourth parameter, both included. If
+		the third parameter is bigger than the fourth the chars are returned in
+		reverse order. If some (or all) chars are out of bounds they are ignored.
+		This file is opened in binary-input-output mode, if it wasn't already.
+		Returns an empty string if this file couldn't be opened.
 		*/
 		Tstr getChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
 
 
 		/*
 		Inserts the second parameter in the position specified by the first. If the
-		specified position is out of bounds some '\0' are added. The main file is
+		specified position is out of bounds some '\0' are added. This file is
 		opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool add(Tspos Pos, T ToAdd);
 		/*
 		Inserts a line containing the second parameter before the line specified by
 		the first. If the specified line is out of bounds some newlines are
-		created. The main file is opened in binary-input-output mode, if it wasn't
+		created. This file is opened in binary-input-output mode, if it wasn't
 		already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool addLine(uint32 Line, T ToAdd);
 		/*
 		Inserts the content of the second parameter before the word specified by
-		the first, with a space ' ' between them. The main file is opened in
+		the first, with a space ' ' between them. This file is opened in
 		binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool addWord(uint32 Word, T ToAdd);
 		/*
 		Inserts the content of the third parameter before a word (second parameter)
-		in a line (first parameter), with a space ' ' between them. The main file
-		is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		in a line (first parameter), with a space ' ' between them. This file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool addWord(uint32 Line, uint32 Word, T ToAdd);
 		/*
 		Inserts the parameter at the pointer position. If the pointer position is
-		out of bounds some '\0' are added.The main file must be open in
+		out of bounds some '\0' are added. This file must be open in
 		binary-input-output mode.
-		Returns false if the main file is not open or the end was already reached,
+		Returns false if this file is not open or the end was already reached,
 		otherwise returns true.
 		*/
 		bool addChar(char ToAdd);
 		/*
 		Inserts the second parameter in the position specified by the first. If the
-		specified position is out of bounds some '\0' are added. The main file is
+		specified position is out of bounds some '\0' are added. This file is
 		opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool addChar(uint32 Char, char ToAdd);
 		/*
 		Inserts the third parameter before a char (second parameter) in a line
-		(first parameter). The main file is opened in binary-input-output mode, if
-		it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		(first parameter). This file is opened in binary-input-output mode, if it
+		wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		bool addChar(uint32 Line, uint32 Char, char ToAdd);
 		/*
 		Inserts the fourth parameter before a char (third parameter) in a word
-		(second parameter) in a line (first parameter). The main file is opened in
+		(second parameter) in a line (first parameter). This file is opened in
 		binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		bool addChar(uint32 Line, uint32 Word, uint32 Char, char ToAdd);
 
@@ -559,112 +559,112 @@ namespace sp {
 		/*
 		Replaces the content of the line specified by the first parameter with the
 		content of the second parameter. If the specified line is out of bounds
-		some newlines are created. The main file is opened in binary-input-output
-		mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		some newlines are created. This file is opened in binary-input-output mode,
+		if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool replaceLine(uint32 Line, T Replacement);
 		/*
 		Replaces the word specified by the first parameter with the content of the
-		second parameter. The main file is opened in binary-input-output mode, if
-		it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		second parameter. This file is opened in binary-input-output mode, if it
+		wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool replaceWord(uint32 Word, T Replacement);
 		/*
 		Replaces a word (second parameter) in a line (first parameter) with the
-		content of the third parameter. The main file is opened in
-		binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		content of the third parameter. This file is opened in binary-input-output
+		mode, if it wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool replaceWord(uint32 Line, uint32 Word, T Replacement);
 		/*
 		Replaces the char at the pointer position with the parameter. If the
-		pointer position is out of bounds some '\0' are added. The main file
-		must be open in binary-output or binary-input-output mode.
-		Returns false if the main file is not open, otherwise returns true.
+		pointer position is out of bounds some '\0' are added. This file must be
+		open in binary-output or binary-input-output mode.
+		Returns false if this file is not open, otherwise returns true.
 		*/
 		bool replaceChar(char Replacement);
 		/*
 		Replaces the char specified by the first parameter with the second
 		parameter. If the specified position is out of bounds some '\0' are added.
-		The main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		This file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool replaceChar(uint32 Char, char Replacement);
 		/*
 		Replaces a char (second parameter) in a line (first parameter) with the
-		third parameter. The main file is opened in binary-input-output mode, if
-		it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		third parameter. This file is opened in binary-input-output mode, if it
+		wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		bool replaceChar(uint32 Line, uint32 Char, char Replacement);
 		/*
 		Replaces a char (third parameter) in a word (second parameter) in a line
-		(first parameter) with the fourth parameter. The main file is opened in
+		(first parameter) with the fourth parameter. This file is opened in
 		binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		bool replaceChar(uint32 Line, uint32 Word, uint32 Char, char Replacement);
 
 
 		/*
 		Deletes the line specified by the parameter. If the specified line is out
-		of bounds the function does nothing and returns true. The main file is
-		opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		of bounds the function does nothing and returns true. This file is opened
+		in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteLine(uint32 Line);
 		/*
 		Deletes the word specified by the parameter and all the spaces around it,
 		unless they are required as word dividers. If the specified word is out
-		of bounds the function does nothing and returns true. The main file is
-		opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		of bounds the function does nothing and returns true. This file is opened
+		in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteWord(uint32 Word);
 		/*
 		Deletes a word (second parameter) in a line (first parameter) and all the
 		spaces around it, unless they are required as word dividers. If the
 		specified word is out of bounds the function does nothing and returns true.
-		The main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		This file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteWord(uint32 Line, uint32 Word);
 		/*
 		Deletes the char at the pointer position. If the pointer position is out of
-		bounds the function does nothing and returns true. The main file must be
-		open in binary-input-output mode.
-		Returns false if the main file is not open, otherwise returns true.
+		bounds the function does nothing and returns true. This file must be open
+		in binary-input-output mode.
+		Returns false if this file is not open, otherwise returns true.
 		*/
 		bool deleteChar();
 		/*
 		Deletes the char specified by the parameter. If the specified char is out
-		of bounds the function does nothing and returns true. The main file is
-		opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		of bounds the function does nothing and returns true. This file is opened
+		in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteChar(uint32 Char);
 		/*
 		Deletes a char (second parameter) in a line (first parameter). If the
 		specified char is out of bounds the function does nothing and returns true.
-		The main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		This file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteChar(uint32 Line, uint32 Char);
 		/*
 		Deletes a char (third parameter) in a word (second parameter) in a line
 		(first parameter). If the specified char is out of bounds the function does
-		nothing and returns true. The main file is opened in binary-input-output
-		mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		nothing and returns true. This file is opened in binary-input-output mode,
+		if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteChar(uint32 Line, uint32 Word, uint32 Char);
 
@@ -672,151 +672,157 @@ namespace sp {
 		/*
 		Deletes the interval of lines between the first and the second parameter,
 		both included. If some (or all) lines are out of bounds they are ignored.
-		The main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		This file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteLines(uint32 From, uint32 To);
 		/*
 		Deletes the interval of words between the first and the second parameter,
 		both included. Deletes all the spaces around the interval, unless they are
 		required as word dividers. If some (or all) words are out of bounds they
-		are ignored. The main file is opened in binary-input-output mode, if it
-		wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		are ignored. This file is opened in binary-input-output mode, if it wasn't
+		already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteWords(uint32 From, uint32 To);
 		/*
 		Deletes the interval of words in a line (first parameter) between the
 		second and the third parameter, both included. Deletes all the spaces
 		around the interval, unless they are required as word dividers. If some (or
-		all) words are out of bounds they are ignored. The main file is opened in
+		all) words are out of bounds they are ignored. This file is opened in
 		binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteWords(uint32 Line, uint32 From, uint32 To);
 		/*
 		Deletes the interval of chars between the first and the second parameter,
 		both included. If some (or all) chars are out of bounds they are ignored.
-		The main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		This file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteChars(uint32 From, uint32 To);
 		/*
 		Deletes the interval of chars in a line (first parameter) between the
 		second and the third parameter, both included. If some (or all) chars are
-		out of bounds they are ignored. The main file is opened in
-		binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		out of bounds they are ignored. This file is opened in binary-input-output
+		mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteChars(uint32 Line, uint32 From, uint32 To);
 		/*
 		Deletes the interval of chars in a word (second parameter) in a line (first
 		parameter) between the third and the fourth parameter, both included. If
-		some (or all) chars are out of bounds they are ignored. The main file is
-		opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		some (or all) chars are out of bounds they are ignored. This file is opened
+		in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteChars(uint32 Line, uint32 Word, uint32 From, uint32 To);
 
 
 		/*
-		Appends the content of the parameter to the end of the main file. The main
-		file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Appends the content of the parameter to the end of this file. This file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool append(T ToAppend);
 		/*
-		Appends a line containing the parameter to the end of the main file. The
-		main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Appends a line containing the parameter to the end of this file. This file
+		is opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool appendLine(T ToAppend);
 		/*
-		Appends the content of the parameter to the end of the main file. Also adds
-		a space ' ' before it, but only if the main file didn't end with a space.
-		The main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Appends the content of the parameter to the end of this file. Also adds a
+		space ' ' before it, but only if this file didn't end with a space. This
+		file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		template<typename T>
 		bool appendWord(T ToAppend);
 		/*
 		Appends the content of the second parameter to the end of a line (first
 		parameter). Also adds a space ' ' before it, but only if the line didn't
-		end with a space. The main file is opened in binary-input-output mode, if
-		it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		end with a space. This file is opened in binary-input-output mode, if it
+		wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		template<typename T>
 		bool appendWord(uint32 Line, T ToAppend);
 		/*
-		Appends the parameter to the end of the main file. The main file is opened
-		in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.
+		Appends the parameter to the end of this file. This file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool appendChar(char ToAppend);
 		/*
-		Appends the second parameter to the end of a line (first parameter). The
-		main file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		Appends the second parameter to the end of a line (first parameter). This
+		file is opened in binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		bool appendChar(uint32 Line, char ToAppend);
 		/*
 		Appends the third parameter to the end of a word (second parameter) in a
-		line (first parameter). The main file is opened in binary-input-output
-		mode, if it wasn't already.
-		Returns false if the main file couldn't be opened or if the specified
-		position is out of bounds, otherwise returns true.
+		line (first parameter). This file is opened in binary-input-outputmode, if
+		it wasn't already.
+		Returns false if this file couldn't be opened or if the specified position
+		is out of bounds, otherwise returns true.
 		*/
 		bool appendChar(uint32 Line, uint32 Word, char ToAppend);
 
 
 		/*
-		Removes all the empty lines at the end of the main file. The main file is
-		opened in binary-input-output mode, if it wasn't already.
-		Returns false if the main file couldn't be opened, otherwise returns true.		
+		Removes all the empty lines at the end of this file. This file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns false if this file couldn't be opened, otherwise returns true.		
 		*/
 		bool deleteLastEmptyLines();
 
 
 		/*
-		Creates the file using the current path
-		Leaves the file open in binary input-output mode
-		Returns false if it couldn't be created/opened, otherwise true
+		Creates this file using the currently set path, if it doesn't already
+		exists. This file is opened in binary-input-output mode.
+		Returs false if this file couldn't be created or opened, otherwise returns
+		true.
 		*/
 		bool create();
 		/*
-		Moves all the file's content to the new location
-		Leaves the file open in binary input-output mode
-		Returns false if either the old path file or the new path file
-			couldn't be opened, otherwise true
+		Moves this file to the path specified by the parameter, and changes the
+		path. This file is closed.
+		Returns false if the file couldn't be moved, otherwise returns true.
 		*/
 		bool move(Tstr newPath);
+		/*
+		Copies this file to the path specified by the parameter. If the file
+		specified by the parameter doesn't exist it is created. This file is opened
+		in binary-input-output mode, if it wasn't already.
+		Returns false if this file or the the file specified by the parameter
+		couldn't be opened, otherwise returns true.
+		*/
 		bool copy(Tstr copyPath);
 		/*
-		Overwrites newFile with this file's content
-		Leaves all files open in binary input-output mode
-		Can set ExternalError
-		Returns false if either the parameter or the file
-			couldn't be opened, otherwise true
+		Overwrites the parameter with the content of this file. Creates the
+		parameter if it doesn't exist. The newline mode is also copied to the
+		parameter. This file and the parameter are opened in binary-input-output
+		mode, if they weren't already.
+		Returns false if this file or the parameter couldn't be opened,
+		otherwise returns true.
 		*/
 		bool copy(File &toOverwrite);
 		/*
-		Swaps the content of this file with toSwap using a temp file
-		Leaves all files open in binary input-output mode
-		Can set ExternalError and TempError
-		Returns false if either the parameter, the file or the
-			temp file couldn't be opened, otherwise true
+		Swaps this file with the parameter. Also swaps the newline modes. This file
+		and the parameter are opened in binary-input-output mode, if they weren't
+		already.
+		Returns false if this file or the parameter couldn't be opened,
+		otherwise returns true.
 		*/
 		bool swap(File &Other);
 		/*
-		Replaces the filename, extension included, with the new name
-		Leaves the file open in binary input-output mode
-		Returns false if either the old path file or the new path file
-			couldn't be opened, otherwise true
+		Changes this file's name to the parameter. This file is closed.
+		Returns false if the file couldn't be renamed, otherwise returns true.
 		*/
 		bool rename(Tstr newName);
 		/*
