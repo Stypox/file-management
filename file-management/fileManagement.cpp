@@ -1301,7 +1301,7 @@ namespace sp {
 					tempChar = mainFile.get();
 					if (mainFile.eof()) return true;
 					if (tempChar != '\n') {
-						endPosition = mainFile.tellg();
+						endPosition = mainFile.tellg() - static_cast<Tspos>(1);
 						goto falseNewline;
 					}
 				}
@@ -1316,12 +1316,7 @@ namespace sp {
 			}
 		}
 		
-
-		std::error_code error;
-		std::experimental::filesystem::resize_file(mainPath, endPosition, error);
-		if (error) return false;
-		mainFile.flush();
-		return true;
+		return resize(static_cast<uint32>(endPosition));
 	}
 
 

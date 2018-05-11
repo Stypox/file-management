@@ -775,9 +775,9 @@ namespace sp {
 
 
 		/*
-		Removes all newlines ('\r' and '\n') at the end using a temp file
-		Closes files before returning, since they were opened in a not-default way
-		Returns false if the files couldn't be opened, otherwise true
+		Removes all the empty lines at the end of the main file. The main file is
+		opened in binary-input-output mode, if it wasn't already.
+		Returns false if the main file couldn't be opened, otherwise returns true.		
 		*/
 		bool deleteLastEmptyLines();
 
