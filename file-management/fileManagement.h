@@ -766,7 +766,7 @@ namespace sp {
 		bool appendChar(uint32 Line, char ToAppend);
 		/*
 		Appends the third parameter to the end of a word (second parameter) in a
-		line (first parameter). This file is opened in binary-input-outputmode, if
+		line (first parameter). This file is opened in binary-input-output mode, if
 		it wasn't already.
 		Returns false if this file couldn't be opened or if the specified position
 		is out of bounds, otherwise returns true.
@@ -792,7 +792,7 @@ namespace sp {
 		/*
 		Moves this file to the path specified by the parameter, and changes the
 		path. Overwrites the file specified by the parameter if it already exists.
-		This file is closed.
+		This file is opened in binary-input-output mode.
 		Returns false if the file couldn't be moved, otherwise returns true.
 		*/
 		bool move(Tstr newPath);
@@ -800,8 +800,8 @@ namespace sp {
 		Copies this file to the path specified by the parameter. If the file
 		specified by the parameter doesn't exist it is created. This file is opened
 		in binary-input-output mode, if it wasn't already.
-		Returns false if this file or the the file specified by the parameter
-		couldn't be opened, otherwise returns true.
+		Returns false if this file or the file specified by the parameter couldn't
+		be opened, otherwise returns true.
 		*/
 		bool copy(Tstr copyPath);
 		/*
@@ -814,17 +814,27 @@ namespace sp {
 		*/
 		bool copy(File &toOverwrite);
 		/*
-		Swaps this file with the parameter. Also swaps the newline modes.
-		Overwrites the file specified by the parameter if it already exists. This
-		file and the parameter are opened in binary-input-output mode, if they
+		Swaps the content of this file with the content of the file specified by
+		the parameter. Also sets the newline mode based on the operating system.
+		This file and the parameter are opened in binary-input-output mode, if they
 		weren't already.
+		Returns false if this file or the file specified by the parameter couldn't
+		be opened, otherwise returns true.
+		*/
+		bool swap(Tstr swapPath);
+		/*
+		Swaps the content of this file with the content of the parameter. Also
+		swaps the newline modes. This file and the parameter are opened in
+		binary-input-output mode, if they weren't already.
 		Returns false if this file or the parameter couldn't be opened, otherwise
 		returns true.
 		*/
 		bool swap(File &Other);
 		/*
-		Changes this file's name to the parameter. This file is closed.
-		Returns false if this file couldn't be renamed, otherwise returns true.
+		Renames this file to the name specified by the parameter parameter, and
+		changes the path. Overwrites the file specified by the parameter if it
+		already exists. This file is opened in binary-input-output mode
+		Returns false if the file couldn't be renamed, otherwise returns true.
 		*/
 		bool rename(Tstr newName);
 		/*
@@ -1021,7 +1031,7 @@ namespace sp {
 			is identic, otherwise false
 		Returns false if a file couldn't be opened
 		*/
-		bool operator== (File &toCompare);
+		bool operator== (File &toCompare); //TODO add == (T toCompare)
 		/*
 		Returns false if the content of the files is identic, otherwise true
 		Returns true if either this file or the parameter file couldn't be opened
@@ -1215,7 +1225,13 @@ namespace sp {
 	template<typename T>
 	inline bool File::operator=(T NewText) {
 		sp::Tstr newText = toString(NewText);
-		if (!pointToBeg() || !resize(newText.length())) return false;
+		if (exists()) {
+			if (!pointToBeg() || !resize(newText.length())) return false;
+		}
+		else {
+			if (!create()) return false;
+		}
+		
 
 		mainFile << newText;
 

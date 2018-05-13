@@ -1321,20 +1321,24 @@ namespace sp {
 
 
 	bool File::create() {
-		if (exists()) return true;
+		if (exists()) return open();
 		if (mainFile.is_open()) mainFile.close();
 		mainFile.open(mainPath, std::ios_base::app);
+		if (!mainFile.is_open()) return false;
 		mainFile.close();
 		return open();
 	}
 	bool File::move(Tstr newPath) {
 		if (mainFile.is_open()) mainFile.close();
 		std::error_code e;
-		std::experimental::filesystem::rename(mainPath, newPath, e); //TODO doesn't work with not existing files.
-		if (e) return false;
+		std::experimental::filesystem::rename(mainPath, newPath, e);
+		if (e) {
+			ExternalError = true;
+			return false;
+		}
 
 		mainPath = newPath;
-		return true;
+		return open();
 	}
 	bool File::copy(Tstr copyPath) {
 		if (!pointToBeg()) return false;
@@ -1356,14 +1360,15 @@ namespace sp {
 	}
 	bool File::copy(File & toOverwrite) {
 		if (this == &toOverwrite) return true;
-		if (!toOverwrite.exists()) {
-			if (!toOverwrite.create()) {
+		if (toOverwrite.exists()) {
+			if (!toOverwrite.truncate()) {
 				ExternalError = 1;
 				return false;
 			}
+			toOverwrite.pointToBeg();
 		}
 		else {
-			if (!toOverwrite.truncate()) {
+			if (!toOverwrite.create()) {
 				ExternalError = 1;
 				return false;
 			}
@@ -1373,7 +1378,12 @@ namespace sp {
 		moveFileContent(mainFile, toOverwrite.mainFile);
 
 		toOverwrite.update();
+		toOverwrite.newlineMode = newlineMode;
 		return true;
+	}
+	bool File::swap(Tstr swapPath) {
+		File toSwap(swapPath);
+		return swap(toSwap);
 	}
 	bool File::swap(File & Other) {
 		if (!pointToBeg()) return false;
