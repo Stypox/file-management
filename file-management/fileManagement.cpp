@@ -1341,6 +1341,7 @@ namespace sp {
 		return open();
 	}
 	bool File::copy(Tstr copyPath) {
+		if (std::experimental::filesystem::equivalent(mainPath, copyPath)) return true;
 		if (!pointToBeg()) return false;
 		Tfstm copyFile;
 		if (std::experimental::filesystem::exists(copyPath)) {
@@ -1359,7 +1360,7 @@ namespace sp {
 		return true;
 	}
 	bool File::copy(File & toOverwrite) {
-		if (this == &toOverwrite) return true;
+		if (std::experimental::filesystem::equivalent(mainPath, toOverwrite.mainPath)) return true;
 		if (toOverwrite.exists()) {
 			if (!toOverwrite.truncate()) {
 				ExternalError = 1;
