@@ -7,6 +7,8 @@
 //TODO remove main file: now there is only one type of file
 //TODO implement error system
 //TODO newline mode auto-detection in constructor
+//TODO #ifndef SP_FILE_MANAGEMENT
+//TODO move constructor
 
 //UTILI:
 /*

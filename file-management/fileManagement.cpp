@@ -1341,26 +1341,14 @@ namespace sp {
 		return open();
 	}
 	bool File::copy(Tstr copyPath) {
-		if (std::experimental::filesystem::equivalent(mainPath, copyPath)) return true;
-		if (!pointToBeg()) return false;
-		Tfstm copyFile;
-		if (std::experimental::filesystem::exists(copyPath)) {
-			copyFile.open(copyPath, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-		}
-		else {
-			copyFile.open(copyPath, std::ios_base::out | std::ios_base::binary | std::ios_base::app);
-		}
-		if (!copyFile.is_open()) {
-			ExternalError = true;
-			return false;
-		}
-
-		moveFileContent(mainFile, copyFile);
-		copyFile.close();
-		return true;
+		File toOverwrite(copyPath);
+		return copy(toOverwrite);
 	}
 	bool File::copy(File & toOverwrite) {
-		if (std::experimental::filesystem::equivalent(mainPath, toOverwrite.mainPath)) return true;
+		std::error_code e;
+		if (std::experimental::filesystem::equivalent(mainPath, toOverwrite.mainPath, e)) return true;
+		else if (e) return false;
+
 		if (toOverwrite.exists()) {
 			if (!toOverwrite.truncate()) {
 				ExternalError = 1;
