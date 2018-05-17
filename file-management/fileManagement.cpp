@@ -1,9 +1,14 @@
-#pragma once
+#ifndef FILE_MANAGEMENT_CPP
+#define FILE_MANAGEMENT_CPP
 
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <experimental\filesystem>
+#include <experimental/filesystem>
+
+#ifdef __linux__
+#include <sys/stat.h>
+#endif
 
 #include "fileManagement.h"
 
@@ -33,7 +38,7 @@ namespace sp {
 	sp::Tstr spc(sp::uint32 number) {
 		return std::to_string(number);
 	}
-	sp::Tstr spc(char letter, sp::int32 & line, sp::NLMode mode = sp::NLMode::unix, char previousLetter = 0) {
+	sp::Tstr spc(char letter, sp::int32 & line, sp::Newline mode = sp::Newline::LF, char previousLetter = 0) {
 		switch (letter) {
 		case '\0':
 			return "\\0";
@@ -43,7 +48,7 @@ namespace sp {
 			return "\\t";
 		case '\n':
 			if (line == 0) return "\\n\n";
-			if (previousLetter == '\r' || mode == sp::NLMode::unix) return sp::Tstr("\\n\n") + std::to_string(line++) + sp::Tstr(" ");
+			if (previousLetter == '\r' || mode == sp::Newline::LF) return sp::Tstr("\\n\n") + std::to_string(line++) + sp::Tstr(" ");
 			return sp::Tstr("\\n");
 		case '\v':
 			return "\\v";
@@ -57,7 +62,7 @@ namespace sp {
 			return &letter;
 		}
 	}
-	sp::Tstr spc(sp::Tstr str, sp::NLMode mode = sp::NLMode::unix) {
+	sp::Tstr spc(sp::Tstr str, sp::Newline mode = sp::Newline::LF) {
 		sp::Tstr returnStr = "";
 		sp::int32 line = 2;
 		char previousLetter = 0;
@@ -178,7 +183,7 @@ namespace sp {
 
 
 		if (Line != dontMove) {
-			if (newlineMode == NLMode::win) {
+			if (newlineMode == Newline::CRLF) {
 				for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 					char tempChar;
 					while (1) {
@@ -304,8 +309,8 @@ namespace sp {
 	}
 
 
-	File::File(NLMode Mode) : mainPath(""), ExternalError(0), newlineMode(Mode) {}
-	File::File(Tstr MainPath, NLMode Mode) : mainPath(MainPath), ExternalError(0), newlineMode(Mode) {}
+	File::File(Newline Mode) : mainPath(""), ExternalError(0), newlineMode(Mode) {}
+	File::File(Tstr MainPath, Newline Mode) : mainPath(MainPath), ExternalError(0), newlineMode(Mode) {}
 	File::File(File & Source) : mainPath(Source.mainPath), ExternalError(Source.ExternalError), newlineMode(Source.newlineMode) {
 		if (Source.isOpen()) {
 			open();
@@ -337,7 +342,7 @@ namespace sp {
 
 
 		if (Line != dontMove && Line != 0) {
-			if (newlineMode == NLMode::win) {
+			if (newlineMode == Newline::CRLF) {
 				for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 					char tempChar;
 					while (1) {
@@ -416,7 +421,7 @@ namespace sp {
 
 
 		if (Line != dontMove) {
-			if (newlineMode == NLMode::win) {
+			if (newlineMode == Newline::CRLF) {
 				for (uint32 currentLine = 0; currentLine < Line; ++currentLine) {
 					char tempChar;
 					while (1) {
@@ -489,7 +494,7 @@ namespace sp {
 
 		char tempChar;
 		uint32 lines = 0;
-		if (newlineMode == NLMode::win) {
+		if (newlineMode == Newline::CRLF) {
 			while (1) {
 				tempChar = mainFile.get();
 				falseNewline:
@@ -547,7 +552,7 @@ namespace sp {
 
 		bool wasSpace = true;
 		char tempChar;
-		if (newlineMode == NLMode::win) {
+		if (newlineMode == Newline::CRLF) {
 			while (1) {
 				tempChar = mainFile.get();
 				falseNewline:
@@ -584,7 +589,7 @@ namespace sp {
 	}
 	uint32 File::getNrChars() {
 		struct stat buffer;
-		if (::stat(mainPath.c_str(), &buffer) != 0) return 0;
+		if (stat(mainPath.c_str(), &buffer) != 0) return 0;
 
 		return static_cast<uint32>(buffer.st_size);
 	}
@@ -594,7 +599,7 @@ namespace sp {
 		Tspos to = getPosition(Line + 1, dontMove, dontMove);
 		if (to == outOfBounds) return getNrChars() - static_cast<uint32>(from);
 
-		return static_cast<uint32>(to) - static_cast<uint32>(from) - (newlineMode == NLMode::win ? 2 : 1);
+		return static_cast<uint32>(to) - static_cast<uint32>(from) - (newlineMode == Newline::CRLF ? 2 : 1);
 	}
 	uint32 File::getNrChars(uint32 Line, uint32 Word) {
 		Tspos pointerBeginning = 0;
@@ -621,7 +626,7 @@ namespace sp {
 		Tstr line = "";
 
 		char tempChar;
-		if (newlineMode == NLMode::win) {
+		if (newlineMode == Newline::CRLF) {
 			while (1) {
 				tempChar = mainFile.get();
 				falseNewline:
@@ -851,7 +856,7 @@ namespace sp {
 		to = getPositionMove(Line + 1, dontMove, dontMove);
 
 		if (to == outOfBounds) {
-			if (newlineMode == NLMode::win) {
+			if (newlineMode == Newline::CRLF) {
 				if (from > static_cast<Tspos>(1)) from -= static_cast<Tspos>(2);
 			}
 			else {
@@ -870,7 +875,7 @@ namespace sp {
 		if (from == outOfBounds) return true;
 
 		char tempChar;
-		if (newlineMode == NLMode::win) {
+		if (newlineMode == Newline::CRLF) {
 			bool endLine = true;
 			while (1) {
 				tempChar = mainFile.get();
@@ -1020,7 +1025,7 @@ namespace sp {
 		to = getPositionMove(To + 1, dontMove, dontMove);
 
 		if (to == outOfBounds) {
-			if (newlineMode == NLMode::win) {
+			if (newlineMode == Newline::CRLF) {
 				if (from > static_cast<Tspos>(1)) from -= static_cast<Tspos>(2);
 			}
 			else {
@@ -1042,7 +1047,7 @@ namespace sp {
 		
 		char tempChar;
 		Tstr lines = "";
-		if (newlineMode == NLMode::win) {
+		if (newlineMode == Newline::CRLF) {
 			bool wasSpace = true, firstWordEndLine = false, lastWordEndLine = false;
 
 			for (uint32 currentWord = From; currentWord <= To;) {
@@ -1271,7 +1276,7 @@ namespace sp {
 			return append(ToAppend);
 		}
 
-		return add(pos - static_cast<Tspos>(newlineMode == NLMode::win ? 2 : 1), ToAppend);
+		return add(pos - static_cast<Tspos>(newlineMode == Newline::CRLF ? 2 : 1), ToAppend);
 	}
 	bool File::appendChar(uint32 Line, uint32 Word, char ToAppend) {
 		if (!pointTo(Line, Word, dontMove)) return false;
@@ -1291,7 +1296,7 @@ namespace sp {
 		if (!pointToBeg()) return false;
 		char tempChar;
 		Tspos endPosition = 0;
-		if (newlineMode == NLMode::win) {
+		if (newlineMode == Newline::CRLF) {
 			while (1) {
 				tempChar = mainFile.get();
 				if (mainFile.eof()) break;
@@ -1722,3 +1727,5 @@ namespace sp {
 		return First + Second.str();
 	}
 }
+
+#endif

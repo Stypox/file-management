@@ -21,12 +21,13 @@ Returns false if this file couldn't be opened, otherwise returns true. // This f
 The pointer is not moved. // The pointer is moved to an untraceable position.
 */
 
-#pragma once
+#ifndef SP_FILE_MANAGEMENT_H
+#define SP_FILE_MANAGEMENT_H
 
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <experimental\filesystem>
+#include <experimental/filesystem>
 
 namespace sp {
 	using Tstr = std::string;
@@ -42,14 +43,14 @@ namespace sp {
 	using uint64 = uint64_t;
 
 
-	enum class NLMode {
-		win,
-		unix
+	enum class Newline {
+		CRLF,
+		LF
 	};
 #ifdef _WIN32
-	constexpr NLMode defaultNewlineMode = NLMode::win;
+	constexpr Newline defaultNewlineMode = Newline::CRLF;
 #else
-	constexpr NLMode defaultNewlineMode = NLMode::unix;
+	constexpr Newline defaultNewlineMode = Newline::LF;
 #endif
 
 	constexpr uint32 dontMove = UINT32_MAX;
@@ -117,7 +118,7 @@ namespace sp {
 		Tstr mainPath;
 		bool ExternalError;
 
-		NLMode newlineMode;
+		Newline newlineMode;
 
 
 		/*
@@ -227,13 +228,13 @@ namespace sp {
 		mode is initialized to the first parameter, if provided, otherwise it is
 		initialized based on the operating system.
 		*/
-		File(NLMode Mode = defaultNewlineMode);
+		File(Newline Mode = defaultNewlineMode);
 		/*
 		Constructor with a string. Initializes the path to the first parameter. The
 		newline mode is initialized to the second parameter, if provided, otherwise
 		it is initialized based on the operating system.
 		*/
-		File(Tstr MainPath, NLMode Mode = defaultNewlineMode);
+		File(Tstr MainPath, Newline Mode = defaultNewlineMode);
 		/*
 		Copy constructor.
 		*/
@@ -1106,16 +1107,16 @@ namespace sp {
 	inline bool File::addLine(uint32 Line, T ToAdd) {
 		Tspos position = getPositionMove(Line, dontMove, dontMove);
 		if (position == fileNotOpen) return false;
-		Tstr newLine = (newlineMode == NLMode::win ? "\r\n" : "\n");
+		Tstr newline = (newlineMode == Newline::CRLF ? "\r\n" : "\n");
 		if (position == outOfBounds) {
 			uint32 nrLines = getNrLines();
 			Tstr strToAppend = "";
 			for (uint32 currentLine = 0; currentLine <= Line - nrLines; ++currentLine) {
-				strToAppend += newLine;
+				strToAppend += newline;
 			}
 			return append(strToAppend + toString(ToAdd));
 		}
-		return add(position, toString(ToAdd) + newLine);
+		return add(position, toString(ToAdd) + newline);
 	}
 	template<typename T>
 	inline bool File::addWord(uint32 Word, T ToAdd) {
@@ -1134,12 +1135,12 @@ namespace sp {
 		from = getPositionMove(Line, dontMove, dontMove);
 		if (from == fileNotOpen) return false;
 		if (from == outOfBounds) {
-			Tstr newLine = (newlineMode == NLMode::win ? "\r\n" : "\n");
+			Tstr newline = (newlineMode == Newline::CRLF ? "\r\n" : "\n");
 			uint32 nrLines = getNrLines();
 			Tstr strToAppend = "";
 
 			for (uint32 currentLine = 0; currentLine < Line - nrLines + 1; ++currentLine) {
-				strToAppend += newLine;
+				strToAppend += newline;
 			}
 			return append(strToAppend + Replacement);
 		}
@@ -1148,7 +1149,7 @@ namespace sp {
 		if (to == outOfBounds) {
 			return replaceSection(from, getNrChars() - 1, toString(Replacement));
 		}
-		if (newlineMode == NLMode::win) {
+		if (newlineMode == Newline::CRLF) {
 			return replaceSection(from, to - static_cast<Tspos>(3), toString(Replacement));
 		}
 		else {
@@ -1185,7 +1186,7 @@ namespace sp {
 	}
 	template<typename T>
 	inline bool File::appendLine(T ToAppend) {
-		return append((newlineMode == NLMode::win ? "\r\n" : "\n") + toString(ToAppend));
+		return append((newlineMode == Newline::CRLF ? "\r\n" : "\n") + toString(ToAppend));
 	}
 	template<typename T>
 	inline bool File::appendWord(T ToAppend) {
@@ -1205,7 +1206,7 @@ namespace sp {
 			if (Line >= getNrLines()) return false;
 			return appendWord(ToAppend);
 		}
-		pos -= static_cast<Tspos>(newlineMode == NLMode::win ? 2 : 1);
+		pos -= static_cast<Tspos>(newlineMode == Newline::CRLF ? 2 : 1);
 
 		mainFile.seekg(pos - static_cast<Tspos>(1));
 		if (isspace(mainFile.get())) return add(pos, ToAppend);
@@ -1255,3 +1256,5 @@ namespace sp {
 
 	Tstr operator+ (Tstr First, File &Second);
 }
+
+#endif
