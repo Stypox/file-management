@@ -29,6 +29,10 @@ The pointer is not moved. // The pointer is moved to an untraceable position.
 #include <fstream>
 #include <experimental/filesystem>
 
+#ifdef __linux__
+#include <sys/stat.h>
+#endif
+
 namespace sp {
 	using Tstr = std::string;
 	using Tfstm = std::fstream;
@@ -267,20 +271,20 @@ namespace sp {
 		line (not necessarily to the beginning of the file). While 0 means "move to
 		the first", -1 means "don't move". So only pointTo(-1, -1, -1) will surely
 		point to the beginning. The constexpr sp::dontMove can be used as -1. This
-		file is opened in binary input-output mode, if it wasn't already.
+		file is opened in binary-input-output mode, if it wasn't already.
 		Returns false if this file couldn't be opened or if the specified position
 		is out of bounds, otherwise returns true.
 		*/
 		bool pointTo(uint32 Line, uint32 Word, uint32 Char);
 		/*
 		Moves the pointer to the beginning of this file and clears its eofbit. This
-		file is opened in binary input-output mode, if it wasn't already.
+		file is opened in binary-input-output mode, if it wasn't already.
 		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool pointToBeg();
 		/*
 		Moves the pointer to the end of this file and clears its eofbit. This file
-		is opened in binary input-output mode, if it wasn't already.
+		is opened in binary-input-output mode, if it wasn't already.
 		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool pointToEnd();
@@ -291,8 +295,8 @@ namespace sp {
 		word of the first line (not necessarily 0). While 0 means "look for the
 		first", -1 means "don't do anything". So only getPosition(-1, -1, -1) will
 		surely return 0. The pointer is not moved. The constexpr sp::dontMove can
-		be used as -1. This file is opened inbinary input-output mode, if it wasn't
-		already.
+		be used as -1. This file is opened in binary-input-output mode, if it
+		wasn't already.
 		Returns -1 if this file couldn't be opened and -2 if the specified position
 		is out of bounds. The constexpr sp::fileNotOpen (= -1) and sp::outOfBounds
 		(= -2) can be used to check.
@@ -303,14 +307,14 @@ namespace sp {
 		/*
 		Returns the number of lines (visible in a text editor: if the file is empty
 		1 is returned, if there is one newline 2 is returned...). The pointer is
-		not moved. This file is opened in binary input-output mode, if it wasn't
+		not moved. This file is opened in binary-input-output mode, if it wasn't
 		already.
 		Returns 0 if this file couldn't be opened.
 		*/
 		uint32 getNrLines();
 		/*
 		Returns the number of words divided by spaces. The pointer is not moved.
-		This file is opened in binary input-output mode, if it wasn't already.
+		This file is opened in binary-input-output mode, if it wasn't already.
 		Returns 0 if this file couldn't be opened.
 		*/
 		uint32 getNrWords();
@@ -322,13 +326,13 @@ namespace sp {
 		*/
 		uint32 getNrWords(uint32 Line);
 		/*
-		Returns the number of chars (or bytes). The pointer is not moved.
+		Returns the number of chars (or bytes) in this file. The pointer is not moved.
 		Returns 0 if this file couldn't be accessed via "stat".
 		*/
 		uint32 getNrChars();
 		/*
 		Returns the number of chars in the line specified by the parameter. The
-		pointer is not moved. This file is opened in binary input-output mode, if
+		pointer is not moved. This file is opened in binary-input-output mode, if
 		it wasn't already.
 		Returns 0 if this file couldn't be opened.
 		*/
@@ -851,37 +855,51 @@ namespace sp {
 		*/
 		void remove();
 
-		
+
+		/*
+		Returns the number of chars (or bytes) in this file. The pointer is not
+		moved.
+		Returns 0 if this file couldn't be accessed via "stat".
+		*/
 		uint32 size();
+		/*
+		Changes the size of this file to the size (in bytes) specified by the
+		parameter. If the new size is smaller than the current size, the remainder
+		of the file is discarded. If the new size is bigger than the current size
+		the new area is filled with '\0'.
+		Returns false if this file couldn't be resized, otherwise returns true.
+		*/
 		bool resize(uint32 newSize);
 
 
 		/*
-		Opens the file in binary input-output mode
-		If the file doesn't exist it won't be created
-		Returns false if the file couldn't be opened, otherwise true
+		Opens this file in binary-input-output mode using the currently set path.
+		If this file was already open the pointer is moved to the beginning.
+		Returs false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool open();
 		/*
-		Closes the file and clears all errors if it wasn't already closed
+		Closes this file if it was open. Clears all errors.
 		*/
 		void close();
 		/*
-		Returns true if the file is open, otherwise false
+		Returns true if this file is open, otherwise returns false
 		*/
 		bool isOpen() const;
 		/*
-		Flushes the file
+		Syncronizes this file with its content on the disk
 		*/
 		void update();
 
 
 		/*
-		Returns true if the file exists, otherwise false
+		Returns true if this file exists, otherwise returns false
+		Returns false if the existence of this file couldn't be verified.
 		*/
 		bool exists() const;
 		/*
-		Returns a stat object containing various infos about the file
+		Returns a struct stat object containing various filesystem infos about this
+		file.
 		*/
 		struct stat info();
 
