@@ -5,10 +5,7 @@
 #include <string>
 #include <fstream>
 #include <experimental/filesystem>
-
-#ifdef __linux__
 #include <sys/stat.h>
-#endif
 
 #include "fileManagement.h"
 
@@ -74,6 +71,14 @@ namespace sp {
 
 		return returnStr;
 	}
+#ifdef _WIN32
+	constexpr auto& getStat = _stat64;
+#else
+	constexpr auto& getStat = stat64;
+#endif
+
+
+
 
 	FileState::FileState(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr) : open(Open), eofError(Eof), failError(Fail), badError(Bad), externalError(ExtErr) {}
 	FileState::operator bool() {
@@ -588,8 +593,8 @@ namespace sp {
 		return nrWords;
 	}
 	uint32 File::getNrChars() {
-		struct stat buffer;
-		if (stat(mainPath.c_str(), &buffer) != 0) return 0;
+		Tstat buffer;
+		if (getStat(mainPath.c_str(), &buffer) != 0) return 0;
 
 		return static_cast<uint32>(buffer.st_size);
 	}
@@ -1498,10 +1503,10 @@ namespace sp {
 		if (e) return false;
 		return returnValue;
 	}
-	struct stat File::info() {
+	Tstat File::info() {
 		mainFile.flush();
-		struct stat buffer;
-		stat(mainPath.c_str(), &buffer);
+		Tstat buffer;
+		getStat(mainPath.c_str(), &buffer);
 		return buffer;
 	}
 

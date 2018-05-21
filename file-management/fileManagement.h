@@ -28,15 +28,17 @@ The pointer is not moved. // The pointer is moved to an untraceable position.
 #include <string>
 #include <fstream>
 #include <experimental/filesystem>
-
-#ifdef __linux__
 #include <sys/stat.h>
-#endif
 
 namespace sp {
 	using Tstr = std::string;
 	using Tfstm = std::fstream;
 	using Tspos = std::streampos;
+#ifdef _WIN32
+	using Tstat = struct _stat64;
+#else
+	using Tstat = struct stat64;
+#endif
 	using int8 = int8_t;
 	using int16 = int16_t;
 	using int32 = int32_t;
@@ -901,7 +903,7 @@ namespace sp {
 		Returns a struct stat object containing various filesystem infos about this
 		file.
 		*/
-		struct stat info();
+		Tstat info();
 
 
 		/*
