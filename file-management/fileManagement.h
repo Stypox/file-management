@@ -907,49 +907,51 @@ namespace sp {
 
 
 		/*
-		Returns true if there aren't errors
+		Returns true if there are no errors, otherwise returns false
 		*/
 		bool good() const;
 		/*
-		Clears all the errors: eofbit, failbit, badbit, TempError and ExternalError
+		Sets all the value of all errors to false: eofErr, failErr, badErr, extErr.
 		*/
 		void clear();
 		/*
-		Returns the file's eofbit, that is true if the end of file was reached
+		Returns the value of the end-of-file (eof) error, that is true if the end
+		of this file was reached.
 		*/
 		bool eofErr() const;
 		/*
-		Sets the file's end-of-file error state flag (eofbit) to a value
+		Sets the value of the end-of-file (eof) error to the parameter.
 		*/
 		void eofErr(bool Value);
 		/*
-		Returns true if either failbit or badbit are set
-		Failbit is true if there were logical errors
-			Badbit is true if there were reading or writing errors
+		Returns the value of the fail error, that is true if there were logical
+		errors on input/output operations.
 		*/
 		bool failErr() const;
 		/*
-		Sets the file's logical error state flag (failbit) to a value
+		Sets the value of the fail error to the parameter.
 		*/
 		void failErr(bool Value);
 		/*
-		Returns the file's badbit, that is true if there were reading/writing errors
+		Returns the value of the bad error, that is true if there were reading or
+		writing errors on input/output operations.
 		*/
 		bool badErr() const;
 		/*
-		Sets the file's reading/writing error state flag (badbit) to a value
+		Sets the value of the bad error to the parameter.
 		*/
 		void badErr(bool Value);
 		/*
-		Returns true if there were errors while using an external file
+		Returns the value of the external error, that is true if there were
+		problems while using an external file.
 		*/
 		bool extErr() const;
 		/*
-		Sets the errors caused by external files state to a value
+		Sets the value of the external error to the parameter.
 		*/
 		void extErr(bool Value);
 		/*
-		Returns an object that contains all the infos about the file's errors
+		Returns an object that contains all the infos about this file's errors
 		*/
 		FileState state() const;
 

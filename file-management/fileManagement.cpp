@@ -1530,7 +1530,7 @@ namespace sp {
 		}
 	}
 	bool File::failErr() const {
-		return mainFile.fail();
+		return mainFile.rdstate() & mainFile.failbit;
 	}
 	void File::failErr(bool Value) {
 		if (Value) {
@@ -1558,7 +1558,7 @@ namespace sp {
 		ExternalError = Value;
 	}
 	FileState File::state() const {
-		return FileState(mainFile.is_open(), mainFile.eof(), mainFile.fail(), mainFile.bad(), ExternalError);
+		return FileState(mainFile.is_open(), eofErr(), failErr(), badErr(), externalError);
 	}
 
 
