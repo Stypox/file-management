@@ -98,7 +98,7 @@ namespace sp {
 		return fileState;
 	}
 	void FileState::save(File &file) {
-		if (!file.isOpen()) file.open();
+		file.open();
 		file << str();
 	}
 
@@ -292,7 +292,7 @@ namespace sp {
 		return true;
 	}
 	bool File::deleteSection(Tspos From, Tspos To) {
-		if (!mainFile.is_open() && !open()) return false;
+		if (!open()) return false;
 		uint32 fileSize = getNrChars();
 		if (From >= fileSize) return true;
 		if (To >= fileSize - 1) return resize(static_cast<uint32>(From));
@@ -350,7 +350,7 @@ namespace sp {
 		return true;
 	}
 	bool File::pointTo(Tspos Position) {
-		if (!mainFile.is_open() && !open()) return false;
+		if (!open()) return false;
 		mainFile.clear(mainFile.eofbit);
 		mainFile.seekg(Position);
 		return Position <= getNrChars();
@@ -419,13 +419,13 @@ namespace sp {
 		return true;
 	}
 	bool File::pointToBeg() {
-		if (!mainFile.is_open() && !open()) return false;
+		if (!open()) return false;
 		mainFile.clear(mainFile.eofbit);
 		mainFile.seekg(0);
 		return true;
 	}
 	bool File::pointToEnd() {
-		if (!mainFile.is_open() && !open()) return false;
+		if (!open()) return false;
 		mainFile.clear(mainFile.eofbit);
 		mainFile.seekg(0, std::ios_base::end);
 		return true;
@@ -1345,14 +1345,14 @@ namespace sp {
 
 	bool File::create() {
 		if (exists()) return open();
-		if (mainFile.is_open()) mainFile.close();
+		close();
 		mainFile.open(mainPath, std::ios_base::app);
 		if (!mainFile.is_open()) return false;
 		mainFile.close();
 		return open();
 	}
 	bool File::move(Tstr newPath) {
-		if (mainFile.is_open()) mainFile.close();
+		close();
 		std::error_code e;
 		std::experimental::filesystem::rename(mainPath, newPath, e);
 		if (e) {
@@ -1471,7 +1471,7 @@ namespace sp {
 		return true;
 	}
 	void File::remove() {
-		if (mainFile.is_open()) mainFile.close();
+		close();
 		std::remove(mainPath.c_str());
 	}
 
@@ -1488,14 +1488,8 @@ namespace sp {
 
 
 	bool File::open() {
-		if (mainFile.is_open()) {
-			mainFile.clear(mainFile.eofbit);
-			mainFile.seekg(0);
-			return true;
-		}
-		else {
-			mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
-		}
+		if (mainFile.is_open()) return true;
+		mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
 		return mainFile.is_open();
 	}
 	void File::close() {
@@ -1552,14 +1546,14 @@ namespace sp {
 		return mainPath;
 	}
 	void File::setPath(Tstr Path) {
-		if (mainFile.is_open()) mainFile.close();
+		close();
 		mainPath = Path;
 	}
 
 
 	File& File::operator>>(File &Out) {
-		if (!isOpen() && !open()) return *this;
-		if (!Out.isOpen() && !Out.open()) {
+		if (!pointToBeg()) return *this;
+		if (!Out.open()) {
 			ExternalError = true;
 			return *this;
 		}

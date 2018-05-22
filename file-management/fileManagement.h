@@ -9,6 +9,7 @@
 //TODO newline mode auto-detection in constructor
 //TODO #ifndef SP_FILE_MANAGEMENT
 //TODO move constructor
+//TODO (maybe) remove open references: the class should handle all of that automatically
 
 //UTILI:
 /*
@@ -941,18 +942,20 @@ namespace sp {
 
 
 		/*
-		Returns the path used to open the file
+		Returns the path used to open this file
 		*/
 		Tstr getPath() const;
 		/*
-		Modifies the path used to open the file
-		Closes the file if it is open
+		Sets the path used to open this file to the parameter. Closes this file if
+		it was open. Clears all errors.
 		*/
 		void setPath(Tstr Path);
 
-
+		/*
+		Saves on the parameter
+		*/
 		template<typename T>
-		File& operator>> (T Out);
+		File& operator>> (T &Out);
 		/*
 		Affixes the content of the file to the parameter using a temp file
 		Leaves both files open in binary input-output mode
@@ -1220,7 +1223,7 @@ namespace sp {
 	}
 
 	template<typename T>
-	inline File & File::operator>>(T Out) {
+	inline File & File::operator>>(T &Out) {
 		mainFile >> Out;
 		return *this;
 	}
@@ -1240,7 +1243,6 @@ namespace sp {
 		else {
 			if (!create()) return false;
 		}
-		
 
 		mainFile << newText;
 
