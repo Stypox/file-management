@@ -920,36 +920,20 @@ namespace sp {
 		*/
 		bool eofErr() const;
 		/*
-		Sets the value of the end-of-file (eof) error to the parameter.
-		*/
-		void eofErr(bool Value);
-		/*
 		Returns the value of the fail error, that is true if there were logical
 		errors on input/output operations.
 		*/
 		bool failErr() const;
-		/*
-		Sets the value of the fail error to the parameter.
-		*/
-		void failErr(bool Value);
 		/*
 		Returns the value of the bad error, that is true if there were reading or
 		writing errors on input/output operations.
 		*/
 		bool badErr() const;
 		/*
-		Sets the value of the bad error to the parameter.
-		*/
-		void badErr(bool Value);
-		/*
 		Returns the value of the external error, that is true if there were
 		problems while using an external file.
 		*/
 		bool extErr() const;
-		/*
-		Sets the value of the external error to the parameter.
-		*/
-		void extErr(bool Value);
 		/*
 		Returns an object that contains all the infos about this file's errors
 		*/

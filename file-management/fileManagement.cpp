@@ -317,14 +317,27 @@ namespace sp {
 	File::File(Newline Mode) : mainPath(""), ExternalError(0), newlineMode(Mode) {}
 	File::File(Tstr MainPath, Newline Mode) : mainPath(MainPath), ExternalError(0), newlineMode(Mode) {}
 	File::File(File & Source) : mainPath(Source.mainPath), ExternalError(Source.ExternalError), newlineMode(Source.newlineMode) {
+		bool Eof = Source.eofErr(), Fail = Source.failErr(), Bad = Source.badErr();
+		
 		if (Source.isOpen()) {
 			open();
 			mainFile.seekg(Source.mainFile.tellg());
 		}
 
-		eofErr(Source.eofErr());
-		failErr(Source.failErr());
-		badErr(Source.badErr());
+		mainFile.clear();
+		Source.mainFile.clear();
+		if (Eof) {
+			mainFile.setstate(mainFile.eofbit);
+			Source.mainFile.setstate(mainFile.eofbit);
+		}
+		if (Fail) {
+			mainFile.setstate(mainFile.failbit);
+			Source.mainFile.setstate(mainFile.failbit);
+		}
+		if (Bad) {
+			mainFile.setstate(mainFile.badbit);
+			Source.mainFile.setstate(mainFile.badbit);
+		}
 	}
 	File::~File() {
 		close();
@@ -1519,46 +1532,19 @@ namespace sp {
 		ExternalError = false;
 	}
 	bool File::eofErr() const {
-		return mainFile.eof();
-	}
-	void File::eofErr(bool Value) {
-		if (Value) {
-			mainFile.setstate(mainFile.eofbit);
-		}
-		else {
-			mainFile.clear(mainFile.eofbit);
-		}
+		return mainFile.rdstate() & mainFile.eofbit;
 	}
 	bool File::failErr() const {
 		return mainFile.rdstate() & mainFile.failbit;
 	}
-	void File::failErr(bool Value) {
-		if (Value) {
-			mainFile.setstate(mainFile.failbit);
-		}
-		else {
-			mainFile.clear(mainFile.failbit);
-		}
-	}
 	bool File::badErr() const {
-		return mainFile.bad();
-	}
-	void File::badErr(bool Value) {
-		if (Value) {
-			mainFile.setstate(mainFile.badbit);
-		}
-		else {
-			mainFile.clear(mainFile.eofbit);
-		}
+		return mainFile.rdstate() & mainFile.badbit;
 	}
 	bool File::extErr() const {
 		return ExternalError;
 	}
-	void File::extErr(bool Value) {
-		ExternalError = Value;
-	}
 	FileState File::state() const {
-		return FileState(mainFile.is_open(), eofErr(), failErr(), badErr(), externalError);
+		return FileState(mainFile.is_open(), eofErr(), failErr(), badErr(), ExternalError);
 	}
 
 
@@ -1641,14 +1627,27 @@ namespace sp {
 		newlineMode = Source.newlineMode;
 		mainPath = Source.mainPath;
 		ExternalError = Source.ExternalError;
+		bool Eof = Source.eofErr(), Fail = Source.failErr(), Bad = Source.badErr();
 
 		if (Source.isOpen()) {
 			open();
 			mainFile.seekg(Source.mainFile.tellg());
 		}
-		eofErr(Source.eofErr());
-		failErr(Source.failErr());
-		badErr(Source.badErr());
+
+		mainFile.clear();
+		Source.mainFile.clear();
+		if (Eof) {
+			mainFile.setstate(mainFile.eofbit);
+			Source.mainFile.setstate(mainFile.eofbit);
+		}
+		if (Fail) {
+			mainFile.setstate(mainFile.failbit);
+			Source.mainFile.setstate(mainFile.failbit);
+		}
+		if (Bad) {
+			mainFile.setstate(mainFile.badbit);
+			Source.mainFile.setstate(mainFile.badbit);
+		}
 
 		return *this;
 	}
@@ -1713,10 +1712,10 @@ namespace sp {
 		return fileStr;
 	}
 	File::operator bool() const {
-		return !(mainFile.eof() || mainFile.fail() || mainFile.bad() || ExternalError);
+		return mainFile.good() && !ExternalError;
 	}
 	bool File::operator!() const {
-		return mainFile.eof() || mainFile.fail() || mainFile.bad() || ExternalError;
+		return !mainFile.good() || ExternalError;
 	}
 
 
