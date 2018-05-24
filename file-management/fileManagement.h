@@ -952,20 +952,42 @@ namespace sp {
 		void setPath(Tstr Path);
 
 		/*
-		Saves on the parameter
+		Reads all the chars after the pointer until a space or the end of this
+		file are reached, formats them based on the parameter's type and saves them
+		on the parameter. This file must be open in binary-input mode or
+		binary-input-output mode. If this file is not open, the end was already
+		reached or the read characters are not formattable based on the parameter's
+		type the parameter is not modified.
+		Returns *this.
 		*/
 		template<typename T>
 		File& operator>> (T &Out);
-		/*
-		Affixes the content of the file to the parameter using a temp file
-		Leaves both files open in binary input-output mode
-		The operation fails if the file, the temp file or the parameter file couldn't be opened
-		If the temp file couldn't be opened TempError is set to 1
-		If the parameter file couldn't be opened ExternalError is set to 1
-		Returns *this
+		/*		
+		Inserts the content of this file at the beginning of the parameter. This
+		file and the parameter are opened in binary-input-output mode, if they
+		weren't already.
+		Returns *this.
 		*/
 		File& operator>> (File &Out);
+		/*
+		Reads all the chars after the pointer until a space or the end of this
+		file are reached, formats them in an 8-bit signed int and saves them on the
+		parameter. This file must be open in binary-input mode or
+		binary-input-output mode. If this file is not open, the end was already
+		reached or the read characters are not formattable based on the parameter's
+		type the parameter is not modified.
+		Returns *this.
+		*/
 		File& operator>> (int8 &Out);
+		/*
+		Reads all the chars after the pointer until a space or the end of this
+		file are reached, formats them in an 8-bit unsigned int and saves them on
+		the parameter. This file must be open in binary-input mode or
+		binary-input-output mode. If this file is not open, the end was already
+		reached or the read characters are not formattable based on the parameter's
+		type the parameter is not modified.
+		Returns *this.
+		*/
 		File& operator>> (uint8 &Out);
 
 

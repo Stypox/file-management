@@ -1552,14 +1552,33 @@ namespace sp {
 
 
 	File& File::operator>>(File &Out) {
+		std::error_code e;
+		if (std::experimental::filesystem::equivalent(mainPath, Out.mainPath, e)) {
+			if (!open()) return *this;
+			uint32 size = getNrChars();
+			char tempChar;
+			for (Tspos pointerGet = static_cast<Tspos>(0), pointerPut = static_cast<Tspos>(size); pointerGet < static_cast<Tspos>(size); pointerGet += 1, pointerPut += 1) {
+				mainFile.seekg(pointerGet);
+				tempChar = mainFile.get();
+				mainFile.seekg(pointerPut);
+				mainFile.put(tempChar);
+			}
+
+			mainFile.flush();
+			return *this;
+		}
+		else if (e) return *this;
+
+
 		if (!pointToBeg()) return *this;
 		if (!Out.open()) {
 			ExternalError = true;
 			return *this;
 		}
-		uint32 sizeThis = getNrChars(), sizeOut = Out.getNrChars();
+		uint32 sizeOut = Out.getNrChars();
+		uint32 sizeThis = getNrChars();
 		
-		char tempChar;		
+		char tempChar;
 		for (Tspos pointerGet = static_cast<Tspos>(sizeOut) - static_cast<Tspos>(1), pointerPut = static_cast<Tspos>(sizeThis + sizeOut) - static_cast<Tspos>(1); pointerGet > -1; pointerGet -= 1, pointerPut -= 1) {
 			Out.mainFile.seekg(pointerGet);
 			tempChar = Out.mainFile.get();
@@ -1574,42 +1593,53 @@ namespace sp {
 		return *this;
 	}
 	File& File::operator>>(int8 &Out) {
-		uint16 output;
+		int16 output = INT16_MAX;
 		mainFile >> output;
+		if (output > INT8_MAX || output < INT8_MIN) {
+			mainFile.setstate(mainFile.failbit);
+			return *this;
+		}
 		Out = static_cast<int8>(output);
 		return *this;
 	}
 	File& File::operator>>(uint8 &Out) {
-		uint16 output;
+		uint16 output = UINT16_MAX;
 		mainFile >> output;
+		if (output > UINT8_MAX) {
+			mainFile.setstate(mainFile.failbit);
+			return *this;
+		}
 		Out = static_cast<uint8>(output);
 		return *this;
 	}
 
 
-	File& File::operator<<(File &In) {
-		if (!pointToEnd()) return *this;
-
-		if (this == &In) {
-			char tempChar;
+	File& File::operator<<(File &In) {		
+		std::error_code e;
+		if (std::experimental::filesystem::equivalent(mainPath, In.mainPath, e)) {
+			if (!open()) return *this;
 			uint32 size = getNrChars();
-			for (Tspos pointerGet = 0, pointerPut = size; pointerGet < size; pointerGet += 1, pointerPut += 1) {
+
+			char tempChar;
+			for (Tspos pointerGet = static_cast<Tspos>(0), pointerPut = static_cast<Tspos>(size); pointerGet < static_cast<Tspos>(size); pointerGet += 1, pointerPut += 1) {
 				mainFile.seekg(pointerGet);
 				tempChar = mainFile.get();
-
 				mainFile.seekg(pointerPut);
-				mainFile << tempChar;
+				mainFile.put(tempChar);
 			}
+
+			mainFile.flush();
+			return *this;
 		}
-		else {
-			if (!In.pointToBeg()) {
-				ExternalError = 1;
-				return *this;
-			}
-			else {
-				moveFileContent(In.mainFile, mainFile);
-			}
+		else if (e) return *this;
+
+		if (!pointToEnd()) return *this;
+		if (!In.pointToBeg()) {
+			ExternalError = 1;
+			return *this;
 		}
+		
+		moveFileContent(In.mainFile, mainFile);
 
 		mainFile.flush();
 		return *this;
