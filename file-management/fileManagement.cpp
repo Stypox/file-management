@@ -98,8 +98,7 @@ namespace sp {
 		return fileState;
 	}
 	void FileState::save(File &file) {
-		file.open();
-		file << str();
+		file = str();
 	}
 
 
@@ -1488,7 +1487,10 @@ namespace sp {
 
 
 	bool File::open() {
-		if (mainFile.is_open()) return true;
+		if (mainFile.is_open()) {
+			clear();
+			return true;
+		}
 		mainFile.open(mainPath, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
 		return mainFile.is_open();
 	}

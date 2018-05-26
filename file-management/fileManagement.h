@@ -877,8 +877,9 @@ namespace sp {
 
 		/*
 		Opens this file in binary-input-output mode using the currently set path.
-		If this file was already open the pointer is moved to the beginning.
-		Returs false if this file couldn't be opened, otherwise returns true.
+		Clears all errors. If this file was already open clears all errors and
+		returns true.
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool open();
 		/*
@@ -962,10 +963,11 @@ namespace sp {
 		*/
 		template<typename T>
 		File& operator>> (T &Out);
-		/*		
+		/*
 		Inserts the content of this file at the beginning of the parameter. This
 		file and the parameter are opened in binary-input-output mode, if they
-		weren't already.
+		weren't already. The operation fails if this file or the parameter couldn't
+		be opened.
 		Returns *this.
 		*/
 		File& operator>> (File &Out);
@@ -991,14 +993,20 @@ namespace sp {
 		File& operator>> (uint8 &Out);
 
 
+		/*
+		Casts the parameter to a std::string and writes it to this file at the
+		pointer position, replacing existing chars and adding new chars at the end
+		of the file if the pointer is/goes out of bounds. This file must be open in
+		binary-output mode or binary-input-output mode.
+		Returns *this.
+		*/
 		template<typename T>
 		File& operator<< (T In);
 		/*
-		Appends the content of the parameter to the file
-		Leaves both files open in binary input-output mode
-		The operation fails if the file or the parameter file couldn't be opened
-		If the parameter file couldn't be opened ExternalError is set to 1
-		Returns *this
+		Appends the content of the parameter to this file. This file and the
+		parameter are opened in binary-input-output mode, if they weren't already.
+		The operation fails if this file or the parameter couldn't be opened.
+		Returns *this.
 		*/
 		File& operator<< (File &In);
 
