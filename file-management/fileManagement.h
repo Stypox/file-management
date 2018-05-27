@@ -1,15 +1,15 @@
-//TODO non so se serva ma forse bisogna fare file.clear() di tutto invece che solo l'eofbit perche' se c'e' il failbit impostato e il file e' gia' aperto non verra' mai chiuso ma sara' impossibile da leggere o scrivere
+//TODO clear() after a function runs without errors
 //TODO remove C-style conversion
 //TODO add for(word : file.words()), for(line : file.lines())
 //TODO implement unix-windows conversion
 //TODO add pointToEnd(index);
-//TODO pointTo(inBounds line, inBounds word, outOfBounds char) shall not point to end, if not needed by functions
+//TODO pointTo(inBounds line, inBounds word, outOfBounds char) shall not point to end, if not needed by functions IMPORTANT !
 //TODO remove main file: now there is only one type of file
 //TODO implement error system
-//TODO newline mode auto-detection in constructor
-//TODO #ifndef SP_FILE_MANAGEMENT
+//TODO newline mode auto-detection in constructor (add into Newline enum an Autodetect option)
 //TODO move constructor
 //TODO (maybe) remove open references: the class should handle all of that automatically
+//   * change functions that requires the file to be open
 
 //UTILI:
 /*
@@ -955,10 +955,10 @@ namespace sp {
 		/*
 		Reads all the chars after the pointer until a space or the end of this
 		file are reached, formats them based on the parameter's type and saves them
-		on the parameter. This file must be open in binary-input mode or
-		binary-input-output mode. If this file is not open, the end was already
-		reached or the read characters are not formattable based on the parameter's
-		type the parameter is not modified.
+		on the parameter. This file is opened in binary-input-output mode, if it
+		wasn't already. If the end of the file was already reached or the read
+		characters are not formattable based on the parameter's type the parameter
+		is not modified.
 		Returns *this.
 		*/
 		template<typename T>
@@ -974,20 +974,19 @@ namespace sp {
 		/*
 		Reads all the chars after the pointer until a space or the end of this
 		file are reached, formats them in an 8-bit signed int and saves them on the
-		parameter. This file must be open in binary-input mode or
-		binary-input-output mode. If this file is not open, the end was already
-		reached or the read characters are not formattable based on the parameter's
-		type the parameter is not modified.
+		parameter. This file is opened in binary-input-output mode, if it wasn't
+		already. If the end of the file was already reached or the read characters
+		are not formattable in an 8-bit unsigned int the parameter is not modified.
 		Returns *this.
 		*/
 		File& operator>> (int8 &Out);
 		/*
 		Reads all the chars after the pointer until a space or the end of this
 		file are reached, formats them in an 8-bit unsigned int and saves them on
-		the parameter. This file must be open in binary-input mode or
-		binary-input-output mode. If this file is not open, the end was already
-		reached or the read characters are not formattable based on the parameter's
-		type the parameter is not modified.
+		the parameter. This file is opened in binary-input-output mode, if it
+		wasn't already. If the end of the file was already reached or the read
+		characters are not formattable in an 8-bit unsigned int the parameter is
+		not modified.
 		Returns *this.
 		*/
 		File& operator>> (uint8 &Out);
@@ -996,8 +995,8 @@ namespace sp {
 		/*
 		Casts the parameter to a std::string and writes it to this file at the
 		pointer position, replacing existing chars and adding new chars at the end
-		of the file if the pointer is/goes out of bounds. This file must be open in
-		binary-output mode or binary-input-output mode.
+		of the file if the pointer is/moves out of bounds. This file is opened in
+		binary-input-output mode, if it wasn't already.
 		Returns *this.
 		*/
 		template<typename T>
@@ -1012,10 +1011,8 @@ namespace sp {
 
 
 		/*
-		Copies the settings from the parameter into this file:
-			path, tempPath, errors, but not the file content
-		If the parameter is open the file will be opened too in binary input-output mode
-		Returns *this
+		Assignment operator.
+		Returns *this.
 		*/
 		File& operator= (File &Source);
 		/*
@@ -1254,11 +1251,13 @@ namespace sp {
 
 	template<typename T>
 	inline File & File::operator>>(T &Out) {
+		if (!open()) return *this;
 		mainFile >> Out;
 		return *this;
 	}
 	template<typename T>
 	inline File & File::operator<<(T In) {
+		if (!open()) return *this;
 		mainFile << toString(In);
 		mainFile.flush();
 		return *this;

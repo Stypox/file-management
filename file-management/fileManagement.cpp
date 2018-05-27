@@ -1595,6 +1595,7 @@ namespace sp {
 		return *this;
 	}
 	File& File::operator>>(int8 &Out) {
+		if (!open()) return *this;
 		int16 output = INT16_MAX;
 		mainFile >> output;
 		if (output > INT8_MAX || output < INT8_MIN) {
@@ -1605,6 +1606,7 @@ namespace sp {
 		return *this;
 	}
 	File& File::operator>>(uint8 &Out) {
+		if (!open()) return *this;
 		uint16 output = UINT16_MAX;
 		mainFile >> output;
 		if (output > UINT8_MAX) {
