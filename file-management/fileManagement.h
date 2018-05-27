@@ -1016,6 +1016,11 @@ namespace sp {
 		*/
 		File& operator= (File &Source);
 		/*
+		Move assignment operator.
+		Returns *this.
+		*/
+		File& operator= (File &&Source);
+		/*
 		Replaces all the content of this file with the parameter
 		The file is opened, if it wasn't already
 		Leaves the file open in binary input-output mode

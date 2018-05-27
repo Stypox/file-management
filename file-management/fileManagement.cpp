@@ -1679,6 +1679,14 @@ namespace sp {
 
 		return *this;
 	}
+	File& File::operator=(File &&Source) {
+		close();
+		newlineMode = std::move(Source.newlineMode);
+		mainPath = std::move(Source.mainPath);
+		ExternalError = std::move(Source.ExternalError);
+		mainFile = std::move(Source.mainFile);
+		return *this;
+	}
 	Tstr File::operator+(File &ToAdd) {
 		return str() + ToAdd.str();
 	}
@@ -1731,10 +1739,8 @@ namespace sp {
 		Tstr fileStr = "";
 		while (1) {
 			tempChar = mainFile.get();
-			if (!mainFile.eof()) {
-				fileStr += tempChar;
-			}
-			else break;
+			if (mainFile.eof()) break;
+			fileStr += tempChar;
 		}
 
 		return fileStr;
