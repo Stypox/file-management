@@ -1,5 +1,4 @@
 #Makefile settings
-
 CXX = g++
 CXXFLAGS = -Wall -g -std=c++17
 CXXFLAGSAFTER = -lstdc++fs
@@ -15,3 +14,8 @@ main.o: $(SRC)main.cpp $(SRC)fileManagement.h
 
 #fileManagement dependencies
 fileManagement.o: $(SRC)fileManagement.h
+
+#cleaning
+clean:
+	rm $(SRC)*.o
+	
