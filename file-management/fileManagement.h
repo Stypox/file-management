@@ -10,6 +10,7 @@
 //TODO move constructor
 //TODO (maybe) remove open references: the class should handle all of that automatically
 //   * change functions that requires the file to be open
+//TODO move File... classes inside class File
 
 //UTILI:
 /*
@@ -65,6 +66,72 @@ namespace sp {
 	 
 	constexpr std::streamoff fileNotOpen = -1;
 	constexpr std::streamoff outOfBounds = -2;
+
+
+
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	template<typename T>
+	Tstr toString(T toConvert) {
+		return static_cast<Tstr>(toConvert);
+	}
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(bool toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(char toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(int8 toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(int16 toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(int32 toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(int64 toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(uint8 toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(uint16 toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(uint32 toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(uint64 toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(float toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(double toConvert);
+	/*
+	Converts the parameter to an std::string object and returns it
+	*/
+	Tstr toString(long double toConvert);
+	/*
+	Returns the parameter itself
+	*/
+	Tstr toString(Tstr &toConvert);
 
 
 	class File;
@@ -123,72 +190,9 @@ namespace sp {
 	public:
 		Tfstm mainFile;
 		Tstr mainPath;
-		bool ExternalError;
+		bool externalError;
 
 		Newline newlineMode;
-
-
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		template <typename T>
-		Tstr toString(T toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(bool toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(char toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(int8 toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(int16 toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(int32 toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(int64 toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(uint8 toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(uint16 toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(uint32 toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(uint64 toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(float toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(double toConvert);
-		/*
-		Converts the parameter to an std::string object and returns it
-		*/
-		Tstr toString(long double toConvert);
-		/*
-		Returns the parameter itself
-		*/
-		Tstr toString(Tstr &toConvert);
 
 
 		/*
@@ -245,7 +249,21 @@ namespace sp {
 		/*
 		Copy constructor.
 		*/
-		File(File & Source);
+		File(File &Source);
+		/*
+		Assignment operator.
+		Returns *this.
+		*/
+		File& operator= (File &Source);
+		/*
+		Move constructor.
+		*/
+		File(File &&Source);
+		/*
+		Move assignment operator.
+		Returns *this.
+		*/
+		File& operator= (File &&Source);
 		/*
 		Destructor. Closes the file.
 		*/
@@ -1011,38 +1029,17 @@ namespace sp {
 
 
 		/*
-		Assignment operator.
-		Returns *this.
-		*/
-		File& operator= (File &Source);
-		/*
-		Move assignment operator.
-		Returns *this.
-		*/
-		File& operator= (File &&Source);
-		/*
-		Replaces all the content of this file with the parameter
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
+		Replaces all the content of this file with the content of the parameter.
+		This file is opened in binary-input-output mode, if it wasn't already.
 		Returns false if the file couldn't be opened, otherwise true
 		*/
 		template<typename T>
 		bool operator= (T NewText);
 		/*
-		Returns a string with at the start the content of this
-			file and then the content of the parameter
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
-		If this file or the parameter file couldn't be opened
-			the returned string won't include them
-		*/
-		Tstr operator+ (File &ToAdd);
-		/*
-		Returns a string with at the start the content
-			of this file and then the parameter
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
-		If this file couldn't be opened toAdd will be returned
+		Returns the content of this file concatenated with the content of the
+		parameter. This file is opened in binary-input-output mode, if it wasn't
+		already.
+		If this file couldn't be opened returns only the content of the parameter.
 		*/
 		template<typename T>
 		Tstr operator+ (T ToAdd);
@@ -1115,13 +1112,9 @@ namespace sp {
 
 		*/
 		FileIterator end();
-	};
+	};	
 	
 	
-	template<typename T>
-	inline Tstr File::toString(T toConvert) {
-		return static_cast<Tstr>(toConvert);
-	}
 
 	template<typename T>
 	inline bool File::add(Tspos Pos, T ToAdd) {
@@ -1289,14 +1282,21 @@ namespace sp {
 	}
 	template<typename T>
 	inline File & File::operator+=(T toAppend) {
-		if (!pointToEnd()) return *this;
-		mainFile << toString(toAppend);
-
-		mainFile.flush();
+		append(toAppend);
 		return *this;
 	}
 
-	Tstr operator+ (Tstr First, File &Second);
+
+	/*
+	Returns the content of the first parameter concatenated with the content of the
+	second parameter. The second parameter is opened in binary-input-output mode,
+	if it wasn't already.
+	If the second parameter file couldn't be opened returns only the content of the first parameter.
+	*/
+	template<typename T, std::enable_if<!std::is_same(T, File), T> = 0>
+	Tstr operator+(T First, File &Second) {
+		return toString(First) + Second.str();
+	}
 }
 
 #endif

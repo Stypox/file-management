@@ -130,46 +130,46 @@ namespace sp {
 
 
 
-	Tstr File::toString(bool toConvert) {
+	Tstr toString(bool toConvert) {
 		return (toConvert) ? "1" : "0";
 	}
-	Tstr File::toString(char toConvert) {
+	Tstr toString(char toConvert) {
 		return Tstr(1, toConvert);
 	}
-	Tstr File::toString(int8 toConvert) {
+	Tstr toString(int8 toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(int16 toConvert) {
+	Tstr toString(int16 toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(int32 toConvert) {
+	Tstr toString(int32 toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(int64 toConvert) {
+	Tstr toString(int64 toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(uint8 toConvert) {
+	Tstr toString(uint8 toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(uint16 toConvert) {
+	Tstr toString(uint16 toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(uint32 toConvert) {
+	Tstr toString(uint32 toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(uint64 toConvert) {
+	Tstr toString(uint64 toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(float toConvert) {
+	Tstr toString(float toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(double toConvert) {
+	Tstr toString(double toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(long double toConvert) {
+	Tstr toString(long double toConvert) {
 		return std::to_string(toConvert);
 	}
-	Tstr File::toString(Tstr &toConvert) {
+	Tstr toString(Tstr &toConvert) {
 		return toConvert;
 	}
 
@@ -313,9 +313,9 @@ namespace sp {
 	}
 
 
-	File::File(Newline Mode) : mainPath(""), ExternalError(0), newlineMode(Mode) {}
-	File::File(Tstr MainPath, Newline Mode) : mainPath(MainPath), ExternalError(0), newlineMode(Mode) {}
-	File::File(File & Source) : mainPath(Source.mainPath), ExternalError(Source.ExternalError), newlineMode(Source.newlineMode) {
+	File::File(Newline Mode) : mainPath(""), externalError(0), newlineMode(Mode) {}
+	File::File(Tstr MainPath, Newline Mode) : mainPath(MainPath), externalError(0), newlineMode(Mode) {}
+	File::File(File &Source) : mainPath(Source.mainPath), externalError(Source.externalError), newlineMode(Source.newlineMode) {
 		bool Eof = Source.eofErr(), Fail = Source.failErr(), Bad = Source.badErr();
 		
 		if (Source.isOpen()) {
@@ -337,6 +337,44 @@ namespace sp {
 			mainFile.setstate(mainFile.badbit);
 			Source.mainFile.setstate(mainFile.badbit);
 		}
+	}
+	File& File::operator=(File &Source) {
+		close();
+		newlineMode = Source.newlineMode;
+		mainPath = Source.mainPath;
+		externalError = Source.externalError;
+		bool Eof = Source.eofErr(), Fail = Source.failErr(), Bad = Source.badErr();
+
+		if (Source.isOpen()) {
+			open();
+			mainFile.seekg(Source.mainFile.tellg());
+		}
+
+		mainFile.clear();
+		Source.mainFile.clear();
+		if (Eof) {
+			mainFile.setstate(mainFile.eofbit);
+			Source.mainFile.setstate(mainFile.eofbit);
+		}
+		if (Fail) {
+			mainFile.setstate(mainFile.failbit);
+			Source.mainFile.setstate(mainFile.failbit);
+		}
+		if (Bad) {
+			mainFile.setstate(mainFile.badbit);
+			Source.mainFile.setstate(mainFile.badbit);
+		}
+
+		return *this;
+	}
+	File::File(File &&Source) : mainFile(std::move(Source.mainFile)), mainPath(std::move(Source.mainPath)), externalError(std::move(Source.externalError)), newlineMode(std::move(Source.newlineMode)) {}
+	File& File::operator=(File &&Source) {
+		close();
+		mainFile = std::move(Source.mainFile);
+		mainPath = std::move(Source.mainPath);
+		externalError = std::move(Source.externalError);
+		newlineMode = std::move(Source.newlineMode);
+		return *this;
 	}
 	File::~File() {
 		close();
@@ -1355,7 +1393,7 @@ namespace sp {
 		std::error_code e;
 		std::experimental::filesystem::rename(mainPath, newPath, e);
 		if (e) {
-			ExternalError = true;
+			externalError = true;
 			return false;
 		}
 
@@ -1373,14 +1411,14 @@ namespace sp {
 
 		if (toOverwrite.exists()) {
 			if (!toOverwrite.truncate()) {
-				ExternalError = 1;
+				externalError = 1;
 				return false;
 			}
 			toOverwrite.pointToBeg();
 		}
 		else {
 			if (!toOverwrite.create()) {
-				ExternalError = 1;
+				externalError = 1;
 				return false;
 			}
 		}
@@ -1399,7 +1437,7 @@ namespace sp {
 	bool File::swap(File & Other) {
 		if (!pointToBeg()) return false;
 		if (!Other.pointToBeg()) {
-			ExternalError = 1;
+			externalError = 1;
 			return false;
 		}
 
@@ -1525,7 +1563,7 @@ namespace sp {
 	}
 	void File::clear() {
 		mainFile.clear();
-		ExternalError = false;
+		externalError = false;
 	}
 	bool File::eofErr() const {
 		return mainFile.rdstate() & mainFile.eofbit;
@@ -1537,10 +1575,10 @@ namespace sp {
 		return mainFile.rdstate() & mainFile.badbit;
 	}
 	bool File::extErr() const {
-		return ExternalError;
+		return externalError;
 	}
 	FileState File::state() const {
-		return FileState(mainFile.is_open(), eofErr(), failErr(), badErr(), ExternalError);
+		return FileState(mainFile.is_open(), eofErr(), failErr(), badErr(), externalError);
 	}
 
 
@@ -1574,7 +1612,7 @@ namespace sp {
 
 		if (!pointToBeg()) return *this;
 		if (!Out.open()) {
-			ExternalError = true;
+			externalError = true;
 			return *this;
 		}
 		uint32 sizeOut = Out.getNrChars();
@@ -1639,7 +1677,7 @@ namespace sp {
 
 		if (!pointToEnd()) return *this;
 		if (!In.pointToBeg()) {
-			ExternalError = 1;
+			externalError = 1;
 			return *this;
 		}
 		
@@ -1650,56 +1688,8 @@ namespace sp {
 	}
 
 
-	File& File::operator=(File &Source) {
-		close();
-		newlineMode = Source.newlineMode;
-		mainPath = Source.mainPath;
-		ExternalError = Source.ExternalError;
-		bool Eof = Source.eofErr(), Fail = Source.failErr(), Bad = Source.badErr();
-
-		if (Source.isOpen()) {
-			open();
-			mainFile.seekg(Source.mainFile.tellg());
-		}
-
-		mainFile.clear();
-		Source.mainFile.clear();
-		if (Eof) {
-			mainFile.setstate(mainFile.eofbit);
-			Source.mainFile.setstate(mainFile.eofbit);
-		}
-		if (Fail) {
-			mainFile.setstate(mainFile.failbit);
-			Source.mainFile.setstate(mainFile.failbit);
-		}
-		if (Bad) {
-			mainFile.setstate(mainFile.badbit);
-			Source.mainFile.setstate(mainFile.badbit);
-		}
-
-		return *this;
-	}
-	File& File::operator=(File &&Source) {
-		close();
-		newlineMode = std::move(Source.newlineMode);
-		mainPath = std::move(Source.mainPath);
-		ExternalError = std::move(Source.ExternalError);
-		mainFile = std::move(Source.mainFile);
-		return *this;
-	}
-	Tstr File::operator+(File &ToAdd) {
-		return str() + ToAdd.str();
-	}
 	File& File::operator+=(File &toAppend) {
-		if (!pointToEnd()) return *this;
-		if (!toAppend.pointToBeg()) {
-			ExternalError = 1;
-			return *this;
-		}
-		moveFileContent(toAppend.mainFile, mainFile);
-
-		mainFile.flush();
-		return *this;
+		return operator<<(toAppend);
 	}
 
 
@@ -1746,10 +1736,10 @@ namespace sp {
 		return fileStr;
 	}
 	File::operator bool() const {
-		return mainFile.good() && !ExternalError;
+		return mainFile.good() && !externalError;
 	}
 	bool File::operator!() const {
-		return !mainFile.good() || ExternalError;
+		return !mainFile.good() || externalError;
 	}
 
 
@@ -1758,11 +1748,6 @@ namespace sp {
 	}
 	FileIterator File::end() {
 		return FileIterator(this, getNrChars());
-	}
-
-
-	Tstr operator+(Tstr First, File &Second) {
-		return First + Second.str();
 	}
 }
 
