@@ -968,7 +968,7 @@ namespace sp {
 		Sets the path used to open this file to the parameter. Closes this file if
 		it was open. Clears all errors.
 		*/
-		void setPath(Tstr Path);
+		void setPath(const Tstr Path);
 
 		/*
 		Reads all the chars after the pointer until a space or the end of this
@@ -1293,7 +1293,7 @@ namespace sp {
 	if it wasn't already.
 	If the second parameter file couldn't be opened returns only the content of the first parameter.
 	*/
-	template<typename T, std::enable_if<!std::is_same(T, File), T> = 0>
+	template<typename T, typename = typename std::enable_if<!std::is_same<T, File>::value>::type>
 	Tstr operator+(T First, File &Second) {
 		return toString(First) + Second.str();
 	}

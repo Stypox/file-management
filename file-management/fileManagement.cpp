@@ -1585,7 +1585,7 @@ namespace sp {
 	Tstr File::getPath() const {
 		return mainPath;
 	}
-	void File::setPath(Tstr Path) {
+	void File::setPath(const Tstr Path) {
 		close();
 		mainPath = Path;
 	}
