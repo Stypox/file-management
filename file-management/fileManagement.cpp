@@ -1559,7 +1559,7 @@ namespace sp {
 
 
 	bool File::good() const {
-		return this->operator bool();
+		return mainFile.good() && !externalError;
 	}
 	void File::clear() {
 		mainFile.clear();
@@ -1591,6 +1591,40 @@ namespace sp {
 	}
 
 
+	File& File::operator>>(int8 &Out) {
+		if (!open()) return *this;
+		int16 output;
+		mainFile >> output;
+		if (output > INT8_MAX) {
+			Out = INT8_MAX;
+			mainFile.setstate(mainFile.failbit);
+			return *this;
+		}
+		else if (output < INT8_MIN) {
+			Out = INT8_MIN;
+			mainFile.setstate(mainFile.failbit);
+			return *this;
+		}
+		Out = static_cast<int8>(output);
+		return *this;
+	}
+	File& File::operator>>(uint8 &Out) {
+		if (!open()) return *this;
+		int16 output;
+		mainFile >> output;
+		if (output > UINT8_MAX) {
+			Out = UINT8_MAX;
+			mainFile.setstate(mainFile.failbit);
+			return *this;
+		}
+		else if (output < 0) {
+			Out = (output > -UINT8_MAX) ? (UINT8_MAX + output) : UINT8_MAX;
+			mainFile.setstate(mainFile.failbit);
+			return *this;
+		}
+		Out = static_cast<uint8>(output);
+		return *this;
+	}
 	File& File::operator>>(File &Out) {
 		std::error_code e;
 		if (std::experimental::filesystem::equivalent(mainPath, Out.mainPath, e)) {
@@ -1630,28 +1664,6 @@ namespace sp {
 		moveFileContent(mainFile, Out.mainFile);
 
 		Out.mainFile.flush();
-		return *this;
-	}
-	File& File::operator>>(int8 &Out) {
-		if (!open()) return *this;
-		int16 output = INT16_MAX;
-		mainFile >> output;
-		if (output > INT8_MAX || output < INT8_MIN) {
-			mainFile.setstate(mainFile.failbit);
-			return *this;
-		}
-		Out = static_cast<int8>(output);
-		return *this;
-	}
-	File& File::operator>>(uint8 &Out) {
-		if (!open()) return *this;
-		uint16 output = UINT16_MAX;
-		mainFile >> output;
-		if (output > UINT8_MAX) {
-			mainFile.setstate(mainFile.failbit);
-			return *this;
-		}
-		Out = static_cast<uint8>(output);
 		return *this;
 	}
 
@@ -1736,10 +1748,10 @@ namespace sp {
 		return fileStr;
 	}
 	File::operator bool() const {
-		return mainFile.good() && !externalError;
+		return mainFile.operator bool();
 	}
 	bool File::operator!() const {
-		return !mainFile.good() || externalError;
+		return !mainFile.operator bool();
 	}
 
 

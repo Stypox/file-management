@@ -265,7 +265,7 @@ namespace sp {
 		*/
 		File& operator= (File &&Source);
 		/*
-		Destructor. Closes the file.
+		Destructor. Closes this file.
 		*/
 		~File();
 
@@ -279,8 +279,8 @@ namespace sp {
 		bool pointMove(Tspos Offset);
 		/*
 		Moves the pointer to the position specified by the parameter. The position
-		starts from zero, that is the first char of the file is at position 0. This
-		file is opened in binary input-output mode, if it wasn't already.
+		starts from zero, that is the first char of this file is at position 0.
+		This file is opened in binary input-output mode, if it wasn't already.
 		Returns false if this file couldn't be opened or if the specified position
 		is out of bounds, otherwise returns true.
 		*/
@@ -289,10 +289,10 @@ namespace sp {
 		Moves the pointer to a char (third parameter) in a word (second parameter)
 		in a line (first parameter). The indices start from 0, that is
 		pointTo(0, 0, 0) points to the first char of the first word of the first
-		line (not necessarily to the beginning of the file). While 0 means "move to
-		the first", -1 means "don't move". So only pointTo(-1, -1, -1) will surely
-		point to the beginning. The constexpr sp::dontMove can be used as -1. This
-		file is opened in binary-input-output mode, if it wasn't already.
+		line (not necessarily to the beginning of this file). While 0 means "move
+		to the first", -1 means "don't move". So only pointTo(-1, -1, -1) will
+		surely point to the beginning. The constexpr sp::dontMove can be used as
+		-1. This file is opened in binary-input-output mode, if it wasn't already.
 		Returns false if this file couldn't be opened or if the specified position
 		is out of bounds, otherwise returns true.
 		*/
@@ -326,9 +326,9 @@ namespace sp {
 
 
 		/*
-		Returns the number of lines (visible in a text editor: if the file is empty
-		1 is returned, if there is one newline 2 is returned...). The pointer is
-		not moved. This file is opened in binary-input-output mode, if it wasn't
+		Returns the number of lines (visible in a text editor: if this file is
+		empty 1 is returned, if there is one newline 2 is returned...). The pointer
+		is not moved. This file is opened in binary-input-output mode, if it wasn't
 		already.
 		Returns 0 if this file couldn't be opened.
 		*/
@@ -819,9 +819,9 @@ namespace sp {
 		bool create();
 		/*
 		Moves this file to the path specified by the parameter, and changes the
-		path. Overwrites the file specified by the parameter if it already exists.
+		path. Overwrites this file specified by the parameter if it already exists.
 		This file is opened in binary-input-output mode.
-		Returns false if the file couldn't be moved, otherwise returns true.
+		Returns false if this file couldn't be moved, otherwise returns true.
 		*/
 		bool move(Tstr newPath);
 		/*
@@ -862,7 +862,7 @@ namespace sp {
 		Renames this file to the name specified by the parameter parameter, and
 		changes the path. Overwrites the file specified by the parameter if it
 		already exists. This file is opened in binary-input-output mode
-		Returns false if the file couldn't be renamed, otherwise returns true.
+		Returns false if this file couldn't be renamed, otherwise returns true.
 		*/
 		bool rename(Tstr newName);
 		/*
@@ -886,7 +886,7 @@ namespace sp {
 		/*
 		Changes the size of this file to the size (in bytes) specified by the
 		parameter. If the new size is smaller than the current size, the remainder
-		of the file is discarded. If the new size is bigger than the current size
+		of this file is discarded. If the new size is bigger than the current size
 		the new area is filled with '\0'.
 		Returns false if this file couldn't be resized, otherwise returns true.
 		*/
@@ -974,13 +974,33 @@ namespace sp {
 		Reads all the chars after the pointer until a space or the end of this
 		file are reached, formats them based on the parameter's type and saves them
 		on the parameter. This file is opened in binary-input-output mode, if it
-		wasn't already. If the end of the file was already reached or the read
-		characters are not formattable based on the parameter's type the parameter
-		is not modified.
+		wasn't already. If this file couldn't be opened, the end of this file was
+		already reached or the read characters are not formattable based on the
+		parameter's type the parameter is set to 0, if possible.
 		Returns *this.
 		*/
 		template<typename T>
 		File& operator>> (T &Out);
+		/*
+		Reads all the chars after the pointer until a space or the end of this
+		file are reached, formats them in an 8-bit signed int and saves them on the
+		parameter. This file is opened in binary-input-output mode, if it wasn't
+		already. If this file couldn't be opened, the end of this file was
+		already reached or the read characters are not formattable in an 8-bit
+		signed int the parameter is set to 0.
+		Returns *this.
+		*/
+		File& operator>> (int8 &Out);
+		/*
+		Reads all the chars after the pointer until a space or the end of this
+		file are reached, formats them in an 8-bit unsigned int and saves them on
+		the parameter. This file is opened in binary-input-output mode, if it
+		wasn't already. If this file couldn't be opened, the end of this file was
+		already reached or the read characters are not formattable in an 8-bit
+		unsigned int the parameter is set to 0.
+		Returns *this.
+		*/
+		File& operator>> (uint8 &Out);
 		/*
 		Inserts the content of this file at the beginning of the parameter. This
 		file and the parameter are opened in binary-input-output mode, if they
@@ -989,40 +1009,23 @@ namespace sp {
 		Returns *this.
 		*/
 		File& operator>> (File &Out);
-		/*
-		Reads all the chars after the pointer until a space or the end of this
-		file are reached, formats them in an 8-bit signed int and saves them on the
-		parameter. This file is opened in binary-input-output mode, if it wasn't
-		already. If the end of the file was already reached or the read characters
-		are not formattable in an 8-bit unsigned int the parameter is not modified.
-		Returns *this.
-		*/
-		File& operator>> (int8 &Out);
-		/*
-		Reads all the chars after the pointer until a space or the end of this
-		file are reached, formats them in an 8-bit unsigned int and saves them on
-		the parameter. This file is opened in binary-input-output mode, if it
-		wasn't already. If the end of the file was already reached or the read
-		characters are not formattable in an 8-bit unsigned int the parameter is
-		not modified.
-		Returns *this.
-		*/
-		File& operator>> (uint8 &Out);
 
 
 		/*
 		Casts the parameter to a std::string and writes it to this file at the
 		pointer position, replacing existing chars and adding new chars at the end
-		of the file if the pointer is/moves out of bounds. This file is opened in
-		binary-input-output mode, if it wasn't already.
+		of this file if the pointer is/moves out of bounds. This file is opened in
+		binary-input-output mode, if it wasn't already. The operation fails if this
+		file couldn't be opened.
 		Returns *this.
 		*/
 		template<typename T>
 		File& operator<< (T In);
 		/*
-		Appends the content of the parameter to this file. This file and the
-		parameter are opened in binary-input-output mode, if they weren't already.
-		The operation fails if this file or the parameter couldn't be opened.
+		Appends the content of the parameter to the end of this file. This file and
+		the parameter are opened in binary-input-output mode, if they weren't
+		already. The operation fails if this file or the parameter couldn't be
+		opened.
 		Returns *this.
 		*/
 		File& operator<< (File &In);
@@ -1031,7 +1034,7 @@ namespace sp {
 		/*
 		Replaces all the content of this file with the content of the parameter.
 		This file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if the file couldn't be opened, otherwise true
+		Returns false if this file couldn't be opened, otherwise true
 		*/
 		template<typename T>
 		bool operator= (T NewText);
@@ -1044,19 +1047,18 @@ namespace sp {
 		template<typename T>
 		Tstr operator+ (T ToAdd);
 		/*
-		Appends the content of the parameter to this file
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
-		If this file couldn't be opened nothing happens
-		Returns *this
+		Appends the content of the parameter to the end of this file. This file and
+		the parameter are opened in binary-input-output mode, if they weren't
+		already. The operation fails if this file or the parameter couldn't be
+		opened.
+		Returns *this.
 		*/
 		File& operator+= (File &toAppend);
 		/*
-		Appends the parameter to this file
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
-		If this file couldn't be opened nothing happens
-		Returns *this
+		Appends the content of the parameter to the end of this file. This file is
+		opened in binary-input-output mode, if it wasn't already. The operation
+		fails if this file or the parameter couldn't be opened.
+		Returns *this.
 		*/
 		template<typename T>
 		File& operator+= (T toAppend);
