@@ -805,7 +805,7 @@ namespace sp {
 		/*
 		Removes all the empty lines at the end of this file. This file is opened in
 		binary-input-output mode, if it wasn't already.
-		Returns false if this file couldn't be opened, otherwise returns true.		
+		Returns false if this file couldn't be opened, otherwise returns true.
 		*/
 		bool deleteLastEmptyLines();
 
@@ -970,6 +970,7 @@ namespace sp {
 		*/
 		void setPath(const Tstr Path);
 
+
 		/*
 		Reads all the chars after the pointer until a space or the end of this
 		file are reached, formats them based on the parameter's type and saves them
@@ -1033,11 +1034,13 @@ namespace sp {
 
 		/*
 		Replaces all the content of this file with the content of the parameter.
-		This file is opened in binary-input-output mode, if it wasn't already.
-		Returns false if this file couldn't be opened, otherwise true
+		Creates this file if it doesn't exist. This file is opened in
+		binary-input-output mode, if it wasn't already. The operation fails if this
+		file couldn't be created or opened.
+		Returns *this.
 		*/
 		template<typename T>
-		bool operator= (T NewText);
+		File& operator= (T NewContent);
 		/*
 		Returns the content of this file concatenated with the content of the
 		parameter. This file is opened in binary-input-output mode, if it wasn't
@@ -1057,7 +1060,7 @@ namespace sp {
 		/*
 		Appends the content of the parameter to the end of this file. This file is
 		opened in binary-input-output mode, if it wasn't already. The operation
-		fails if this file or the parameter couldn't be opened.
+		fails if this file couldn't be opened.
 		Returns *this.
 		*/
 		template<typename T>
@@ -1114,7 +1117,7 @@ namespace sp {
 
 		*/
 		FileIterator end();
-	};	
+	};
 	
 	
 
@@ -1250,13 +1253,13 @@ namespace sp {
 	}
 
 	template<typename T>
-	inline File & File::operator>>(T &Out) {
+	inline File& File::operator>>(T &Out) {
 		if (!open()) return *this;
 		mainFile >> Out;
 		return *this;
 	}
 	template<typename T>
-	inline File & File::operator<<(T In) {
+	inline File& File::operator<<(T In) {
 		if (!open()) return *this;
 		mainFile << toString(In);
 		mainFile.flush();
@@ -1264,19 +1267,19 @@ namespace sp {
 	}
 	
 	template<typename T>
-	inline bool File::operator=(T NewText) {
-		sp::Tstr newText = toString(NewText);
+	inline File& File::operator=(T NewContent) {
+		sp::Tstr newContent = toString(NewContent);
 		if (exists()) {
-			if (!pointToBeg() || !resize(newText.length())) return false;
+			if (!pointToBeg() || !resize(newContent.length())) return *this;
 		}
 		else {
-			if (!create()) return false;
+			if (!create()) return *this;
 		}
 
-		mainFile << newText;
+		mainFile << newContent;
 
 		mainFile.flush();
-		return true;
+		return *this;
 	}
 	template<typename T>
 	inline Tstr File::operator+(T ToAdd) {

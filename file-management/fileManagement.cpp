@@ -129,7 +129,6 @@ namespace sp {
 
 
 
-
 	Tstr toString(bool toConvert) {
 		return (toConvert) ? "1" : "0";
 	}
