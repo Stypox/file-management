@@ -1,16 +1,13 @@
 //TODO clear() after a function runs without errors
 //TODO remove C-style conversion
-//TODO add for(word : file.words()), for(line : file.lines())
 //TODO implement unix-windows conversion
 //TODO add pointToEnd(index);
 //TODO pointTo(inBounds line, inBounds word, outOfBounds char) shall not point to end, if not needed by functions IMPORTANT !
 //TODO remove main file: now there is only one type of file
 //TODO implement error system
 //TODO newline mode auto-detection in constructor (add into Newline enum an Autodetect option)
-//TODO move constructor
 //TODO (maybe) remove open references: the class should handle all of that automatically
 //   * change functions that requires the file to be open
-//TODO move File... classes inside class File
 
 //UTILI:
 /*
@@ -134,59 +131,121 @@ namespace sp {
 	Tstr toString(Tstr &toConvert);
 
 
-	class File;
-
-	struct FileState {
-	public:
-		bool open, eofError, failError, badError, externalError;
-
-		FileState(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr);
-
-		/*
-		Returns true if the file is open and there are no errors
-		*/
-		operator bool();
-		/*
-		Saves the state of the file on a string
-		*/
-		std::string str();
-		/*
-		Saves the state of the file on another file
-		*/
-		void save(File &file);
-	};
-
-	class FilePosition {
-		File * file;
-		uint32 position;
-	public:
-		FilePosition(File * file, uint32 Position);
-
-		/*
-		Returns the char in the set position
-		*/
-		operator char();
-		/*
-		The char in the set position is replaced by the parameter
-		Leaves the file open after returning
-		Returns false if the file couldn't be opened or if the
-			set position is out of bounds, otherwise true
-		*/
-		bool operator=(char newChar);
-	};
-
-	class FileIterator {
-		File * file;
-		uint32 position;
-	public:
-		FileIterator(File * file, uint32 Position);
-
-		bool operator!= (const FileIterator& ToCompare);
-		FilePosition operator* () const;
-		void operator++();
-	};
-
+	
 	class File {
+	public:
+		class Char {
+		private:
+			File * file;
+			const uint32 position;
+		public:
+			Char(File * file, const uint32 Position);
+			
+			operator char() const;
+			void operator=(char Replacement) const;
+		};
+		class Chars {
+		public:
+			class Iterator {
+			private:
+				File * file;
+				uint32 position;
+			public:
+				Iterator(File * file, const uint32 Position);
+
+				bool operator!=(const Iterator& ToCompare) const;
+				Char operator*() const;
+				void operator++();
+			};
+		private:
+			File * file;
+		public:
+			Chars(File * file);
+
+			Char operator[](uint32 Position) const;
+			Iterator begin() const;
+			Iterator end() const;
+		};
+
+		class Word {
+		private:
+			File * file;
+			const uint32 position;
+		public:
+			Word(File * file, const uint32 Position);
+			
+			operator Tstr() const;
+			template<typename T>
+			void operator=(T Replacement) const;
+		};
+		class Words {
+		public:
+			class Iterator {
+			private:
+				File * file;
+				uint32 position;
+			public:
+				Iterator(File * file, const uint32 Position);
+
+				bool operator!=(const Iterator& ToCompare) const;
+				Word operator*() const;
+				void operator++();
+			};
+		private:
+			File * file;
+		public:
+			Words(File * file);
+
+			Word operator[](uint32 Position) const;
+			Iterator begin() const;
+			Iterator end() const;
+		};
+
+		class Line {
+		private:
+			File * file;
+			const uint32 position;
+		public:
+			Line(File * file, const uint32 Position);
+			
+			operator Tstr() const;
+			template<typename T>
+			void operator=(T Replacement) const;
+		};
+		class Lines {
+		public:
+			class Iterator {
+			private:
+				File * file;
+				uint32 position;
+			public:
+				Iterator(File * file, const uint32 Position);
+
+				bool operator!=(const Iterator& ToCompare) const;
+				Line operator*() const;
+				void operator++();
+			};
+		private:
+			File * file;
+		public:
+			Lines(File * file);
+
+			Line operator[](uint32 Position) const;
+			Iterator begin() const;
+			Iterator end() const;
+		};
+
+		struct State {
+		public:
+			bool open, eofError, failError, badError, externalError;
+
+			State(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr);
+
+			operator bool() const;
+			std::string str() const;
+			void save(File &file) const;
+		};
+
 	public:
 		Tfstm mainFile;
 		Tstr mainPath;
@@ -957,7 +1016,7 @@ namespace sp {
 		/*
 		Returns an object that contains all the infos about this file's errors
 		*/
-		FileState state() const;
+		State state() const;
 
 
 		/*
@@ -1121,23 +1180,13 @@ namespace sp {
 		*/
 		bool operator!() const;
 
-
-		/*
-		Returns a FilePosition object to get/modify the char
-			using operator char and operator=
-		*/
-		const FilePosition operator[] (uint32 Position);
-		/*
-
-		*/
-		FileIterator begin();
-		/*
-
-		*/
-		FileIterator end();
-
-
-
+		
+		Chars chars();
+		Words words();
+		Lines lines();
+		Line operator[](uint32 Position);
+		Lines::Iterator begin();
+		Lines::Iterator end();
 	};
 	
 	
@@ -1202,7 +1251,7 @@ namespace sp {
 			for (uint32 currentLine = 0; currentLine < Line - nrLines + 1; ++currentLine) {
 				strToAppend += newline;
 			}
-			return append(strToAppend + Replacement);
+			return append(strToAppend + toString(Replacement));
 		}
 		to = getPositionMove(Line + 1, dontMove, dontMove);
 
@@ -1332,6 +1381,16 @@ namespace sp {
 	template<typename T>
 	inline bool File::operator!=(T ToCompare) {
 		return !operator==(ToCompare);
+	}
+
+
+	template<typename T>
+	inline void File::Word::operator=(T Replacement) const {
+		file->replaceWord(position, Replacement);
+	}
+	template<typename T>
+	inline void File::Line::operator=(T Replacement) const {
+		file->replaceLine(position, Replacement);
 	}
 
 

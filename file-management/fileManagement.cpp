@@ -77,53 +77,104 @@ namespace sp {
 	constexpr auto& getStat = stat64;
 #endif
 
-
-
-
-	FileState::FileState(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr) : open(Open), eofError(Eof), failError(Fail), badError(Bad), externalError(ExtErr) {}
-	FileState::operator bool() {
-		return eofError || failError || badError || externalError;
-	}
-	std::string FileState::str() {
-		std::string fileState = "open:";
-		fileState += (open) ? "1" : "0";
-		fileState += " eofErr:";
-		fileState += (eofError) ? "1" : "0";
-		fileState += " failErr:";
-		fileState += (failError) ? "1" : "0";
-		fileState += " badErr:";
-		fileState += (badError) ? "1" : "0";
-		fileState += " extErr:";
-		fileState += (externalError) ? "1" : "0";
-		return fileState;
-	}
-	void FileState::save(File &file) {
-		file = str();
-	}
-
-
-
-
-	FilePosition::FilePosition(File * file, uint32 Position) : file(file), position(Position) {}
-	FilePosition::operator char() {
+	File::Char::Char(File * file, const uint32 Position) : file(file), position(Position) {}
+	File::Char::operator char() const {
 		return file->getChar(position);
 	}
-	bool FilePosition::operator=(char newChar) {
-		return file->replaceChar(position, newChar);
+	void File::Char::operator=(char Replacement) const {
+		file->replaceChar(position, Replacement);
 	}
-
-
-
-
-	FileIterator::FileIterator(File * file, uint32 Position) : file(file), position(Position) {}
-	bool FileIterator::operator!=(const FileIterator & ToCompare) {
+	File::Chars::Iterator::Iterator(File * file, const uint32 Position) : file(file), position(Position) {}
+	bool File::Chars::Iterator::operator!=(const Iterator& ToCompare) const {
 		return position != ToCompare.position;
 	}
-	FilePosition FileIterator::operator*() const {
-		return file->operator[](position);
+	File::Char File::Chars::Iterator::operator*() const {
+		return File::Char(file, position);
 	}
-	void FileIterator::operator++() {
+	void File::Chars::Iterator::operator++() {
 		++position;
+	}
+	File::Chars::Chars(File * file) : file(file) {}
+	File::Char File::Chars::operator[](uint32 Position) const {
+		return File::Char(file, Position);
+	}
+	File::Chars::Iterator File::Chars::begin() const {
+		return File::Chars::Iterator(file, 0);
+	}
+	File::Chars::Iterator File::Chars::end() const {
+		return File::Chars::Iterator(file, file->getNrChars());
+	}
+
+	File::Word::Word(File * file, const uint32 Position) : file(file), position(Position) {}
+	File::Word::operator Tstr() const {
+		return file->getWord(position);
+	}
+	File::Words::Iterator::Iterator(File * file, const uint32 Position) : file(file), position(Position) {}
+	bool File::Words::Iterator::operator!=(const Iterator& ToCompare) const {
+		return position != ToCompare.position;
+	}
+	File::Word File::Words::Iterator::operator*() const {
+		return File::Word(file, position);
+	}
+	void File::Words::Iterator::operator++() {
+		++position;
+	}
+	File::Words::Words(File * file) : file(file) {}
+	File::Word File::Words::operator[](uint32 Position) const {
+		return File::Word(file, Position);
+	}
+	File::Words::Iterator File::Words::begin() const {
+		return File::Words::Iterator(file, 0);
+	}
+	File::Words::Iterator File::Words::end() const {
+		return File::Words::Iterator(file, file->getNrWords());
+	}
+
+	File::Line::Line(File * file, const uint32 Position) : file(file), position(Position) {}
+	File::Line::operator Tstr() const {
+		return file->getLine(position);
+	}
+	File::Lines::Iterator::Iterator(File * file, const uint32 Position) : file(file), position(Position) {}
+	bool File::Lines::Iterator::operator!=(const Iterator& ToCompare) const {
+		return position != ToCompare.position;
+	}
+	File::Line File::Lines::Iterator::operator*() const {
+		return File::Line(file, position);
+	}
+	void File::Lines::Iterator::operator++() {
+		++position;
+	}
+	File::Lines::Lines(File * file) : file(file) {}
+	File::Line File::Lines::operator[](uint32 Position) const {
+		return File::Line(file, Position);
+	}
+	File::Lines::Iterator File::Lines::begin() const {
+		return File::Lines::Iterator(file, 0);
+	}
+	File::Lines::Iterator File::Lines::end() const {
+		return File::Lines::Iterator(file, file->getNrLines());
+	}
+
+
+	File::State::State(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr) : open(Open), eofError(Eof), failError(Fail), badError(Bad), externalError(ExtErr) {}
+	File::State::operator bool() const {
+		return eofError || failError || badError || externalError;
+	}
+	std::string File::State::str() const {
+		std::string fileState = "open:";
+		fileState += toString(open);
+		fileState += " eofErr:";
+		fileState += toString(eofError);
+		fileState += " failErr:";
+		fileState += toString(failError);
+		fileState += " badErr:";
+		fileState += toString(badError);
+		fileState += " extErr:";
+		fileState += toString(externalError);
+		return fileState;
+	}
+	void File::State::save(File &file) const {
+		file = str();
 	}
 
 
@@ -1576,8 +1627,8 @@ namespace sp {
 	bool File::extErr() const {
 		return externalError;
 	}
-	FileState File::state() const {
-		return FileState(mainFile.is_open(), eofErr(), failErr(), badErr(), externalError);
+	File::State File::state() const {
+		return File::State(mainFile.is_open(), eofErr(), failErr(), badErr(), externalError);
 	}
 
 
@@ -1704,9 +1755,6 @@ namespace sp {
 	}
 
 
-	const FilePosition File::operator[](uint32 Position) {
-		return FilePosition(this, Position);
-	}
 	bool File::operator==(File &ToCompare) {
 		std::error_code e;
 		if (std::experimental::filesystem::equivalent(mainPath, ToCompare.mainPath, e)) return true;
@@ -1756,12 +1804,23 @@ namespace sp {
 		return !good();
 	}
 
-
-	FileIterator File::begin() {
-		return FileIterator(this, 0);
+	File::Chars File::chars() {
+		return File::Chars(this);
 	}
-	FileIterator File::end() {
-		return FileIterator(this, getNrChars());
+	File::Words File::words() {
+		return File::Words(this);
+	}
+	File::Lines File::lines() {
+		return File::Lines(this);
+	}
+	File::Line File::operator[](uint32 Position) {
+		return File::Line(this, Position);
+	}
+	File::Lines::Iterator File::begin() {
+		return File::Lines::Iterator(this, 0);
+	}
+	File::Lines::Iterator File::end() {
+		return File::Lines::Iterator(this, getNrLines());
 	}
 }
 
