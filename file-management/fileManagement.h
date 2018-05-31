@@ -1068,47 +1068,65 @@ namespace sp {
 
 
 		/*
-		Returns a FilePosition object to get/modify the char
-			using operator char and operator=
+		Returns true if the content of this file is identic to the content of the
+		parameter, otherwise returns false. This file and the parameter are opened
+		in binary-input-output mode, if they weren't already.
+		Returns false if this file or the parameter couldn't be opened.
 		*/
-		const FilePosition operator[] (uint32 Position);
+		bool operator== (File &ToCompare);
 		/*
-		Returns true if the content of the files
-			is identic, otherwise false
-		Returns false if a file couldn't be opened
+		Returns true if the content of this file is identic to the content of the
+		parameter. This file is opened in binary-input-output mode, if it wasn't
+		already.
+		Returns false if this file couldn't be opened.
 		*/
-		bool operator== (File &toCompare); //TODO add == (T toCompare)
+		template<typename T>
+		bool operator== (T ToCompare);
 		/*
-		Returns false if the content of the files is identic, otherwise true
-		Returns true if either this file or the parameter file couldn't be opened
+		Returns true if the content of this file is different from the content of
+		the parameter, otherwise returns false. This file and the parameter are
+		opened in binary-input-output mode, if they weren't already.
+		Returns true if this file or the parameter couldn't be opened.
 		*/
-		bool operator!= (File &toCompare);
+		bool operator!= (File &ToCompare);
+		/*
+		Returns true if the content of this file is different from the content of
+		the parameter, otherwise returns false. This file is opened in
+		binary-input-output mode, if it wasn't already.
+		Returns true if this file couldn't be opened.
+		*/
+		template<typename T>
+		bool operator!= (T ToCompare);
 
 
 		/*
-		Returns a string containing all the file
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
-		Returns "" if the file couldn't be opened
+		Saves the content of this file in an std::string and returns it. This file
+		is opened in binary-input-output mode, if it wasn't already.
+		Returns an empty string if this file couldn't be opened.
 		*/
 		operator Tstr();
 		/*
-		Returns a string containing all the file
-		The file is opened, if it wasn't already
-		Leaves the file open in binary input-output mode
-		Returns "" if the file couldn't be opened
+		Saves the content of this file in an std::string and returns it. This file
+		is opened in binary-input-output mode, if it wasn't already.
+		Returns an empty string if this file couldn't be opened.
 		*/
 		Tstr str();
 		/*
-		Returns true if there aren't errors, otherwise false
+		Returns true if this file is ready for input and output operations,
+		otherwise returns false.
 		*/
 		operator bool() const;
 		/*
-		Returns false if there aren't errors, otherwise true
+		Returns true if this file has errors, otherwise returns false.
 		*/
 		bool operator!() const;
 
 
+		/*
+		Returns a FilePosition object to get/modify the char
+			using operator char and operator=
+		*/
+		const FilePosition operator[] (uint32 Position);
 		/*
 
 		*/
@@ -1117,6 +1135,9 @@ namespace sp {
 
 		*/
 		FileIterator end();
+
+
+
 	};
 	
 	
@@ -1286,9 +1307,31 @@ namespace sp {
 		return str() + toString(ToAdd);
 	}
 	template<typename T>
-	inline File & File::operator+=(T toAppend) {
+	inline File& File::operator+=(T toAppend) {
 		append(toAppend);
 		return *this;
+	}
+
+
+	template<typename T>
+	inline bool File::operator==(T ToCompare) {
+		Tstr toCompare = toString(ToCompare);
+		if (toCompare.length() != getNrChars()) return false;
+		if (!pointToBeg()) return false;
+		
+		char tempChar;
+		uint32 currentPosition = 0;
+		while (1) {
+			tempChar = mainFile.get();
+			if (mainFile.eof()) break;
+			if (tempChar != toCompare[currentPosition]) return false;
+			++currentPosition;
+		}
+		return true;
+	}
+	template<typename T>
+	inline bool File::operator!=(T ToCompare) {
+		return !operator==(ToCompare);
 	}
 
 

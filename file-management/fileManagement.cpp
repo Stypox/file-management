@@ -1707,17 +1707,19 @@ namespace sp {
 	const FilePosition File::operator[](uint32 Position) {
 		return FilePosition(this, Position);
 	}
-	bool File::operator==(File &toCompare) {
-		if (!pointToBeg()) return false;
-		if (!toCompare.pointToBeg()) return false;
+	bool File::operator==(File &ToCompare) {
+		std::error_code e;
+		if (std::experimental::filesystem::equivalent(mainPath, ToCompare.mainPath, e)) return true;
+		else if (e) return false;
+		if (!pointToBeg() || !ToCompare.pointToBeg()) return false;
 
 		char tempCharThis, tempCharCompare;
 		while (1) {
 			tempCharThis = mainFile.get();
-			tempCharCompare = toCompare.mainFile.get();
+			tempCharCompare = ToCompare.mainFile.get();
 
 			if (mainFile.eof()) {
-				if (toCompare.mainFile.eof()) break;
+				if (ToCompare.mainFile.eof()) break;
 				else return false;
 			}
 
@@ -1725,8 +1727,8 @@ namespace sp {
 		}
 		return true;
 	}
-	bool File::operator!=(File &toCompare) {
-		return !operator==(toCompare);
+	bool File::operator!=(File &ToCompare) {
+		return !operator==(ToCompare);
 	}
 
 
@@ -1738,6 +1740,7 @@ namespace sp {
 
 		char tempChar;
 		Tstr fileStr = "";
+		fileStr.reserve(getNrChars());
 		while (1) {
 			tempChar = mainFile.get();
 			if (mainFile.eof()) break;
@@ -1747,10 +1750,10 @@ namespace sp {
 		return fileStr;
 	}
 	File::operator bool() const {
-		return mainFile.operator bool();
+		return mainFile.is_open() && mainFile.operator bool();
 	}
 	bool File::operator!() const {
-		return !mainFile.operator bool();
+		return !good();
 	}
 
 
