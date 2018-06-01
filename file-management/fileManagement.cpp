@@ -10,72 +10,59 @@
 #include "fileManagement.h"
 
 namespace sp {
-	sp::Tstr spc(char letter) {
-		switch (letter) {
-		case '\0':
-			return "\\0";
-		case ' ':
-			return "_";
-		case '\t':
-			return "\\t";
-		case '\n':
-			return "\\n\n";
-		case '\v':
-			return "\\v";
-		case '\f':
-			return "\\f";
-		case '\r':
-			return "\\r";
-		case -1:
-			return "-1";
-		default:
-			return &letter;
-		}
-	}
-	sp::Tstr spc(sp::uint32 number) {
-		return std::to_string(number);
-	}
-	sp::Tstr spc(char letter, sp::int32 & line, sp::Newline mode = sp::Newline::LF, char previousLetter = 0) {
-		switch (letter) {
-		case '\0':
-			return "\\0";
-		case ' ':
-			return "_";
-		case '\t':
-			return "\\t";
-		case '\n':
-			if (line == 0) return "\\n\n";
-			if (previousLetter == '\r' || mode == sp::Newline::LF) return sp::Tstr("\\n\n") + std::to_string(line++) + sp::Tstr(" ");
-			return sp::Tstr("\\n");
-		case '\v':
-			return "\\v";
-		case '\f':
-			return "\\f";
-		case '\r':
-			return "\\r";
-		case -1:
-			return "-1";
-		default:
-			return &letter;
-		}
-	}
-	sp::Tstr spc(sp::Tstr str, sp::Newline mode = sp::Newline::LF) {
-		sp::Tstr returnStr = "";
-		sp::int32 line = 2;
-		char previousLetter = 0;
-		for (char letter : str) {
-			returnStr += spc(letter, line, mode, previousLetter);
-			previousLetter = letter;
-		}
-		if (line != 2) returnStr = "\n1 " + returnStr + "\n";
-
-		return returnStr;
-	}
 #ifdef _WIN32
 	constexpr auto& getStat = _stat64;
 #else
 	constexpr auto& getStat = stat64;
 #endif
+
+
+
+
+	Tstr toString(bool toConvert) {
+		return (toConvert) ? "1" : "0";
+	}
+	Tstr toString(char toConvert) {
+		return Tstr(1, toConvert);
+	}
+	Tstr toString(int8 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(int16 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(int32 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(int64 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(uint8 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(uint16 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(uint32 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(uint64 toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(float toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(double toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(long double toConvert) {
+		return std::to_string(toConvert);
+	}
+	Tstr toString(Tstr &toConvert) {
+		return toConvert;
+	}
+
+
 
 	File::Char::Char(File * file, const uint32 Position) : file(file), position(Position) {}
 	File::Char::operator char() const {
@@ -156,7 +143,9 @@ namespace sp {
 	}
 
 
-	File::State::State(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr) : open(Open), eofError(Eof), failError(Fail), badError(Bad), externalError(ExtErr) {}
+
+
+	File::State::State(bool Open, bool EofError, bool FailError, bool BadError, bool ExternalError) : open(Open), eofError(EofError), failError(FailError), badError(BadError), externalError(ExternalError) {}
 	File::State::operator bool() const {
 		return eofError || failError || badError || externalError;
 	}
@@ -173,55 +162,14 @@ namespace sp {
 		fileState += toString(externalError);
 		return fileState;
 	}
+	File::State::operator Tstr() const {
+		return str();
+	}
 	void File::State::save(File &file) const {
 		file = str();
 	}
 
 
-
-
-	Tstr toString(bool toConvert) {
-		return (toConvert) ? "1" : "0";
-	}
-	Tstr toString(char toConvert) {
-		return Tstr(1, toConvert);
-	}
-	Tstr toString(int8 toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(int16 toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(int32 toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(int64 toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(uint8 toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(uint16 toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(uint32 toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(uint64 toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(float toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(double toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(long double toConvert) {
-		return std::to_string(toConvert);
-	}
-	Tstr toString(Tstr &toConvert) {
-		return toConvert;
-	}
 
 
 	void File::moveFileContent(Tfstm & From, Tfstm & To) {
@@ -1803,6 +1751,7 @@ namespace sp {
 	bool File::operator!() const {
 		return !good();
 	}
+
 
 	File::Chars File::chars() {
 		return File::Chars(this);

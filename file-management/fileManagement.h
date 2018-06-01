@@ -139,9 +139,20 @@ namespace sp {
 			File * file;
 			const uint32 position;
 		public:
+			/*
+			Constructor that takes the file containing the char (first parameter)
+			and its position (second parameter).
+			*/
 			Char(File * file, const uint32 Position);
 			
+			/*
+			Returns the corresponding char. See File::getChar(uint32).
+			*/
 			operator char() const;
+			/*
+			Replaces the corresponding char with the parameter. See
+			File::replaceChar(uint32, char).
+			*/
 			void operator=(char Replacement) const;
 		};
 		class Chars {
@@ -151,19 +162,49 @@ namespace sp {
 				File * file;
 				uint32 position;
 			public:
+				/*
+				Constructor that takes a file (first parameter) and the starting
+				position of this iterator (second parameter).
+				*/
 				Iterator(File * file, const uint32 Position);
 
+				/*
+				Returns true if the position of this iterator and the position of
+				the parameter are different, otherwise returns false.
+				*/
 				bool operator!=(const Iterator& ToCompare) const;
+				/*
+				Returns a File::Char object pointing to the position of this
+				iterator that can be used to read or replace the corresponding
+				char.
+				*/
 				Char operator*() const;
+				/*
+				Increases by one the position of this iterator.
+				*/
 				void operator++();
 			};
 		private:
 			File * file;
 		public:
+			/*
+			Constructor that takes the file containing the chars.
+			*/
 			Chars(File * file);
 
+			/*
+			Returns a File::Char object pointing to the position specified by the
+			parameter that can be used to read or replace the corresponding char.
+			*/
 			Char operator[](uint32 Position) const;
+			/*
+			Returns a File::Chars::Iterator object that points to the first char.
+			*/
 			Iterator begin() const;
+			/*
+			Returns a File::Chars::Iterator object that points to the char after
+			the last one.
+			*/
 			Iterator end() const;
 		};
 
@@ -172,9 +213,20 @@ namespace sp {
 			File * file;
 			const uint32 position;
 		public:
+			/*
+			Constructor that takes the file containing the word (first parameter)
+			and its position (second parameter).
+			*/
 			Word(File * file, const uint32 Position);
 			
+			/*
+			Returns the corresponding word. See File::getWord(uint32).
+			*/
 			operator Tstr() const;
+			/*
+			Replaces the corresponding word with the parameter. See
+			File::replaceWord(uint32, T).
+			*/
 			template<typename T>
 			void operator=(T Replacement) const;
 		};
@@ -185,19 +237,49 @@ namespace sp {
 				File * file;
 				uint32 position;
 			public:
+				/*
+				Constructor that takes a file (first parameter) and the starting
+				position of this iterator (second parameter).
+				*/
 				Iterator(File * file, const uint32 Position);
 
+				/*
+				Returns true if the position of this iterator and the position of
+				the parameter are different, otherwise returns false.
+				*/
 				bool operator!=(const Iterator& ToCompare) const;
+				/*
+				Returns a File::Word object pointing to the position of this
+				iterator that can be used to read or replace the corresponding
+				word.
+				*/
 				Word operator*() const;
+				/*
+				Increases by one the position of this iterator.
+				*/
 				void operator++();
 			};
 		private:
 			File * file;
 		public:
+			/*
+			Constructor that takes the file containing the words.
+			*/
 			Words(File * file);
 
+			/*
+			Returns a File::Word object pointing to the position specified by the
+			parameter that can be used to read or replace the corresponding word.
+			*/
 			Word operator[](uint32 Position) const;
+			/*
+			Returns a File::Words::Iterator object that points to the first word.
+			*/
 			Iterator begin() const;
+			/*
+			Returns a File::Words::Iterator object that points to the word after
+			the last one.
+			*/
 			Iterator end() const;
 		};
 
@@ -206,9 +288,20 @@ namespace sp {
 			File * file;
 			const uint32 position;
 		public:
+			/*
+			Constructor that takes the file containing the line (first parameter)
+			and its position (second parameter).
+			*/
 			Line(File * file, const uint32 Position);
 			
+			/*
+			Returns the corresponding line. See File::getLine(uint32).
+			*/
 			operator Tstr() const;
+			/*
+			Replaces the corresponding line with the parameter. See
+			File::replaceLine(uint32, T).
+			*/
 			template<typename T>
 			void operator=(T Replacement) const;
 		};
@@ -219,19 +312,49 @@ namespace sp {
 				File * file;
 				uint32 position;
 			public:
+				/*
+				Constructor that takes a file (first parameter) and the starting
+				position of this iterator (second parameter).
+				*/
 				Iterator(File * file, const uint32 Position);
 
+				/*
+				Returns true if the position of this iterator and the position of
+				the parameter are different, otherwise returns false.
+				*/
 				bool operator!=(const Iterator& ToCompare) const;
+				/*
+				Returns a File::Line object pointing to the position of this
+				iterator that can be used to read or replace the corresponding
+				line.
+				*/
 				Line operator*() const;
+				/*
+				Increases by one the position of this iterator.
+				*/
 				void operator++();
 			};
 		private:
 			File * file;
 		public:
+			/*
+			Constructor that takes the file containing the lines.
+			*/
 			Lines(File * file);
 
+			/*
+			Returns a File::Line object pointing to the position specified by the
+			parameter that can be used to read or replace the corresponding line.
+			*/
 			Line operator[](uint32 Position) const;
+			/*
+			Returns a File::Lines::Iterator object that points to the first line.
+			*/
 			Iterator begin() const;
+			/*
+			Returns a File::Lines::Iterator object that points to the line after
+			the last one.
+			*/
 			Iterator end() const;
 		};
 
@@ -239,10 +362,27 @@ namespace sp {
 		public:
 			bool open, eofError, failError, badError, externalError;
 
-			State(bool Open, bool Eof, bool Fail, bool Bad, bool ExtErr);
+			/*
+			Constructor that takes, in order: whether the file is open or not,
+			end-of-file error, fail error, bad error, external error.
+			*/
+			State(bool Open, bool EofError, bool FailError, bool BadError, bool ExternalError);
 
+			/*
+			Returns true if there are no errors, otherwise returns false.
+			*/
 			operator bool() const;
+			/*
+			Saves on a std::string all the errors and returns it.
+			*/
 			std::string str() const;
+			/*
+			Saves on a std::string all the errors and returns it.
+			*/
+			operator Tstr() const;
+			/*
+			Saves on the parameter all the errors.
+			*/
 			void save(File &file) const;
 		};
 
@@ -1181,14 +1321,46 @@ namespace sp {
 		bool operator!() const;
 
 		
+		/*
+		Returns a File::Chars object that can be used to read or replace chars in
+		range-for-loops or with operator[].
+		*/
 		Chars chars();
+		/*
+		Returns a File::Words object that can be used to read or replace words in
+		range-for-loops or with operator[].
+		*/
 		Words words();
+		/*
+		Returns a File::Lines object that can be used to read or replace lines in
+		range-for-loops or with operator[].
+		*/
 		Lines lines();
+		/*
+		Returns a File::Line object that can can be used to read or replace the
+		line specified by the parameter.
+		*/
 		Line operator[](uint32 Position);
+		/*
+		Returns a File::Lines::Iterator object that points to the first line.
+		*/
 		Lines::Iterator begin();
+		/*
+		Returns a File::Lines::Iterator object that points to the line after the
+		last one.
+		*/
 		Lines::Iterator end();
 	};
 	
+
+	template<typename T>
+	inline void File::Word::operator=(T Replacement) const {
+		file->replaceWord(position, Replacement);
+	}
+	template<typename T>
+	inline void File::Line::operator=(T Replacement) const {
+		file->replaceLine(position, Replacement);
+	}
 	
 
 	template<typename T>
@@ -1381,16 +1553,6 @@ namespace sp {
 	template<typename T>
 	inline bool File::operator!=(T ToCompare) {
 		return !operator==(ToCompare);
-	}
-
-
-	template<typename T>
-	inline void File::Word::operator=(T Replacement) const {
-		file->replaceWord(position, Replacement);
-	}
-	template<typename T>
-	inline void File::Line::operator=(T Replacement) const {
-		file->replaceLine(position, Replacement);
 	}
 
 
