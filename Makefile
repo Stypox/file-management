@@ -1,21 +1,10 @@
-#Makefile settings
 CXX = g++
-CXXFLAGS = -Wall -g -std=c++17
-CXXFLAGSAFTER = -lstdc++fs
-SRC = ./file-management/
+CXXFLAGS := -Wall -std=c++17
 
-#executable dependencies
-executable: $(SRC)main.o $(SRC)fileManagement.o
-	$(CXX) $(CXXFLAGS) -o executable $(SRC)main.o $(SRC)fileManagement.o $(CXXFLAGSAFTER)
+SRC = file-management/
 
-#main.o dependencies
-main.o: $(SRC)main.cpp $(SRC)fileManagement.h
-	$(CXX) $(CXXFLAGS) -c $(SRC)main.cpp $(CXXFLAGSAFTER)
+file_management.o: $(SRC)file_management.h $(SRC)file_management.cpp
+	$(CXX) $(CXXFLAGS) -c $(SRC)file_management.cpp -o file_management.o
 
-#fileManagement dependencies
-fileManagement.o: $(SRC)fileManagement.h
-
-#cleaning
 clean:
-	rm $(SRC)*.o
-	
+	rm file_management.o	
