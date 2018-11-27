@@ -3,7 +3,7 @@
 
 #include "file_management.h"
 
-namespace sp {
+namespace stypox {
 #ifdef _WIN32
 	constexpr auto& getStat = _stat64;
 #else

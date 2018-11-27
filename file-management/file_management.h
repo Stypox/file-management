@@ -20,8 +20,8 @@ Returns false if this file couldn't be opened, otherwise returns true. // This f
 The pointer is not moved. // The pointer is moved to an untraceable position.
 */
 
-#ifndef SP_FILE_MANAGEMENT_H
-#define SP_FILE_MANAGEMENT_H
+#ifndef _STYPOX_FILE_MANAGEMENT_H_
+#define _STYPOX_FILE_MANAGEMENT_H_
 
 #include <iostream>
 #include <string>
@@ -29,7 +29,7 @@ The pointer is not moved. // The pointer is moved to an untraceable position.
 #include <filesystem>
 #include <sys/stat.h>
 
-namespace sp {
+namespace stypox {
 	using Tstr = std::string;
 	using Tfstm = std::fstream;
 	using Tspos = std::streampos;
