@@ -407,11 +407,11 @@ namespace stypox {
 		first word of the first line(not necessarily 0). While 0 means "look for
 		the first", -1 means "don't do anything". So only 
 		getPositionMove(-1, -1, -1) will surely return 0. The constexpr
-		sp::dontMove can be used as -1. The pointer is moved to an untraceable
+		stypox::dontMove can be used as -1. The pointer is moved to an untraceable
 		position. This file is opened in binary-input-output mode, if it wasn't
 		already.
 		Returns -1 if this file couldn't be opened and -2 if the specified position
-		is out of bounds. The constexpr sp::fileNotOpen (= -1) and sp::outOfBounds
+		is out of bounds. The constexpr stypox::fileNotOpen (= -1) and stypox::outOfBounds
 		(= -2) can be used to check.
 		*/
 		Tspos getPositionMove(uint32 Line, uint32 Word, uint32 Char);
@@ -490,7 +490,7 @@ namespace stypox {
 		pointTo(0, 0, 0) points to the first char of the first word of the first
 		line (not necessarily to the beginning of this file). While 0 means "move
 		to the first", -1 means "don't move". So only pointTo(-1, -1, -1) will
-		surely point to the beginning. The constexpr sp::dontMove can be used as
+		surely point to the beginning. The constexpr stypox::dontMove can be used as
 		-1. This file is opened in binary-input-output mode, if it wasn't already.
 		Returns false if this file couldn't be opened or if the specified position
 		is out of bounds, otherwise returns true.
@@ -514,11 +514,11 @@ namespace stypox {
 		getPosition(0, 0, 0) returns the position of the first char of the first
 		word of the first line (not necessarily 0). While 0 means "look for the
 		first", -1 means "don't do anything". So only getPosition(-1, -1, -1) will
-		surely return 0. The pointer is not moved. The constexpr sp::dontMove can
+		surely return 0. The pointer is not moved. The constexpr stypox::dontMove can
 		be used as -1. This file is opened in binary-input-output mode, if it
 		wasn't already.
 		Returns -1 if this file couldn't be opened and -2 if the specified position
-		is out of bounds. The constexpr sp::fileNotOpen (= -1) and sp::outOfBounds
+		is out of bounds. The constexpr stypox::fileNotOpen (= -1) and stypox::outOfBounds
 		(= -2) can be used to check.
 		*/
 		Tspos getPosition(uint32 Line, uint32 Word, uint32 Char);
@@ -1510,7 +1510,7 @@ namespace stypox {
 	
 	template<typename T>
 	inline File& File::operator=(T NewContent) {
-		sp::Tstr newContent = toString(NewContent);
+		stypox::Tstr newContent = toString(NewContent);
 		if (exists()) {
 			if (!pointToBeg() || !resize(newContent.length())) return *this;
 		}
