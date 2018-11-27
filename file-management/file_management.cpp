@@ -1383,7 +1383,7 @@ namespace sp {
 	bool File::move(Tstr newPath) {
 		close();
 		std::error_code e;
-		std::experimental::filesystem::rename(mainPath, newPath, e);
+		std::filesystem::rename(mainPath, newPath, e);
 		if (e) {
 			externalError = true;
 			return false;
@@ -1398,7 +1398,7 @@ namespace sp {
 	}
 	bool File::copy(File & toOverwrite) {
 		std::error_code e;
-		if (std::experimental::filesystem::equivalent(mainPath, toOverwrite.mainPath, e)) return true;
+		if (std::filesystem::equivalent(mainPath, toOverwrite.mainPath, e)) return true;
 		else if (e) return false;
 
 		if (toOverwrite.exists()) {
@@ -1510,7 +1510,7 @@ namespace sp {
 	}
 	bool File::resize(uint32 newSize) {
 		std::error_code error;
-		std::experimental::filesystem::resize_file(mainPath, newSize, error);
+		std::filesystem::resize_file(mainPath, newSize, error);
 		if (mainFile.is_open()) mainFile.flush();
 		return !error;
 	}
@@ -1538,7 +1538,7 @@ namespace sp {
 
 	bool File::exists() const {
 		std::error_code e;
-		bool returnValue = std::experimental::filesystem::exists(mainPath, e);
+		bool returnValue = std::filesystem::exists(mainPath, e);
 		if (e) return false;
 		return returnValue;
 	}
@@ -1619,7 +1619,7 @@ namespace sp {
 	}
 	File& File::operator>>(File &Out) {
 		std::error_code e;
-		if (std::experimental::filesystem::equivalent(mainPath, Out.mainPath, e)) {
+		if (std::filesystem::equivalent(mainPath, Out.mainPath, e)) {
 			if (!open()) return *this;
 			uint32 size = getNrChars();
 			char tempChar;
@@ -1662,7 +1662,7 @@ namespace sp {
 
 	File& File::operator<<(File &In) {		
 		std::error_code e;
-		if (std::experimental::filesystem::equivalent(mainPath, In.mainPath, e)) {
+		if (std::filesystem::equivalent(mainPath, In.mainPath, e)) {
 			if (!open()) return *this;
 			uint32 size = getNrChars();
 
@@ -1699,7 +1699,7 @@ namespace sp {
 
 	bool File::operator==(File &ToCompare) {
 		std::error_code e;
-		if (std::experimental::filesystem::equivalent(mainPath, ToCompare.mainPath, e)) return true;
+		if (std::filesystem::equivalent(mainPath, ToCompare.mainPath, e)) return true;
 		else if (e) return false;
 		if (!pointToBeg() || !ToCompare.pointToBeg()) return false;
 
