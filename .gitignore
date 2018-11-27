@@ -1,21 +1,4 @@
 .vscode/
 *.o
 
-Debug/
-x64/
-.vs/
-*.sln
-file-management/Debug/
-file-management/x64/
-file-management/*.vcxproj
-file-management/*.vcxproj.filters
-file-management/*.vcxproj.user
-
-*.ini
-*.txt
-
-/*
-!Makefile
-!README.md
-!.gitignore
-!file-management/
+file-management/main.cpp
