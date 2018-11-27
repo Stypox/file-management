@@ -1,12 +1,6 @@
 #ifndef FILE_MANAGEMENT_CPP
 #define FILE_MANAGEMENT_CPP
 
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <filesystem>
-#include <sys/stat.h>
-
 #include "file_management.h"
 
 namespace sp {
