@@ -1,7 +1,7 @@
 #ifndef FILE_MANAGEMENT_CPP
 #define FILE_MANAGEMENT_CPP
 
-#include "file_management.h"
+#include "../include/stypox/file_management.h"
 
 namespace stypox {
 #ifdef _WIN32
