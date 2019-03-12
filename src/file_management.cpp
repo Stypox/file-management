@@ -1,7 +1,4 @@
-#ifndef FILE_MANAGEMENT_CPP
-#define FILE_MANAGEMENT_CPP
-
-#include "../include/stypox/file_management.h"
+#include "../include/stypox/file_management.hpp"
 
 namespace stypox {
 #ifdef _WIN32
@@ -1766,5 +1763,3 @@ namespace stypox {
 		return File::Lines::Iterator(this, getNrLines());
 	}
 }
-
-#endif

@@ -20,8 +20,8 @@ Returns false if this file couldn't be opened, otherwise returns true. // This f
 The pointer is not moved. // The pointer is moved to an untraceable position.
 */
 
-#ifndef _STYPOX_FILE_MANAGEMENT_H_
-#define _STYPOX_FILE_MANAGEMENT_H_
+#ifndef _STYPOX_FILE_MANAGEMENT_HPP_
+#define _STYPOX_FILE_MANAGEMENT_HPP_
 
 #include <iostream>
 #include <string>
